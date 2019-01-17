@@ -4,20 +4,24 @@ import {
 import BigNumber = utils.BigNumber
 import RLP = utils.RLP
 
+/**
+ * Segment class is one segment of deposited value on Plasma
+ */
 export class Segment {
   start: BigNumber;
   end: BigNumber;
 
+  /**
+   * Segment
+   * @param start 
+   * @param end 
+   */
   constructor(
     start: BigNumber,
     end: BigNumber
   ) {
     this.start = start;
     this.end = end;
-  }
-
-  static bignumberToBuffer(bn: BigNumber): Buffer {
-    return Buffer.from(bn.toHexString(), 'hex');
   }
 
   encode(): string {
