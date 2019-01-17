@@ -1,6 +1,9 @@
 import {
   utils
 } from "ethers"
+import {
+  RLPItem
+} from './helpers/ethers'
 import BigNumber = utils.BigNumber
 import RLP = utils.RLP
 
@@ -24,6 +27,20 @@ export class Segment {
     this.end = end;
   }
 
+  toTuple(): BigNumber[] {
+    return [
+      this.start,
+      this.end
+    ]
+  }
+
+  static fromTuple(tuple: RLPItem[]): Segment {
+    return new Segment(
+      utils.bigNumberify(tuple[0]),
+      utils.bigNumberify(tuple[1])
+    )
+  }
+
   encode(): string {
     return RLP.encode([
       this.start,
@@ -32,11 +49,7 @@ export class Segment {
   }
 
   static decode(bytes: string): Segment {
-    const list = RLP.decode(bytes)
-    return new Segment(
-      utils.bigNumberify(list[0]),
-      utils.bigNumberify(list[1])
-    )
+    return Segment.fromTuple(RLP.decode(bytes))
   }
 
 }
