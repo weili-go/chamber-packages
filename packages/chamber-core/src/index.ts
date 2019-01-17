@@ -3,3 +3,7 @@
 export {
   Transaction
 } from './tx'
+
+export {
+  Segment
+} from './segment'
