@@ -1,0 +1,24 @@
+{
+  "name": "@layer2/chamber-packages",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "author": {
+    "name": "Cryptoeconomics Lab",
+    "url": "https://www.cryptoeconomicslab.com/"
+  },
+  "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "build": "lerna run build",
+    "test": "lerna run test",
+    "format": "lerna run format",
+    "publish": "yarn build && lerna publish",
+    "start": "node app"
+  },
+  "dependencies": {
+    "lerna": "^3.10.5"
+  }
+}

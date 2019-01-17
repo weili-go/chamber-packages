@@ -1,0 +1,21 @@
+{
+  "name": "@layer2/core",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc --build ./tsconfig.json",
+    "build:dev": "tsc",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "test": "mocha"
+  },
+  "dependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "chai-bignumber": "^3.0.0",
+    "typescript": "^3.2.2"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0"
+  }
+}

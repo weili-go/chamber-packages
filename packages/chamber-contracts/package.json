@@ -1,0 +1,19 @@
+{
+  "name": "@layer2/contracts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "clean": "rm -r build",
+    "build": "yarn clean && truffle compile",
+    "test": "yarn build && truffle test"
+  },
+  "dependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "chai-bignumber": "^3.0.0",
+    "ethereumjs-util": "^6.0.0",
+    "rlp": "^2.2.2",
+    "truffle": "^5.0.2"
+  }
+}
