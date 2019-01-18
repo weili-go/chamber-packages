@@ -4,7 +4,7 @@ const utils = require("ethereumjs-util")
 const {
   Segment
 } = require('@layer2/core')
-const RootChain = artifacts.require("Rootchain")
+const RootChain = artifacts.require("RootChain")
 
 const ethers = require('ethers')
 

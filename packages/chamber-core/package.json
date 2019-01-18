@@ -6,8 +6,10 @@
   "scripts": {
     "build": "tsc --build ./tsconfig.json",
     "build:dev": "tsc",
+    "build:ci": "yarn run build",
     "format": "prettier --write \"src/**/*.ts\"",
-    "test": "mocha -r ts-node/register 'test/**/*.ts'"
+    "test": "mocha -r ts-node/register 'test/**/*.ts'",
+    "test:ci": "yarn run test"
   },
   "dependencies": {
     "@types/chai": "^4.1.7",

@@ -1,0 +1,25 @@
+language: python
+python:
+  - "3.6"
+
+cache:
+  bundler: true
+  directories:
+    - node_modules
+
+before_install:
+  - pip install -U pip
+  - pip install vyper
+  - nvm install $(jq -r '.engines.node' package.json)
+  - npm install -g yarn
+  - npm install -g lerna
+
+install:
+  - lerna bootstrap
+
+script:
+  - yarn build:ci
+  - yarn test:ci
+
+dist: trusty
+sudo: false

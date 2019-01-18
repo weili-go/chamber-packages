@@ -10,10 +10,15 @@
     "name": "Cryptoeconomics Lab",
     "url": "https://www.cryptoeconomicslab.com/"
   },
+  "engines": {
+    "node": "8"
+  },
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "build": "lerna run build",
     "test": "lerna run test",
+    "build:ci": "lerna run build:ci",
+    "test:ci": "lerna run test:ci",
     "format": "lerna run format",
     "publish": "yarn build && lerna publish",
     "start": "node app"
