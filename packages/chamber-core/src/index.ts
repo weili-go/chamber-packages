@@ -1,15 +1,15 @@
 // core module
 
 export {
-  Transaction,
+  Address,
+  TransferTransaction,
+  SplitTransaction,
+  MergeTransaction,
+  SwapTransaction,
+  Multisig2Transaction,
   SignedTransaction,
   SignedTransactionWithProof
 } from './tx'
-export {
-  Address,
-  LockState,
-  TransactionOutput
-} from './txo'
 export {
   Segment
 } from './segment'
