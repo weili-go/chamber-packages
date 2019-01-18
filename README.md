@@ -1,7 +1,7 @@
 chamber-packages
 =====
 
-https://travis-ci.org/cryptoeconomicslab/chamber-packages.svg?branch=master
+[![Build Status](https://travis-ci.org/cryptoeconomicslab/chamber-packages.svg?branch=master)](https://travis-ci.org/cryptoeconomicslab/chamber-packages)
 
 
 ```
