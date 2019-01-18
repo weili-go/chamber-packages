@@ -2,13 +2,19 @@ const { deployRLPdecoder } = require('./helpers/deployRLPdecoder')
 
 const utils = require("ethereumjs-util")
 const {
-  Segment
+  Segment,
+  SumMerkleTree,
+  SumMerkleTreeNode
 } = require('@layer2/core')
 const RootChain = artifacts.require("RootChain")
 
 const ethers = require('ethers')
 
 const BigNumber = ethers.utils.BigNumber
+
+const {
+  Scenario1
+} = require('./testdata')
 
 require('chai')
   .use(require('chai-as-promised'))
@@ -17,27 +23,24 @@ require('chai')
 
 
 contract("RootChain", ([owner, nonOwner]) => {
-  const start = new BigNumber(100000)
-  const end = new BigNumber(200000)
-  const segment = new Segment(start, end)
-
 
   beforeEach(async () => {
     await deployRLPdecoder(owner)
     this.rootChain = await RootChain.new()
   });
 
-  describe("segment", () => {
-    it("should decode segment", async () => {
-      const hex = utils.bufferToHex(segment.encode())
-      const result = await this.rootChain.get(
+  describe("submit", () => {
+    const root = Scenario1.tree.root();
+
+    it("should submit", async () => {
+      const hex = utils.bufferToHex(root)
+      const result = await this.rootChain.submit(
         hex,
         {
           from: owner
         });
-      assert.equal(start.toString(), result[0].toString())
-      assert.equal(end.toString(), result[1].toString())
+      assert.equal(result.logs[0].event, 'BlockSubmitted')
     })
   });
-  
+
 })
