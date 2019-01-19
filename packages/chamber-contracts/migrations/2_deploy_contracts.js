@@ -4,6 +4,7 @@ const TransactionVerifier = artifacts.require("TransactionVerifier")
 module.exports = (deployer) => {
   deployer.deploy(TransactionVerifier)
   .then(() => deployer.deploy(
-      RootChain
+      RootChain,
+      TransactionVerifier.address
   ))
 }

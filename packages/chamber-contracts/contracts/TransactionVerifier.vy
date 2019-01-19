@@ -109,3 +109,47 @@ def decodeMultisig2(_tBytes: bytes[224]) -> (uint256, uint256):
 @constant
 def get(_segmentBytes: bytes[64]) -> (uint256, uint256):
   return self.decodeSegment(_segmentBytes)
+
+# verify transaction
+@public
+@constant
+def verify(
+  _txBytes: bytes[1024],
+  _sigs: bytes[130]
+) -> bool:
+  return True
+
+@public
+@constant
+def getInputHash(
+  _txBytes: bytes[1024],
+  _inputIndex: uint256
+) -> bytes32:
+  return sha3("input")
+
+@public
+@constant
+def getOutputHash(
+  _txBytes: bytes[1024],
+  _outputIndex: uint256
+) -> bytes32:
+  return sha3("output")
+
+@public
+@constant
+def verifyOwner(
+  _txBytes: bytes[1024],
+  _outputIndex: uint256,
+  _address: address
+) -> bool:
+  return True
+
+# check segment within the transaction
+@public
+@constant
+def checkWithin(
+  _start: uint256,
+  _end: uint256,
+  _txBytes: bytes[1024]
+) -> bool:
+  return True

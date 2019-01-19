@@ -191,7 +191,6 @@ export class SumMerkleTree {
       let buf = []
       if(leftOrRight === 0) {
         buf = [currentAmountBuf, hash, convert32(amount), node]
-        console.log('length', currentAmountBuf, convert32(amount))
       }else{
         buf = [convert32(amount), node, currentAmountBuf, hash]
         lastLeftAmount = currentAmount.sub(range)
