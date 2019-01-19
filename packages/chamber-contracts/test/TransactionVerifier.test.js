@@ -16,15 +16,14 @@ require('chai')
   .should();
 
 
-contract("TransactionVerifier", ([owner, nonOwner]) => {
+contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) => {
   const start = new BigNumber(100000)
   const end = new BigNumber(200000)
   const segment = new Segment(start, end)
 
-
   beforeEach(async () => {
-    await deployRLPdecoder(owner)
-    this.transactionVerifier = await TransactionVerifier.new()
+    await deployRLPdecoder(admin)
+    this.transactionVerifier = await TransactionVerifier.new({ from: operator })
   });
 
   describe("segment", () => {
@@ -33,7 +32,7 @@ contract("TransactionVerifier", ([owner, nonOwner]) => {
       const result = await this.transactionVerifier.get(
         hex,
         {
-          from: owner
+          from: bob
         });
       assert.equal(start.toString(), result[0].toString())
       assert.equal(end.toString(), result[1].toString())

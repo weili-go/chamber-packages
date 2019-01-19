@@ -41,7 +41,6 @@ describe('SumMerkleTree', function() {
       assert.equal(tree.verify(
         leaves[2].getLengthAsBigNumber(), // leaf amount
         leaves[2].getHash(),    // leaf hash
-        2,
         new BigNumber(24), // total deposit
         new BigNumber(5), // left offset
         root,
@@ -55,7 +54,6 @@ describe('SumMerkleTree', function() {
       assert.equal(tree.verify(
         leaves[2].getLengthAsBigNumber(), // leaf amount
         leaves[2].getHash(),    // leaf hash
-        2,
         new BigNumber(30), // total deposit
         new BigNumber(5), // left offset
         root,
@@ -69,7 +67,6 @@ describe('SumMerkleTree', function() {
       assert.equal(tree.verify(
         leaves[2].getLengthAsBigNumber(), // leaf amount
         leaves[2].getHash(),    // leaf hash
-        2,
         new BigNumber(24), // total deposit
         new BigNumber(7), // left offset
         root,
@@ -83,7 +80,6 @@ describe('SumMerkleTree', function() {
       assert.equal(tree.verify(
         leaves[0].getLengthAsBigNumber(), // leaf amount
         leaves[0].getHash(),    // leaf hash
-        2,
         new BigNumber(24), // total deposit
         new BigNumber(5), // left offset
         root,

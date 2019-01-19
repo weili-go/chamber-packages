@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rm -r build/*",
     "build": "yarn clean && truffle compile",
-    "build:ci": "yarn build",
+    "build:ci": "truffle compile",
     "test": "yarn build && truffle test",
     "test:ci": "truffle test"
   },

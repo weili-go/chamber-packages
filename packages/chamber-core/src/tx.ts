@@ -43,6 +43,10 @@ export class BaseTransaction {
     return BaseTransaction.fromTuple(RLP.decode(bytes))
   }
 
+  hash(): string {
+    return utils.keccak256(this.encode())
+  }
+
   verify(): boolean {
     return false
   }
@@ -296,11 +300,19 @@ export class SignedTransaction {
   signatures: Signature[]
 
   constructor(
-    tx: BaseTransaction,
-    signatures: Signature[]
+    tx: BaseTransaction
   ) {
     this.tx = tx
-    this.signatures = signatures
+    this.signatures = []
+  }
+
+  sign(pkey: string) {
+    const key = new utils.SigningKey(pkey)
+    this.signatures.push(utils.joinSignature(key.signDigest(this.tx.hash())))
+  }
+
+  getSignatures() {
+    return utils.hexlify(utils.concat(this.signatures.map(s => utils.arrayify(s))))
   }
 
 }
@@ -309,15 +321,18 @@ export class SignedTransaction {
  * SignedTransactionWithProof is the transaction and its signatures and proof
  */
 export class SignedTransactionWithProof extends SignedTransaction {
-  proofs: MerkleProof[]
+  proofs: MerkleProof
 
   constructor(
     tx: BaseTransaction,
-    signatures: Signature[],
-    proofs: MerkleProof[]
+    proofs: MerkleProof
   ) {
-    super(tx, signatures)
+    super(tx)
     this.proofs = proofs
+  }
+
+  getProofs() {
+    return utils.hexlify(this.proofs)
   }
 
 }

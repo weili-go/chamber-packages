@@ -9,8 +9,14 @@ export class SumMerkleTreeNode {
   hash: Buffer
   len: BigNumber
 
-  constructor(hash: Buffer, len: BigNumber) {
-    this.hash = hash;
+  constructor(hash: Buffer | String, len: BigNumber) {
+    if((typeof hash == 'string') && utils.isHexString(hash)) {
+      this.hash = Buffer.from(utils.arrayify(hash))
+    }else if(hash instanceof Buffer) {
+      this.hash = hash;
+    }else{
+      throw new Error('invalid hash type')
+    }
     this.len = len;
   }
 
@@ -18,16 +24,20 @@ export class SumMerkleTreeNode {
     return this.hash;
   }
 
-  getLength(): Buffer {
+  getLength8Byte(): Buffer {
+    return bignumTo8BytesBuffer(this.len);
+  }
+  getLength32Byte(): Buffer {
     return bignumTo32BytesBuffer(this.len);
   }
+
 
   getLengthAsBigNumber(): BigNumber {
     return this.len;
   }
 
-  toBytes(): Buffer {
-    return Buffer.concat([this.getLength(), this.getHash()]);
+  toBytes(leftOrRight: number): Buffer {
+    return Buffer.concat([Buffer.from([leftOrRight]), this.getLength8Byte(), this.getHash()]);
   }
 
   static getEmpty() {
@@ -86,9 +96,9 @@ export class SumMerkleTree {
       const left = nodes[i]
       const right = nodes[i + 1]
       const buf = keccak256(Buffer.concat([
-        left.getLength(),
+        left.getLength32Byte(),
         left.getHash(),
-        right.getLength(),
+        right.getLength32Byte(),
         right.getHash()]))
       const newNode = new SumMerkleTreeNode(
         buf,
@@ -139,10 +149,10 @@ export class SumMerkleTree {
     const proof = []
     if(index <= this.getLeaves().length) {
       for(let i = 0; i < this.layers.length - 1; i++) {
-        let layerIndex = (index % 2 === 0) ? (index + 1) : (index - 1)
+        const leftOrRight = (index % 2 === 0)
+        let layerIndex = leftOrRight ? (index + 1) : (index - 1)
         index = Math.floor(index / 2)
-
-        proof.push(this.layers[i][layerIndex].toBytes())
+        proof.push(this.layers[i][layerIndex].toBytes(leftOrRight?0:1))
       }
     }
     return Buffer.concat(proof)
@@ -161,7 +171,6 @@ export class SumMerkleTree {
   verify(
     range: BigNumber,
     value: Buffer,
-    index: number,
     totalAmount: BigNumber,
     leftOffset: BigNumber,
     root: Buffer,
@@ -174,20 +183,21 @@ export class SumMerkleTree {
     let currentAmount = range
     let hash = value
     let lastLeftAmount = new BigNumber(0)
-    for(let i = 0; i < proof.length; i += 64) {
-      const amount = proof.slice(i, i + 32)
-      const node = proof.slice(i + 32, i + 64)
+    for(let i = 0; i < proof.length; i += 41) {
+      const leftOrRight = proof.slice(i, i + 1).readUInt8(0)
+      const amount = proof.slice(i + 1, i + 9)
+      const node = proof.slice(i + 9, i + 41)
       const currentAmountBuf = bignumTo32BytesBuffer(currentAmount)
       let buf = []
-      if(index % 2 === 0) {
-        buf = [currentAmountBuf, hash, amount, node]
+      if(leftOrRight === 0) {
+        buf = [currentAmountBuf, hash, convert32(amount), node]
+        console.log('length', currentAmountBuf, convert32(amount))
       }else{
-        buf = [amount, node, currentAmountBuf, hash]
+        buf = [convert32(amount), node, currentAmountBuf, hash]
         lastLeftAmount = currentAmount.sub(range)
       }
       currentAmount = currentAmount.add(utils.bigNumberify(amount))
       hash = keccak256(Buffer.concat(buf))
-      index = Math.floor(index / 2)
     }
     
     return (
@@ -198,12 +208,25 @@ export class SumMerkleTree {
 }
 
 /**
+ * bignumTo8BytesBuffer
+ * @param {BigNumber} bn 
+ */
+function bignumTo8BytesBuffer(bn: BigNumber): Buffer {
+  let str = bn.toHexString()
+  return Buffer.from(utils.hexZeroPad(str, 8).substr(2), 'hex')
+}
+
+/**
  * bignumTo32BytesBuffer
  * @param {BigNumber} bn 
  */
 function bignumTo32BytesBuffer(bn: BigNumber): Buffer {
   let str = bn.toHexString()
   return Buffer.from(utils.hexZeroPad(str, 32).substr(2), 'hex')
+}
+
+function convert32(amount: Buffer): Buffer {
+  return Buffer.from(utils.hexZeroPad(utils.hexlify(amount), 32).substr(2), 'hex')
 }
 
 /**
