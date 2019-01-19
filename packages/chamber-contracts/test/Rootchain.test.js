@@ -79,6 +79,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob
         });
       // gas cost of exit is 116480
+      console.log('gasCost', gasCost)
       const result = await this.rootChain.exit(
         6 * 100,
         Scenario1.segments[0].start,
