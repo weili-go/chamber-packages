@@ -80,6 +80,42 @@ def checkMembership(
     currentAmount += amount
   return (computedHash == _rootHash) and (lastLeftAmount == _leftOffset) and (currentAmount == _totalAmount)
 
+@private
+@constant
+def checkTransaction(
+  _start: uint256,
+  _end: uint256,
+  _txHash: bytes32,
+  _txBytes: bytes[1024],
+  _blkNum: uint256,
+  _proof: bytes[512],
+  _sigs: bytes[130],
+  _outputIndex: uint256
+):
+  root: bytes32 = self.childChain[_blkNum].root
+  if _blkNum % 2 == 0:
+    assert self.checkMembership(
+      _end - _start,
+      _txHash,
+      self.totalDeposit,
+      _start,
+      root,
+      _proof
+    ) == True
+    assert TransactionVerifier(self.txverifier).verify(
+      _txHash,
+      _txBytes,
+      _sigs,
+      _outputIndex,
+      ZERO_ADDRESS,
+      _start,
+      _end)
+  else:
+    # deposit transaction
+    assert _txHash == root
+    assert convert(slice(_txBytes, start=64, len=32), uint256) == _start
+    assert convert(slice(_txBytes, start=96, len=32), uint256) == _end
+
 # @dev Constructor
 @public
 def __init__(_txverifierAddress: address):
@@ -239,27 +275,21 @@ def challengeBefore(
 ):
   exitTxHash: bytes32 = sha3(_exitTxBytes)
   blkNum: uint256 = _utxoPos / 100
-  root: bytes32 = self.childChain[blkNum].root
+  outputIndex: uint256 = _utxoPos - blkNum * 100
   exit: Exit = self.exits[exitTxHash]
   exitSegmentStart: uint256 = exit.segment / (2 ** 32)
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * (2 ** 32)
   txHash: bytes32 = sha3(_txBytes)
-  assert self.checkMembership(
-    _end - _start,
-    txHash,
-    self.totalDeposit,
+  self.checkTransaction(
     _start,
-    root,
-    _proof
-  ) == True
-  assert TransactionVerifier(self.txverifier).verify(
+    _end,
     txHash,
     _txBytes,
+    blkNum,
+    _proof,
     _sig,
-    0,
-    ZERO_ADDRESS,
-    _start,
-    _end)
+    outputIndex
+  )
   assert blkNum < (exit.utxoPos / 100)
   assert (_end > exitSegmentStart) and (_start < exitSegmentEnd)
   if self.challenges[_cTxHash].status == 0:
