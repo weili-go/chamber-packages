@@ -10,7 +10,7 @@ contract StandardVerifier():
   ) -> bool: constant
   def getTxoHashOfTransfer(
     _txBytes: bytes[1024],
-    _outputIndex: uint256,
+    _index: uint256,
     _blkNum: uint256
   ) -> bytes32: constant
   def verifySplit(
@@ -24,7 +24,7 @@ contract StandardVerifier():
   ) -> bool: constant
   def getTxoHashOfSplit(
     _txBytes: bytes[1024],
-    _outputIndex: uint256,
+    _index: uint256,
     _blkNum: uint256
   ) -> bytes32: constant
   def verifyMerge(
@@ -38,7 +38,7 @@ contract StandardVerifier():
   ) -> bool: constant
   def getTxoHashOfMerge(
     _txBytes: bytes[1024],
-    _outputIndex: uint256,
+    _index: uint256,
     _blkNum: uint256
   ) -> bytes32: constant
 
