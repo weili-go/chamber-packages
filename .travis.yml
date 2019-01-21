@@ -9,7 +9,7 @@ cache:
 
 before_install:
   - pip install -U pip
-  - pip install vyper
+  - pip install vyper==0.1.0b6
   - vyper --version
   - nvm install $(jq -r '.engines.node' package.json)
   - npm install -g yarn
