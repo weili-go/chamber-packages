@@ -18,17 +18,26 @@ export type RLPTx = RLPItem[]
 
 /**
  * BaseTransaction is raw transaction data structure
+ * @title BaseTransaction
+ * @descriotion abstract class of Transaction
  */
 export class BaseTransaction {
 
+  label: number
   items: RLPTx
 
-  constructor(items: RLPTx) {
+  /**
+   * BaseTransaction
+   * @param label is transaction type
+   * @param items is transaction body
+   */
+  constructor(label: number, items: RLPTx) {
+    this.label = label
     this.items = items
   }
 
   toTuple(): RLPItem[] {
-    return this.items
+    return [utils.bigNumberify(this.label), RLP.encode(this.items)]
   }
 
   encode(): string {
@@ -36,7 +45,7 @@ export class BaseTransaction {
   }
 
   static fromTuple(tuple: RLPItem[]): BaseTransaction {
-    return new BaseTransaction(tuple)
+    return new BaseTransaction(tuple[0], RLP.decode(tuple[1]))
   }
 
   static decode(bytes: string): BaseTransaction {
@@ -53,6 +62,31 @@ export class BaseTransaction {
 
   getOutput() {
 
+  }
+}
+
+/**
+ * @title TransactionDecoder
+ * @description The decoder for transaction
+ */
+export class TransactionDecoder {
+
+  /**
+   * decode
+   * @param bytes is hex string
+   */
+  static decode(bytes: string): BaseTransaction {
+    const tuple: RLPItem[] = RLP.decode(bytes)
+    const label = utils.bigNumberify(tuple[0]).toNumber()
+    if(label === 1) {
+      return TransferTransaction.decode(tuple[1])
+    }else if(label === 2) {
+      return SplitTransaction.decode(tuple[1])
+    }else if(label === 3) {
+      return MergeTransaction.decode(tuple[1])
+    }else{
+      return TransferTransaction.decode(tuple[1])
+    }
   }
 }
 
@@ -85,7 +119,7 @@ export class TransferTransaction extends BaseTransaction {
     blkNum: Uint256,
     to: Address
   ) {
-    super([from, segment.start, segment.end, blkNum, to])
+    super(1, [from, segment.start, segment.end, blkNum, to])
     this.from = from
     this.segment = segment
     this.blkNum = blkNum
@@ -125,7 +159,7 @@ export class SplitTransaction extends BaseTransaction {
     to2: Address,
     offset: Uint256,
   ) {
-    super([from, segment.start, segment.end, blkNum, to1, to2, offset])
+    super(2, [from, segment.start, segment.end, blkNum, to1, to2, offset])
     this.from = from
     this.segment = segment
     this.blkNum = blkNum
@@ -180,15 +214,15 @@ export class MergeTransaction extends BaseTransaction {
     blkNum2: Uint256,
     to: Address
   ) {
-    super([
-      from,
-      segment1.start,
-      segment1.end,
-      segment2.start,
-      segment2.end,
-      blkNum1,
-      blkNum2,
-      to])
+    super(3, 
+      [from,
+        segment1.start,
+        segment1.end,
+        segment2.start,
+        segment2.end,
+        blkNum1,
+        blkNum2,
+        to])
     this.from = from
     this.segment1 = segment1
     this.segment2 = segment2
@@ -230,15 +264,15 @@ export class SwapTransaction extends BaseTransaction {
     segment2: Segment,
     blkNum2: Uint256
   ) {
-    super([
-      from1,
-      segment1.start,
-      segment1.end,
-      blkNum1,
-      from2,
-      segment2.start,
-      segment2.end,
-      blkNum2])
+    super(4,
+      [from1,
+        segment1.start,
+        segment1.end,
+        blkNum1,
+        from2,
+        segment2.start,
+        segment2.end,
+        blkNum2])
   }
 
   static fromTuple(tuple: RLPItem[]): SwapTransaction {
@@ -265,17 +299,17 @@ export class Multisig2Transaction extends BaseTransaction {
     segment2: Segment,
     blkNum2: Uint256
   ) {
-    super([
-      lockstate,
-      nextstate,
-      from1,
-      segment1.start,
-      segment1.end,
-      blkNum1,
-      from2,
-      segment2.start,
-      segment2.end,
-      blkNum2])
+    super(10,
+      [lockstate,
+        nextstate,
+        from1,
+        segment1.start,
+        segment1.end,
+        blkNum1,
+        from2,
+        segment2.start,
+        segment2.end,
+        blkNum2])
   }
 
   static fromTuple(tuple: RLPItem[]): Multisig2Transaction {
@@ -306,6 +340,10 @@ export class SignedTransaction {
     this.signatures = []
   }
 
+  /**
+   * sign
+   * @param pkey is hex string of private key
+   */
   sign(pkey: string) {
     const key = new utils.SigningKey(pkey)
     this.signatures.push(utils.joinSignature(key.signDigest(this.tx.hash())))

@@ -14,22 +14,19 @@ struct Challenge:
 
 contract TransactionVerifier():
   def verify(
+    _txHash: bytes32,
     _txBytes: bytes[1024],
-    _sigs: bytes[65]
-  ) -> bool: constant
-  def getInputHash(
-    _txBytes: bytes[1024],
-    _inputIndex: uint256
-  ) -> bytes32: constant
-  def getOutputHash(
-    _txBytes: bytes[1024],
-    _outputIndex: uint256
-  ) -> bytes32: constant
-  def verifyOwner(
-    _txBytes: bytes[1024],
+    _sigs: bytes[130],
     _outputIndex: uint256,
-    _address: address
+    _owner: address,
+    _start: uint256,
+    _end: uint256
   ) -> bool: constant
+  def getTxoHash(
+    _txBytes: bytes[1024],
+    _inputIndex: uint256,
+    _blkNum: uint256
+  ) -> bytes32: constant
   def checkWithin(
     _start: uint256,
     _end: uint256,
@@ -84,7 +81,7 @@ def __init__(_txverifierAddress: address):
   self.operator = msg.sender
   self.currentChildBlock = 1
   self.totalDeposit = 0
-  self.txverifier = create_with_code_of(_txverifierAddress)
+  self.txverifier = _txverifierAddress
 
 # @dev submit plasma block
 @public
@@ -131,7 +128,7 @@ def exit(
   _end: uint256,
   _txBytes: bytes[1024],
   _proof: bytes[512],
-  _sig: bytes[65]
+  _sig: bytes[130]
 ):
   blkNum: uint256 = _utxoPos / 100
   outputIndex: uint256 = _utxoPos - blkNum * 100
@@ -145,13 +142,15 @@ def exit(
     root,
     _proof
   ) == True
+  # verify signature, owner and segment
   assert TransactionVerifier(self.txverifier).verify(
+    txHash,
     _txBytes,
-    _sig)
-  assert TransactionVerifier(self.txverifier).verifyOwner(
-    _txBytes,
+    _sig,
     outputIndex,
-    msg.sender)
+    msg.sender,
+    _start,
+    _end)
   exitableAt: uint256 = as_unitless_number(block.timestamp + 4 * 7 * 24 * 60 * 60)
   self.exits[txHash] = Exit({
     owner: msg.sender,
@@ -161,20 +160,27 @@ def exit(
   log.ExitStarted(txHash, msg.sender, exitableAt, _start, _end)
 
 # @dev challenge
+# @param _utxoPos is blknum and index of challenge tx
+# @param _eInputPos if _eInputPos < 0 then it's spent challenge,
+#     if _eInputPos >= 0 then it's double spend challenge and _eInputPos is input index
 @public
 def challenge(
   _exitTxBytes: bytes[1024],
   _utxoPos: uint256,
+  _eInputPos: int128,
   _start: uint256,
   _end: uint256,
   _txBytes: bytes[1024],
   _proof: bytes[512],
-  _sig: bytes[65]
+  _sig: bytes[130]
 ):
   exitTxHash: bytes32 = sha3(_exitTxBytes)
   blkNum: uint256 = _utxoPos / 100
   txoIndex: uint256 = _utxoPos - blkNum * 100
   root: bytes32 = self.childChain[blkNum].root
+  spentTxoHash: bytes32
+  exitBlkNum: uint256 = self.exits[exitTxHash].utxoPos / 100
+  exitIndex: uint256 = self.exits[exitTxHash].utxoPos - exitBlkNum * 100
   assert self.checkMembership(
     _end - _start,
     sha3(_txBytes),
@@ -184,20 +190,29 @@ def challenge(
     _proof
   ) == True
   assert TransactionVerifier(self.txverifier).verify(
+    sha3(_txBytes),
     _txBytes,
-    _sig)
-  spentTxoHash: bytes32
-  if txoIndex < 10:
+    _sig,
+    0,
+    ZERO_ADDRESS,
+    _start,
+    _end)
+  if _eInputPos > 0:
     # spent challenge
-    spentTxoHash = TransactionVerifier(self.txverifier).getOutputHash(
+    # get output hash
+    spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
       _exitTxBytes,
-      txoIndex)
-    assert blkNum > (self.exits[exitTxHash].utxoPos / 100)
+      exitIndex,
+      exitBlkNum)
+    assert blkNum > exitBlkNum
   else:
     # double spent challenge
-    spentTxoHash = TransactionVerifier(self.txverifier).getInputHash(
+    # get input hash
+    spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
       _exitTxBytes,
-      txoIndex - 10)
-    assert blkNum < (self.exits[exitTxHash].utxoPos / 100)
-  assert spentTxoHash == TransactionVerifier(self.txverifier).getInputHash(_txBytes, 0)
+      convert(_eInputPos, uint256),
+      exitBlkNum)
+    assert blkNum < exitBlkNum
+  assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_txBytes, txoIndex, blkNum)
+  # break exit procedure
   self.exits[exitTxHash].owner = ZERO_ADDRESS

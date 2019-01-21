@@ -8,6 +8,8 @@ const {
 } = require('@layer2/core')
 const RootChain = artifacts.require("RootChain")
 const TransactionVerifier = artifacts.require("TransactionVerifier")
+const StandardVerifier = artifacts.require("StandardVerifier")
+const MultisigVerifier = artifacts.require("MultisigVerifier")
 
 const ethers = require('ethers')
 
@@ -27,7 +29,14 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   beforeEach(async () => {
     await deployRLPdecoder(alice)
-    this.transactionVerifier = await TransactionVerifier.new({ from: operator })
+    this.standardVerifier = await StandardVerifier.new({ from: operator })
+    this.multisigVerifier = await MultisigVerifier.new({ from: operator })
+    this.transactionVerifier = await TransactionVerifier.new(
+      this.standardVerifier.address,
+      this.multisigVerifier.address,
+      {
+        from: operator
+      })
     this.rootChain = await RootChain.new(
       this.transactionVerifier.address,
       {

@@ -1,41 +1,49 @@
 const { deployRLPdecoder } = require('./helpers/deployRLPdecoder')
-
-const utils = require("ethereumjs-util")
-const {
-  Segment
-} = require('@layer2/core')
 const TransactionVerifier = artifacts.require("TransactionVerifier")
-
+const StandardVerifier = artifacts.require("StandardVerifier")
+const MultisigVerifier = artifacts.require("MultisigVerifier")
 const ethers = require('ethers')
-
 const BigNumber = ethers.utils.BigNumber
+
+const {
+  Scenario1
+} = require('./testdata')
 
 require('chai')
   .use(require('chai-as-promised'))
   .use(require('chai-bignumber')(BigNumber))
   .should();
 
-
 contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) => {
-  const start = new BigNumber(100000)
-  const end = new BigNumber(200000)
-  const segment = new Segment(start, end)
 
   beforeEach(async () => {
     await deployRLPdecoder(admin)
-    this.transactionVerifier = await TransactionVerifier.new({ from: operator })
+    this.standardVerifier = await StandardVerifier.new({ from: operator })
+    this.multisigVerifier = await MultisigVerifier.new({ from: operator })
+    this.transactionVerifier = await TransactionVerifier.new(
+      this.standardVerifier.address,
+      this.multisigVerifier.address,
+      {
+        from: operator
+      })
   });
 
-  describe("segment", () => {
-    it("should decode segment", async () => {
-      const hex = utils.bufferToHex(segment.encode())
-      const result = await this.transactionVerifier.get(
-        hex,
+  describe("TransferTransaction", () => {
+
+    it("should be verified", async () => {
+      const tx = Scenario1.signedTransactions[0]
+      const result = await this.transactionVerifier.verify(
+        tx.tx.hash(),
+        tx.tx.encode(),
+        tx.getSignatures(),
+        0,
+        ethers.constants.AddressZero,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
         {
-          from: bob
+          from: alice
         });
-      assert.equal(start.toString(), result[0].toString())
-      assert.equal(end.toString(), result[1].toString())
+      assert.equal(result, true)
     })
   });
   
