@@ -5,6 +5,9 @@ const {
   duration,
   increaseTime,
 } = require('./helpers/increaseTime')
+const {
+  assertRevert
+} = require('./helpers/assertRevert');
 
 const utils = require("ethereumjs-util")
 const RootChain = artifacts.require("RootChain")
@@ -82,6 +85,11 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         {
           from: operator
         });
+      await this.rootChain.submit(
+        utils.bufferToHex(Scenario1.blocks[2].tree.root()),
+        {
+          from: operator
+        });
     })
 
     it("should success to exit and finalizeExit", async () => {
@@ -144,6 +152,45 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: alice,
           gas: '500000'
         });
+    })
+
+    it("should success to challengeBefore", async () => {
+      const tx = Scenario1.blocks[2].signedTransactions[0]
+      await this.rootChain.exit(
+        10 * 100,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        tx.tx.encode(),
+        tx.getProofs(),
+        tx.getSignatures(),
+        {
+          from: operator
+        });
+
+      const challengeTx = Scenario1.blocks[1].signedTransactions[0]
+      await this.rootChain.challengeBefore(
+        tx.tx.encode(),
+        8 * 100,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        challengeTx.tx.encode(),
+        challengeTx.tx.hash(),
+        challengeTx.getProofs(),
+        challengeTx.getSignatures(),
+        {
+          from: alice,
+          gas: '500000'
+        });
+      // 6 weeks after
+      const exitResult = await this.rootChain.getExit(tx.tx.hash())
+      // challengeCount is 1
+      assert(exitResult[1].toNumber(), 1)
+      await increaseTime(duration.weeks(6))
+      await assertRevert(this.rootChain.finalizeExit(
+        tx.tx.hash(),
+        {
+          from: operator
+        }))
     })
 
   });

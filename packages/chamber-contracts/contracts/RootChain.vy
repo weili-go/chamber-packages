@@ -270,8 +270,8 @@ def challengeBefore(
   _utxoPos: uint256,
   _start: uint256,
   _end: uint256,
-  _cTxHash: bytes32,
   _txBytes: bytes[1024],
+  _cTxHash: bytes32,
   _proof: bytes[512],
   _sig: bytes[130]
 ):
@@ -305,7 +305,7 @@ def challengeBefore(
   elif self.challenges[_cTxHash].status == 2:
     assert self.challenges[_cTxHash].exitTxHash == exitTxHash
     self.challenges[_cTxHash].status = 3
-  exit.challengeCount += 1
+  self.exits[exitTxHash].challengeCount += 1
   log.ChallengeStarted(exitTxHash, _cTxHash)
 
 # @dev respond challenge
@@ -360,11 +360,20 @@ def respondChallenge(
 def finalizeExit(
   _exitTxHash: bytes32
 ):
-  currentExit: Exit = self.exits[_exitTxHash]
-  exitSegmentStart: uint256 = currentExit.segment / (2 ** 32)
-  exitSegmentEnd: uint256 = currentExit.segment - exitSegmentStart * (2 ** 32)
-  assert currentExit.exitableAt < as_unitless_number(block.timestamp)
-  assert currentExit.challengeCount == 0
-  send(currentExit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei"))
-  currentExit.owner = ZERO_ADDRESS
+  exit: Exit = self.exits[_exitTxHash]
+  exitSegmentStart: uint256 = exit.segment / (2 ** 32)
+  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * (2 ** 32)
+  assert exit.exitableAt < as_unitless_number(block.timestamp)
+  assert exit.challengeCount == 0
+  send(exit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei"))
+  self.exits[_exitTxHash].owner = ZERO_ADDRESS
   log.FinalizedExit(_exitTxHash, exitSegmentStart, exitSegmentEnd)
+
+# @dev getExit
+@public
+@constant
+def getExit(
+  _exitTxHash: bytes32
+) -> (address, uint256):
+  exit: Exit = self.exits[_exitTxHash]
+  return (exit.owner, exit.challengeCount)
