@@ -10,6 +10,7 @@ cache:
 before_install:
   - pip install -U pip
   - pip install vyper
+  - vyper --version
   - nvm install $(jq -r '.engines.node' package.json)
   - npm install -g yarn
   - npm install -g lerna
