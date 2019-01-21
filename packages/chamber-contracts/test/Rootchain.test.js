@@ -1,11 +1,10 @@
 const { deployRLPdecoder } = require('./helpers/deployRLPdecoder')
+const {
+  duration,
+  increaseTime,
+} = require('./helpers/increaseTime')
 
 const utils = require("ethereumjs-util")
-const {
-  Segment,
-  SumMerkleTree,
-  SumMerkleTreeNode
-} = require('@layer2/core')
 const RootChain = artifacts.require("RootChain")
 const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
@@ -45,7 +44,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
   });
 
   describe("submit", () => {
-    const root = Scenario1.tree.root();
+    const root = Scenario1.blocks[0].tree.root();
 
     it("should submit", async () => {
       const hex = utils.bufferToHex(root)
@@ -59,7 +58,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
   });
 
   describe("exit", () => {
-    it("should success to exit", async () => {
+    it("should success to exit and finalizeExit", async () => {
       await this.rootChain.deposit(
         {
           from: alice,
@@ -70,13 +69,13 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob,
           value: '1000000'
         });
-      const hex = utils.bufferToHex(Scenario1.tree.root())
+      const hex = utils.bufferToHex(Scenario1.blocks[0].tree.root())
       await this.rootChain.submit(
         hex,
         {
           from: operator
         });
-      const tx = Scenario1.signedTransactions[0]
+      const tx = Scenario1.blocks[0].signedTransactions[0]
       const gasCost = await this.rootChain.exit.estimateGas(
         6 * 100,
         Scenario1.segments[0].start,
@@ -100,6 +99,13 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob
         });
       assert.equal(result.logs[0].event, 'ExitStarted')
+      // 6 weeks after
+      await increaseTime(duration.weeks(6));
+      await this.rootChain.finalizeExit(
+        tx.tx.hash(),
+        {
+          from: bob
+        });
     })
   });
 

@@ -33,38 +33,109 @@ const segment1 = new Segment(
 const segment2 = new Segment(
   utils.bigNumberify('1000000'),
   utils.bigNumberify('2000000'))
-  
-const blkNum = utils.bigNumberify('1')
+
+/*
+ * 1->3->4-x>5
+ */
+
+// deposits
+const blkNum1 = utils.bigNumberify('3')
+const blkNum2 = utils.bigNumberify('5')
+// transactinos
+const blkNum3 = utils.bigNumberify('6')
+const blkNum4 = utils.bigNumberify('8')
+const blkNum5 = utils.bigNumberify('10')
+
+const tx31 = new TransferTransaction(AliceAddress, segment1, blkNum1, BobAddress)
+const tx32 = new TransferTransaction(User4Address, segment2, blkNum2, User5Address)
+
+const tx41 = new TransferTransaction(BobAddress, segment1, blkNum3, AliceAddress)
+const tx42 = new TransferTransaction(User5Address, segment2, blkNum3, User4Address)
+
+const tx51 = new TransferTransaction(User5Address, segment1, blkNum4, OperatorAddress)
+const tx52 = new TransferTransaction(User4Address, segment2, blkNum4, User5Address)
 
 
-const tx11 = new TransferTransaction(AliceAddress, segment1, blkNum, BobAddress)
-const tx12 = new TransferTransaction(User4Address, segment2, blkNum, User5Address)
+const leaves3 = [
+  new SumMerkleTreeNode(
+    tx31.hash(),
+    new BigNumber(1000000)
+  ),
+  new SumMerkleTreeNode(
+    tx32.hash(),
+    new BigNumber(1000000)
+  )
+]
+const tree3 = new SumMerkleTree(leaves3)
 
-const leaves = []
-leaves[0] = new SumMerkleTreeNode(
-  tx11.hash(),
-  new BigNumber(1000000)
-);
-leaves[1] = new SumMerkleTreeNode(
-  tx12.hash(),
-  new BigNumber(1000000)
-);
-const tree = new SumMerkleTree(leaves)
-const signedTx11 = new SignedTransactionWithProof(
-  tx11,
-  tree.proof(leaves[0]))
-signedTx11.sign(AlicePrivateKey)
-const signedTx12 = new SignedTransactionWithProof(
-  tx12,
-  tree.proof(leaves[1]))
-signedTx12.sign(User4PrivateKey)
+const leaves4 = [
+  new SumMerkleTreeNode(
+    tx41.hash(),
+    new BigNumber(1000000)
+  ),
+  new SumMerkleTreeNode(
+    tx42.hash(),
+    new BigNumber(1000000)
+  )
+]
+const tree4 = new SumMerkleTree(leaves4)
+
+const leaves5 = [
+  new SumMerkleTreeNode(
+    tx51.hash(),
+    new BigNumber(1000000)
+  ),
+  new SumMerkleTreeNode(
+    tx52.hash(),
+    new BigNumber(1000000)
+  )
+]
+const tree5 = new SumMerkleTree(leaves5)
+
+const signedTx31 = new SignedTransactionWithProof(
+  tx31,
+  tree3.proof(leaves3[0]))
+signedTx31.sign(AlicePrivateKey)
+const signedTx32 = new SignedTransactionWithProof(
+  tx32,
+  tree3.proof(leaves3[1]))
+signedTx32.sign(User4PrivateKey)
+
+const signedTx41 = new SignedTransactionWithProof(
+  tx41,
+  tree4.proof(leaves4[0]))
+signedTx41.sign(BobPrivateKey)
+const signedTx42 = new SignedTransactionWithProof(
+  tx42,
+  tree4.proof(leaves4[1]))
+signedTx42.sign(User5PrivateKey)
+
+const signedTx51 = new SignedTransactionWithProof(
+  tx51,
+  tree5.proof(leaves5[0]))
+signedTx51.sign(User5PrivateKey)
+const signedTx52 = new SignedTransactionWithProof(
+  tx52,
+  tree5.proof(leaves5[1]))
+signedTx52.sign(User4PrivateKey)
 
 module.exports = {
   Scenario1: {
     segments: [segment1, segment2],
-    transactions: [tx11, tx12],
-    signedTransactions: [signedTx11, signedTx12],
-    leaves: leaves,
-    tree: new SumMerkleTree(leaves)
+    blocks: [
+      {
+        tree: tree3,
+        transactions: [tx31, tx32],
+        signedTransactions: [signedTx31, signedTx32]
+      },{
+        tree: tree4,
+        transactions: [tx41, tx42],
+        signedTransactions: [signedTx41, signedTx42]
+      },{
+        tree: tree5,
+        transactions: [tx51, tx52],
+        signedTransactions: [signedTx51, signedTx52]
+      }
+    ]
   }
 }

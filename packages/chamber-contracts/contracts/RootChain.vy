@@ -40,6 +40,7 @@ BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: address, _start: uint256, _end: uint256, _blkNum: uint256})
 ExitStarted: event({_txHash: bytes32, _exitor: address, exitableAt: uint256, _start: uint256, _end: uint256})
 ChallengeStarted: event({_eTxHash: bytes32, _cTxHash: bytes32})
+FinalizedExit: event({_eTxHash: bytes32, _start: uint256, _end: uint256})
 
 operator: address
 txverifier: address
@@ -197,7 +198,7 @@ def exit(
     owner: msg.sender,
     exitableAt: exitableAt,
     utxoPos: _utxoPos,
-    segment: _start + _end * (2 ** 32),
+    segment: _start * (2 ** 32) + _end,
     challengeCount: 0
   })
   log.ExitStarted(txHash, msg.sender, exitableAt, _start, _end)
@@ -361,7 +362,8 @@ def finalizeExit(
   currentExit: Exit = self.exits[_exitTxHash]
   exitSegmentStart: uint256 = currentExit.segment / (2 ** 32)
   exitSegmentEnd: uint256 = currentExit.segment - exitSegmentStart * (2 ** 32)
-  assert currentExit.exitableAt > as_unitless_number(block.timestamp)
+  assert currentExit.exitableAt < as_unitless_number(block.timestamp)
   assert currentExit.challengeCount == 0
   send(currentExit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei"))
   currentExit.owner = ZERO_ADDRESS
+  log.FinalizedExit(_exitTxHash, exitSegmentStart, exitSegmentEnd)

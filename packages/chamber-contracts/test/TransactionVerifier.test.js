@@ -18,11 +18,11 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
 
   beforeEach(async () => {
     await deployRLPdecoder(admin)
-    this.standardVerifier = await StandardVerifier.new({ from: operator })
-    this.multisigVerifier = await MultisigVerifier.new({ from: operator })
+    const standardVerifier = await StandardVerifier.new({ from: operator })
+    const multisigVerifier = await MultisigVerifier.new({ from: operator })
     this.transactionVerifier = await TransactionVerifier.new(
-      this.standardVerifier.address,
-      this.multisigVerifier.address,
+      standardVerifier.address,
+      multisigVerifier.address,
       {
         from: operator
       })
@@ -31,7 +31,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
   describe("TransferTransaction", () => {
 
     it("should be verified", async () => {
-      const tx = Scenario1.signedTransactions[0]
+      const tx = Scenario1.blocks[0].signedTransactions[0]
       const result = await this.transactionVerifier.verify(
         tx.tx.hash(),
         tx.tx.encode(),

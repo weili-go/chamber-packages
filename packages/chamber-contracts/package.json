@@ -19,6 +19,7 @@
     "chai-bignumber": "^3.0.0",
     "ethereumjs-util": "^6.0.0",
     "ethers": "^4.0.21",
+    "pify": "^4.0.1",
     "truffle": "^5.0.2",
     "ts-node": "^7.0.1"
   },
