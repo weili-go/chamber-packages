@@ -1,6 +1,7 @@
 import { describe, it } from "mocha"
 import {
   Segment,
+  TransactionDecoder,
   TransferTransaction,
   SplitTransaction,
   MergeTransaction
@@ -35,8 +36,8 @@ describe('Transaction', () => {
   it('encode and decode transfer transaction', () => {
     const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
     const encoded = tx.encode()
-    const decoded = TransferTransaction.decode(encoded)
-    assert.equal(encoded, '0xf394953b8fb338ef870eda6d74c1dd4769b6c977b8cf831e8480832dc6c0019434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
+    const decoded: TransferTransaction = TransactionDecoder.decode(encoded) as TransferTransaction
+    assert.equal(encoded, '0xf601b4f394953b8fb338ef870eda6d74c1dd4769b6c977b8cf831e8480832dc6c0019434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
     assert.equal(decoded.getOutput().getSegment().start.toString(), '2000000');
   });
 
@@ -44,8 +45,8 @@ describe('Transaction', () => {
     const tx = new SplitTransaction(
       AliceAddress, segment, blkNum, AliceAddress, BobAddress, offset)
     const encoded = tx.encode()
-    const decoded = SplitTransaction.decode(encoded)
-    assert.equal(encoded, '0xf84c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf831e8480832dc6c00194953b8fb338ef870eda6d74c1dd4769b6c977b8cf9434fdeadc2b69fd24f3043a89f9231f10f1284a4a8327ac40');
+    const decoded: SplitTransaction = TransactionDecoder.decode(encoded) as SplitTransaction
+    assert.equal(encoded, '0xf85102b84ef84c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf831e8480832dc6c00194953b8fb338ef870eda6d74c1dd4769b6c977b8cf9434fdeadc2b69fd24f3043a89f9231f10f1284a4a8327ac40');
     assert.equal(decoded.getOutputWith(1).getSegment().start.toString(), '2600000');
   });
 
@@ -53,8 +54,8 @@ describe('Transaction', () => {
     const tx = new MergeTransaction(
       AliceAddress, segment1, segment2, blkNum1, blkNum2, BobAddress)
     const encoded = tx.encode()
-    const decoded = MergeTransaction.decode(encoded)
-    assert.equal(encoded, '0xf83c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf834c4b40835b8d80835b8d80836acfc032349434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
+    const decoded: MergeTransaction = TransactionDecoder.decode(encoded) as MergeTransaction
+    assert.equal(encoded, '0xf84103b83ef83c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf834c4b40835b8d80835b8d80836acfc032349434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
     assert.equal(decoded.getOutput().getSegment().start.toString(), '5000000');
   });
 

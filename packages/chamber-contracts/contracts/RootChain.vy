@@ -4,25 +4,45 @@ struct ChildChainBlock:
 
 struct Exit:
   owner: address
-  token: address
-  amount: uint256
+  exitableAt: uint256
+  utxoPos: uint256
 
 struct Challenge:
   owner: address
   token: address
   amount: uint256
 
+contract TransactionVerifier():
+  def verify(
+    _txHash: bytes32,
+    _txBytes: bytes[1024],
+    _sigs: bytes[130],
+    _outputIndex: uint256,
+    _owner: address,
+    _start: uint256,
+    _end: uint256
+  ) -> bool: constant
+  def getTxoHash(
+    _txBytes: bytes[1024],
+    _inputIndex: uint256,
+    _blkNum: uint256
+  ) -> bytes32: constant
+  def checkWithin(
+    _start: uint256,
+    _end: uint256,
+    _txBytes: bytes[1024]
+  ) -> bool: constant
+
 BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: address, _start: uint256, _end: uint256, _blkNum: uint256})
-ExitStarted: event({_exitor: address, _start: uint256, _end: uint256})
-Check: event({_root: bytes32, _root2: bytes32})
-Check1: event({_root: uint256})
+ExitStarted: event({_txHash: bytes32, _exitor: address, exitableAt: uint256, _start: uint256, _end: uint256})
 
 operator: address
+txverifier: address
 childChain: map(uint256, ChildChainBlock)
 currentChildBlock: uint256
 totalDeposit: uint256
-
+exits: map(bytes32, Exit)
 
 @private
 @constant
@@ -57,10 +77,11 @@ def checkMembership(
 
 # @dev Constructor
 @public
-def __init__():
+def __init__(_txverifierAddress: address):
   self.operator = msg.sender
   self.currentChildBlock = 1
   self.totalDeposit = 0
+  self.txverifier = _txverifierAddress
 
 # @dev submit plasma block
 @public
@@ -102,35 +123,64 @@ def deposit():
 # @dev exit
 @public
 def exit(
-  _blkNum: uint256,
+  _utxoPos: uint256,
   _start: uint256,
   _end: uint256,
   _txBytes: bytes[1024],
   _proof: bytes[512],
-  _sig: bytes[65]
+  _sig: bytes[130]
 ):
-  root: bytes32 = self.childChain[_blkNum].root
+  blkNum: uint256 = _utxoPos / 100
+  outputIndex: uint256 = _utxoPos - blkNum * 100
+  root: bytes32 = self.childChain[blkNum].root
+  txHash: bytes32 = sha3(_txBytes)
   assert self.checkMembership(
     _end - _start,
-    sha3(_txBytes),
+    txHash,
     self.totalDeposit,
     _start,
     root,
     _proof
   ) == True
-  log.ExitStarted(msg.sender, _start, _end)
+  # verify signature, owner and segment
+  assert TransactionVerifier(self.txverifier).verify(
+    txHash,
+    _txBytes,
+    _sig,
+    outputIndex,
+    msg.sender,
+    _start,
+    _end)
+  exitableAt: uint256 = as_unitless_number(block.timestamp + 4 * 7 * 24 * 60 * 60)
+  self.exits[txHash] = Exit({
+    owner: msg.sender,
+    exitableAt: exitableAt,
+    utxoPos: _utxoPos
+  })
+  log.ExitStarted(txHash, msg.sender, exitableAt, _start, _end)
 
 # @dev challenge
+# @param _utxoPos is blknum and index of challenge tx
+# @param _eInputPos if _eInputPos < 0 then it's spent challenge,
+#     if _eInputPos >= 0 then it's double spend challenge and _eInputPos is input index
 @public
 def challenge(
-  _blkNum: uint256,
+  _exitTxBytes: bytes[1024],
+  _utxoPos: uint256,
+  _eInputPos: int128,
   _start: uint256,
   _end: uint256,
   _txBytes: bytes[1024],
   _proof: bytes[512],
-  _sig: bytes[65]
+  _sig: bytes[130]
 ):
-  root: bytes32 = self.childChain[_blkNum].root
+  exitTxHash: bytes32 = sha3(_exitTxBytes)
+  blkNum: uint256 = _utxoPos / 100
+  txoIndex: uint256 = _utxoPos - blkNum * 100
+  root: bytes32 = self.childChain[blkNum].root
+  spentTxoHash: bytes32
+  exitBlkNum: uint256 = self.exits[exitTxHash].utxoPos / 100
+  exitIndex: uint256 = self.exits[exitTxHash].utxoPos - exitBlkNum * 100
   assert self.checkMembership(
     _end - _start,
     sha3(_txBytes),
@@ -139,3 +189,30 @@ def challenge(
     root,
     _proof
   ) == True
+  assert TransactionVerifier(self.txverifier).verify(
+    sha3(_txBytes),
+    _txBytes,
+    _sig,
+    0,
+    ZERO_ADDRESS,
+    _start,
+    _end)
+  if _eInputPos > 0:
+    # spent challenge
+    # get output hash
+    spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
+      _exitTxBytes,
+      exitIndex,
+      exitBlkNum)
+    assert blkNum > exitBlkNum
+  else:
+    # double spent challenge
+    # get input hash
+    spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
+      _exitTxBytes,
+      convert(_eInputPos, uint256),
+      exitBlkNum)
+    assert blkNum < exitBlkNum
+  assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_txBytes, txoIndex, blkNum)
+  # break exit procedure
+  self.exits[exitTxHash].owner = ZERO_ADDRESS

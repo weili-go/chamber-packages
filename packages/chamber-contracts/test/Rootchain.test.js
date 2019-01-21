@@ -7,6 +7,9 @@ const {
   SumMerkleTreeNode
 } = require('@layer2/core')
 const RootChain = artifacts.require("RootChain")
+const TransactionVerifier = artifacts.require("TransactionVerifier")
+const StandardVerifier = artifacts.require("StandardVerifier")
+const MultisigVerifier = artifacts.require("MultisigVerifier")
 
 const ethers = require('ethers')
 
@@ -26,7 +29,19 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   beforeEach(async () => {
     await deployRLPdecoder(alice)
-    this.rootChain = await RootChain.new({ from: operator })
+    this.standardVerifier = await StandardVerifier.new({ from: operator })
+    this.multisigVerifier = await MultisigVerifier.new({ from: operator })
+    this.transactionVerifier = await TransactionVerifier.new(
+      this.standardVerifier.address,
+      this.multisigVerifier.address,
+      {
+        from: operator
+      })
+    this.rootChain = await RootChain.new(
+      this.transactionVerifier.address,
+      {
+        from: operator
+      })
   });
 
   describe("submit", () => {
@@ -62,8 +77,20 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: operator
         });
       const tx = Scenario1.signedTransactions[0]
+      const gasCost = await this.rootChain.exit.estimateGas(
+        6 * 100,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        tx.tx.encode(),
+        tx.getProofs(),
+        tx.getSignatures(),
+        {
+          from: bob
+        });
+      // gas cost of exit is 116480
+      console.log('gasCost', gasCost)
       const result = await this.rootChain.exit(
-        6,
+        6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
         tx.tx.encode(),

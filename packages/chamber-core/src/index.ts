@@ -2,6 +2,7 @@
 
 export {
   Address,
+  TransactionDecoder,
   TransferTransaction,
   SplitTransaction,
   MergeTransaction,
