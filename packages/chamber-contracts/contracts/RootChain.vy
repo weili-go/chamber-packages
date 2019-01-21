@@ -333,7 +333,7 @@ def respondChallenge(
     _start,
     root,
     _proof
-  ) == True
+  )
   assert TransactionVerifier(self.txverifier).verify(
     sha3(_txBytes),
     _txBytes,

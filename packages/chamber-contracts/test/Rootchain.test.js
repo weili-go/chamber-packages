@@ -184,13 +184,58 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       const exitResult = await this.rootChain.getExit(tx.tx.hash())
       // challengeCount is 1
-      assert(exitResult[1].toNumber(), 1)
+      assert.equal(exitResult[1].toNumber(), 1)
       await increaseTime(duration.weeks(6))
       await assertRevert(this.rootChain.finalizeExit(
         tx.tx.hash(),
         {
           from: operator
         }))
+    })
+
+    it("should success to respondChallenge", async () => {
+      const tx = Scenario1.blocks[2].signedTransactions[0]
+      await this.rootChain.exit(
+        10 * 100,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        tx.tx.encode(),
+        tx.getProofs(),
+        tx.getSignatures(),
+        {
+          from: operator
+        });
+
+      const challengeTx = Scenario1.blocks[0].signedTransactions[0]
+      await this.rootChain.challengeBefore(
+        tx.tx.encode(),
+        6 * 100,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        challengeTx.tx.encode(),
+        challengeTx.tx.hash(),
+        challengeTx.getProofs(),
+        challengeTx.getSignatures(),
+        {
+          from: bob,
+          gas: '500000'
+        });
+      const respondTx = Scenario1.blocks[1].signedTransactions[0]
+      await this.rootChain.respondChallenge(
+        challengeTx.tx.encode(),
+        8 * 100 + 10,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        respondTx.tx.encode(),
+        respondTx.getProofs(),
+        respondTx.getSignatures(),
+        {
+          from: operator,
+          gas: '500000'
+        });
+      const exitResult = await this.rootChain.getExit(tx.tx.hash())
+      // challengeCount is 0
+      assert.equal(exitResult[1].toNumber(), 0)
     })
 
   });
