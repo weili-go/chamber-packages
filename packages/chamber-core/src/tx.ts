@@ -56,6 +56,10 @@ export class BaseTransaction {
     return utils.keccak256(this.encode())
   }
 
+  getSegments(): Segment[] {
+    return []
+  }
+  
   verify(): boolean {
     return false
   }
@@ -141,6 +145,10 @@ export class TransferTransaction extends BaseTransaction {
     )
   }
 
+  getSegments(): Segment[] {
+    return [this.segment]
+  }
+
 }
 
 export class SplitTransaction extends BaseTransaction {
@@ -195,6 +203,13 @@ export class SplitTransaction extends BaseTransaction {
       )
     }
   }
+  
+  getSegments(): Segment[] {
+    return [
+      new Segment(this.segment.start, this.offset),
+      new Segment(this.offset, this.segment.end)
+    ]
+  }
 
 }
 
@@ -218,7 +233,6 @@ export class MergeTransaction extends BaseTransaction {
       [from,
         segment1.start,
         segment1.end,
-        segment2.start,
         segment2.end,
         blkNum1,
         blkNum2,
@@ -229,16 +243,17 @@ export class MergeTransaction extends BaseTransaction {
     this.blkNum1 = blkNum1
     this.blkNum2 = blkNum2
     this.to = to
+    if(!segment1.end.eq(segment2.start)) throw new Error('not neighborhood')
   }
 
   static fromTuple(tuple: RLPItem[]): MergeTransaction {
     return new MergeTransaction(
       tuple[0],
       Segment.fromTuple(tuple.slice(1, 3)),
-      Segment.fromTuple(tuple.slice(3, 5)),
+      Segment.fromTuple(tuple.slice(2, 4)),
+      tuple[4],
       tuple[5],
-      tuple[6],
-      tuple[7])
+      tuple[6])
   }
 
   static decode(bytes: string): MergeTransaction {
@@ -252,6 +267,12 @@ export class MergeTransaction extends BaseTransaction {
     )
   }
 
+  getSegments(): Segment[] {
+    return [
+      new Segment(this.segment1.start, this.segment2.end)
+    ]
+  }
+  
 }
 
 export class SwapTransaction extends BaseTransaction {
@@ -347,6 +368,14 @@ export class SignedTransaction {
   sign(pkey: string) {
     const key = new utils.SigningKey(pkey)
     this.signatures.push(utils.joinSignature(key.signDigest(this.tx.hash())))
+  }
+
+  hash() {
+    return this.tx.hash()
+  }
+
+  getSegments() {
+    return this.tx.getSegments()
   }
 
   getSignatures() {

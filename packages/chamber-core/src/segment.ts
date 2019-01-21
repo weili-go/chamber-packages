@@ -27,6 +27,10 @@ export class Segment {
     this.end = end;
   }
 
+  getAmount() {
+    return this.end.sub(this.start)
+  }
+
   toTuple(): BigNumber[] {
     return [
       this.start,
