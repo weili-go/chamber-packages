@@ -6,11 +6,14 @@ struct Exit:
   owner: address
   exitableAt: uint256
   utxoPos: uint256
+  segment: uint256
+  challengeCount: uint256
 
 struct Challenge:
   owner: address
-  token: address
-  amount: uint256
+  exitTxHash: bytes32
+  utxoPos: uint256
+  status: uint256
 
 contract TransactionVerifier():
   def verify(
@@ -36,6 +39,7 @@ contract TransactionVerifier():
 BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: address, _start: uint256, _end: uint256, _blkNum: uint256})
 ExitStarted: event({_txHash: bytes32, _exitor: address, exitableAt: uint256, _start: uint256, _end: uint256})
+ChallengeStarted: event({_eTxHash: bytes32, _cTxHash: bytes32})
 
 operator: address
 txverifier: address
@@ -43,6 +47,7 @@ childChain: map(uint256, ChildChainBlock)
 currentChildBlock: uint256
 totalDeposit: uint256
 exits: map(bytes32, Exit)
+challenges: map(bytes32, Challenge)
 
 @private
 @constant
@@ -155,7 +160,9 @@ def exit(
   self.exits[txHash] = Exit({
     owner: msg.sender,
     exitableAt: exitableAt,
-    utxoPos: _utxoPos
+    utxoPos: _utxoPos,
+    segment: _start + _end * (2 ** 32),
+    challengeCount: 0
   })
   log.ExitStarted(txHash, msg.sender, exitableAt, _start, _end)
 
@@ -216,3 +223,115 @@ def challenge(
   assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_txBytes, txoIndex, blkNum)
   # break exit procedure
   self.exits[exitTxHash].owner = ZERO_ADDRESS
+
+# @dev challengeBefore start challenge game
+# @param _utxoPos is blknum and index of challenge tx
+@public
+def challengeBefore(
+  _exitTxBytes: bytes[1024],
+  _utxoPos: uint256,
+  _start: uint256,
+  _end: uint256,
+  _cTxHash: bytes32,
+  _txBytes: bytes[1024],
+  _proof: bytes[512],
+  _sig: bytes[130]
+):
+  exitTxHash: bytes32 = sha3(_exitTxBytes)
+  blkNum: uint256 = _utxoPos / 100
+  root: bytes32 = self.childChain[blkNum].root
+  exit: Exit = self.exits[exitTxHash]
+  exitSegmentStart: uint256 = exit.segment / (2 ** 32)
+  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * (2 ** 32)
+  txHash: bytes32 = sha3(_txBytes)
+  assert self.checkMembership(
+    _end - _start,
+    txHash,
+    self.totalDeposit,
+    _start,
+    root,
+    _proof
+  ) == True
+  assert TransactionVerifier(self.txverifier).verify(
+    txHash,
+    _txBytes,
+    _sig,
+    0,
+    ZERO_ADDRESS,
+    _start,
+    _end)
+  assert blkNum < (exit.utxoPos / 100)
+  assert (_end > exitSegmentStart) and (_start < exitSegmentEnd)
+  if self.challenges[_cTxHash].status == 0:
+    assert _cTxHash == txHash
+    self.challenges[_cTxHash] = Challenge({
+      owner: msg.sender,
+      exitTxHash: exitTxHash,
+      utxoPos: _utxoPos,
+      status: 1
+    })
+  elif self.challenges[_cTxHash].status == 2:
+    assert self.challenges[_cTxHash].exitTxHash == exitTxHash
+    self.challenges[_cTxHash].status = 3
+  exit.challengeCount += 1
+  log.ChallengeStarted(exitTxHash, _cTxHash)
+
+# @dev respond challenge
+@public
+def respondChallenge(
+  _cTxBytes: bytes[1024],
+  _utxoPos: uint256,
+  _start: uint256,
+  _end: uint256,
+  _txBytes: bytes[1024],
+  _proof: bytes[512],
+  _sig: bytes[130]
+):
+  cTxHash: bytes32 = sha3(_cTxBytes)
+  blkNum: uint256 = _utxoPos / 100
+  txoIndex: uint256 = _utxoPos - blkNum * 100
+  root: bytes32 = self.childChain[blkNum].root
+  challenge: Challenge = self.challenges[cTxHash]
+  cBlkNum: uint256 = challenge.utxoPos / 100
+  cOutputIndex: uint256 = challenge.utxoPos - cBlkNum * 100
+  assert self.checkMembership(
+    _end - _start,
+    sha3(_txBytes),
+    self.totalDeposit,
+    _start,
+    root,
+    _proof
+  ) == True
+  assert TransactionVerifier(self.txverifier).verify(
+    sha3(_txBytes),
+    _txBytes,
+    _sig,
+    0,
+    ZERO_ADDRESS,
+    _start,
+    _end)
+  assert TransactionVerifier(self.txverifier).getTxoHash(
+    _cTxBytes,
+    cOutputIndex,
+    cBlkNum) == TransactionVerifier(self.txverifier).getTxoHash(_txBytes, txoIndex, blkNum)
+  assert blkNum > cBlkNum
+  # change challenge status
+  if challenge.status == 1:
+    challenge.status = 2
+  elif challenge.status == 3:
+    challenge.status = 4
+  self.exits[challenge.exitTxHash].challengeCount -= 1
+  self.exits[challenge.exitTxHash].exitableAt = as_unitless_number(block.timestamp + 1 * 7 * 24 * 60 * 60)
+
+# @dev finalizeExit
+@public
+def finalizeExit(
+  _exitTxHash: bytes32
+):
+  currentExit: Exit = self.exits[_exitTxHash]
+  exitSegmentStart: uint256 = currentExit.segment / (2 ** 32)
+  exitSegmentEnd: uint256 = currentExit.segment - exitSegmentStart * (2 ** 32)
+  assert currentExit.exitableAt > as_unitless_number(block.timestamp)
+  assert currentExit.challengeCount == 0
+  send(currentExit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei"))
+  currentExit.owner = ZERO_ADDRESS
