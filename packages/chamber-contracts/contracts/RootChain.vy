@@ -27,7 +27,7 @@ contract TransactionVerifier():
   ) -> bool: constant
   def getTxoHash(
     _txBytes: bytes[1024],
-    _inputIndex: uint256,
+    _index: uint256,
     _blkNum: uint256
   ) -> bytes32: constant
   def checkWithin(
@@ -41,6 +41,7 @@ Deposited: event({_depositer: address, _start: uint256, _end: uint256, _blkNum: 
 ExitStarted: event({_txHash: bytes32, _exitor: address, exitableAt: uint256, _start: uint256, _end: uint256})
 ChallengeStarted: event({_eTxHash: bytes32, _cTxHash: bytes32})
 FinalizedExit: event({_eTxHash: bytes32, _start: uint256, _end: uint256})
+Log: event({_a: bytes32})
 
 operator: address
 txverifier: address
@@ -232,7 +233,7 @@ def challenge(
     _start,
     root,
     _proof
-  ) == True
+  )
   assert TransactionVerifier(self.txverifier).verify(
     sha3(_txBytes),
     _txBytes,
@@ -241,7 +242,7 @@ def challenge(
     ZERO_ADDRESS,
     _start,
     _end)
-  if _eInputPos > 0:
+  if _eInputPos < 0:
     # spent challenge
     # get output hash
     spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
@@ -254,7 +255,7 @@ def challenge(
     # get input hash
     spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
       _exitTxBytes,
-      convert(_eInputPos, uint256),
+      convert(_eInputPos + 10, uint256),
       exitBlkNum)
     assert blkNum < exitBlkNum
   assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_txBytes, txoIndex, blkNum)

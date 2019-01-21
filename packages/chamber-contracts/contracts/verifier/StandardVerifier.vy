@@ -48,7 +48,12 @@ def decodeTransfer(
 ) -> (address, uint256, uint256, uint256, address):
   # from, start, end, blkNum, to
   return RLPList(_tBytes, [address, uint256, uint256, uint256, address])
-  
+
+# @dev Constructor
+@public
+def __init__():
+  assert True
+
 @public
 @constant
 def verifyTransfer(
@@ -71,10 +76,10 @@ def verifyTransfer(
     assert(_owner == to and _outputIndex == 0)
   return (self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == _from) and (_start == start) and (_end == end)
 
-@private
+@public
 @constant
 def getTxoHashOfTransfer(
-  _tBytes: bytes[1024],
+  _txBytes: bytes[1024],
   _index: uint256,
   _blkNum: uint256
 ) -> (bytes32):
@@ -84,14 +89,14 @@ def getTxoHashOfTransfer(
   end: uint256
   blkNum: uint256
   to: address
-  (_from, start, end, blkNum, to) = self.decodeTransfer(_tBytes)
-  if _index > 10:
+  (_from, start, end, blkNum, to) = self.decodeTransfer(_txBytes)
+  if _index >= 10:
     return self.getOwnState(_from, start, end, blkNum)
   else:
     return self.getOwnState(to, start, end, _blkNum)
 
 # split
-@private
+@public
 @constant
 def verifySplit(
   _txHash: bytes32,
@@ -106,20 +111,24 @@ def verifySplit(
   tList = RLPList(_tBytes, [address, uint256, uint256, uint256, address, address, uint256])
   if _owner != ZERO_ADDRESS:
     if _outputIndex == 0:
-      assert(_owner == tList[4]) and (_start == tList[1]) and (_end == tList[6])
+      assert(_owner == tList[4])
     else:
-      assert(_owner == tList[5]) and (_start == tList[6]) and (_end == tList[2])
+      assert(_owner == tList[5])
+  if _outputIndex == 0:
+    assert (_start == tList[1]) and (_end == tList[6])
+  else:
+    assert (_start == tList[6]) and (_end == tList[2])
   return (self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == tList[0])
 
-@private
+@public
 @constant
 def getTxoHashOfSplit(
-  _tBytes: bytes[1024],
+  _txBytes: bytes[1024],
   _index: uint256,
   _blkNum: uint256
 ) -> (bytes32):
-  tList = RLPList(_tBytes, [address, uint256, uint256, uint256, address, address, uint256])
-  if _index > 10:
+  tList = RLPList(_txBytes, [address, uint256, uint256, uint256, address, address, uint256])
+  if _index >= 10:
     return self.getOwnState(tList[0], tList[1], tList[2], tList[3])
   elif _index == 0:
     return self.getOwnState(tList[4], tList[1], tList[6], _blkNum)
@@ -127,7 +136,7 @@ def getTxoHashOfSplit(
     return self.getOwnState(tList[5], tList[6], tList[2], _blkNum)
 
 # merge
-@private
+@public
 @constant
 def verifyMerge(
   _txHash: bytes32,
@@ -145,14 +154,14 @@ def verifyMerge(
     assert(_owner == tList[6]) and (_start == tList[1]) and (_end == tList[3])
   return (self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == tList[0])
 
-@private
+@public
 @constant
 def getTxoHashOfMerge(
-  _tBytes: bytes[1024],
+  _txBytes: bytes[1024],
   _index: uint256,
   _blkNum: uint256
 ) -> (bytes32):
-  tList = RLPList(_tBytes, [
+  tList = RLPList(_txBytes, [
     address, uint256, uint256, uint256, uint256, uint256, address])
   if _index == 10:
     return self.getOwnState(tList[0], tList[1], tList[2], tList[4])

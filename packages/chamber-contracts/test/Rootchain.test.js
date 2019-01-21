@@ -1,3 +1,5 @@
+// const { injectInTruffle } = require('sol-trace');
+// injectInTruffle(web3, artifacts);
 const { deployRLPdecoder } = require('./helpers/deployRLPdecoder')
 const {
   duration,
@@ -58,7 +60,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
   });
 
   describe("exit", () => {
-    it("should success to exit and finalizeExit", async () => {
+
+    beforeEach(async () => {
       await this.rootChain.deposit(
         {
           from: alice,
@@ -69,12 +72,19 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob,
           value: '1000000'
         });
-      const hex = utils.bufferToHex(Scenario1.blocks[0].tree.root())
       await this.rootChain.submit(
-        hex,
+        utils.bufferToHex(Scenario1.blocks[0].tree.root()),
         {
           from: operator
         });
+      await this.rootChain.submit(
+        utils.bufferToHex(Scenario1.blocks[1].tree.root()),
+        {
+          from: operator
+        });
+    })
+
+    it("should success to exit and finalizeExit", async () => {
       const tx = Scenario1.blocks[0].signedTransactions[0]
       const gasCost = await this.rootChain.exit.estimateGas(
         6 * 100,
@@ -107,6 +117,35 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob
         });
     })
+
+    it("should success to challenge", async () => {
+      const tx = Scenario1.blocks[0].signedTransactions[0]
+      await this.rootChain.exit(
+        6 * 100,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        tx.tx.encode(),
+        tx.getProofs(),
+        tx.getSignatures(),
+        {
+          from: bob
+        });
+      const challengeTx = Scenario1.blocks[1].signedTransactions[0]
+      await this.rootChain.challenge(
+        tx.tx.encode(),
+        8 * 100 + 10,
+        -1,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        challengeTx.tx.encode(),
+        challengeTx.getProofs(),
+        challengeTx.getSignatures(),
+        {
+          from: alice,
+          gas: '500000'
+        });
+    })
+
   });
 
 })
