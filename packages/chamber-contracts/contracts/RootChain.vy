@@ -50,6 +50,7 @@ currentChildBlock: uint256
 totalDeposit: uint256
 exits: map(bytes32, Exit)
 challenges: map(bytes32, Challenge)
+TOTAL_DEPOSIT: constant(uint256) = 2**48
 
 @private
 @constant
@@ -99,7 +100,7 @@ def checkTransaction(
     assert self.checkMembership(
       _end - _start,
       _txHash,
-      self.totalDeposit,
+      TOTAL_DEPOSIT,
       _start,
       root,
       _proof
@@ -180,7 +181,7 @@ def exit(
   assert self.checkMembership(
     _end - _start,
     txHash,
-    self.totalDeposit,
+    TOTAL_DEPOSIT,
     _start,
     root,
     _proof
@@ -229,7 +230,7 @@ def challenge(
   assert self.checkMembership(
     _end - _start,
     sha3(_txBytes),
-    self.totalDeposit,
+    TOTAL_DEPOSIT,
     _start,
     root,
     _proof
@@ -329,7 +330,7 @@ def respondChallenge(
   assert self.checkMembership(
     _end - _start,
     sha3(_txBytes),
-    self.totalDeposit,
+    TOTAL_DEPOSIT,
     _start,
     root,
     _proof

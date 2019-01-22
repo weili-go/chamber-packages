@@ -36,10 +36,10 @@ describe('Block', () => {
     const rawTx2 = new TransferTransaction(AliceAddress, segment3, blkNum, BobAddress)
     const tx1 = new SignedTransaction(rawTx1)
     const tx2 = new SignedTransaction(rawTx2)
-    const block = new Block()
+    const block = new Block(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
-    assert.equal(block.createTree().getLeaves().length, 4)
+    assert.equal(block.createTree().getLeaves().length, 8)
     assert.equal(utils.hexlify(block.createTree().getLeaves()[2].getHash()), constants.HashZero)
   });
 

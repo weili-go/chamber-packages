@@ -5,6 +5,7 @@ const {
 const BigNumber = utils.BigNumber
 
 const {
+  Block,
   Segment,
   SumMerkleTree,
   SumMerkleTreeNode,
@@ -45,6 +46,9 @@ const blkNum2 = utils.bigNumberify('5')
 const blkNum3 = utils.bigNumberify('6')
 const blkNum4 = utils.bigNumberify('8')
 const blkNum5 = utils.bigNumberify('10')
+const block3 = new Block(6)
+const block4 = new Block(8)
+const block5 = new Block(10)
 
 const tx31 = new TransferTransaction(AliceAddress, segment1, blkNum1, BobAddress)
 const tx32 = new TransferTransaction(User4Address, segment2, blkNum2, User5Address)
@@ -55,68 +59,44 @@ const tx42 = new TransferTransaction(User5Address, segment2, blkNum3, User4Addre
 const tx51 = new TransferTransaction(User5Address, segment1, blkNum4, OperatorAddress)
 const tx52 = new TransferTransaction(User4Address, segment2, blkNum4, User5Address)
 
+block3.appendTx(tx31)
+block3.appendTx(tx32)
 
-const leaves3 = [
-  new SumMerkleTreeNode(
-    tx31.hash(),
-    new BigNumber(1000000)
-  ),
-  new SumMerkleTreeNode(
-    tx32.hash(),
-    new BigNumber(1000000)
-  )
-]
-const tree3 = new SumMerkleTree(leaves3)
+block4.appendTx(tx41)
+block4.appendTx(tx42)
 
-const leaves4 = [
-  new SumMerkleTreeNode(
-    tx41.hash(),
-    new BigNumber(1000000)
-  ),
-  new SumMerkleTreeNode(
-    tx42.hash(),
-    new BigNumber(1000000)
-  )
-]
-const tree4 = new SumMerkleTree(leaves4)
+block5.appendTx(tx51)
+block5.appendTx(tx52)
 
-const leaves5 = [
-  new SumMerkleTreeNode(
-    tx51.hash(),
-    new BigNumber(1000000)
-  ),
-  new SumMerkleTreeNode(
-    tx52.hash(),
-    new BigNumber(1000000)
-  )
-]
-const tree5 = new SumMerkleTree(leaves5)
+const tree3 = block3.createTree()
+const tree4 = block4.createTree()
+const tree5 = block5.createTree()
 
 const signedTx31 = new SignedTransactionWithProof(
   tx31,
-  tree3.proof(leaves3[0]))
+  block3.getProof(tx31.hash()))
 signedTx31.sign(AlicePrivateKey)
 const signedTx32 = new SignedTransactionWithProof(
   tx32,
-  tree3.proof(leaves3[1]))
+  block3.getProof(tx32.hash()))
 signedTx32.sign(User4PrivateKey)
 
 const signedTx41 = new SignedTransactionWithProof(
   tx41,
-  tree4.proof(leaves4[0]))
+  block4.getProof(tx41.hash()))
 signedTx41.sign(BobPrivateKey)
 const signedTx42 = new SignedTransactionWithProof(
   tx42,
-  tree4.proof(leaves4[1]))
+  block4.getProof(tx42.hash()))
 signedTx42.sign(User5PrivateKey)
 
 const signedTx51 = new SignedTransactionWithProof(
   tx51,
-  tree5.proof(leaves5[0]))
+  block5.getProof(tx51.hash()))
 signedTx51.sign(User5PrivateKey)
 const signedTx52 = new SignedTransactionWithProof(
   tx52,
-  tree5.proof(leaves5[1]))
+  block5.getProof(tx52.hash()))
 signedTx52.sign(User4PrivateKey)
 
 module.exports = {
