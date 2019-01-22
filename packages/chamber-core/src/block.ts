@@ -12,6 +12,13 @@ import * as ethers from 'ethers'
 import { HashZero } from 'ethers/constants'
 import { BigNumber } from 'ethers/utils'
 import { utils } from 'ethers';
+import {
+  TOTAL_AMOUNT
+} from './helpers/constants'
+import {
+  HexString,
+  Hash
+} from './helpers/types'
 
 class SegmentNode {
   segment: Segment
@@ -26,11 +33,6 @@ class SegmentNode {
   }
 }
 
-/**
- * @title TotalAmount
- * total amount is 2^48
- */
-export const TotalAmount = new BigNumber(2).pow(48)
 /**
  * @title Block
  * @description Plasma Block
@@ -50,7 +52,7 @@ export const TotalAmount = new BigNumber(2).pow(48)
  *
  * When there are not enough prime numbers, operator don't receive split tx and do merge.
  */
-export class Block {
+ export class Block {
   number: number
   txs: SignedTransaction[]
   tree: SumMerkleTree | null
@@ -67,14 +69,14 @@ export class Block {
     this.txs.push(tx)
   }
 
-  getRoot() {
+  getRoot(): Hash {
     if(this.tree === null) {
       this.tree = this.createTree()
     }
     return ethers.utils.hexlify(this.tree.root())
   }
   
-  getProof(hash: string): string {
+  getProof(hash: string): HexString {
     if(this.tree === null) {
       this.tree = this.createTree()
     }
@@ -93,7 +95,7 @@ export class Block {
       start,
       end,
       Buffer.from(tx.hash().substr(2), 'hex'),
-      TotalAmount,
+      TOTAL_AMOUNT,
       Buffer.from(this.getRoot().substr(2), 'hex'),
       Buffer.from(tx.getProofs().substr(2), 'hex')      
     )
@@ -129,9 +131,9 @@ export class Block {
     }, [])
     // add last exclusion segment
     const lastSegment = nodes[nodes.length - 1].segment
-    if(lastSegment.end.lt(TotalAmount)) {
+    if(lastSegment.end.lt(TOTAL_AMOUNT)) {
       const lastExclusion = new SegmentNode(
-        new Segment(lastSegment.end, TotalAmount),
+        new Segment(lastSegment.end, TOTAL_AMOUNT),
         utils.keccak256(HashZero))
       nodes.push(lastExclusion)
     }
