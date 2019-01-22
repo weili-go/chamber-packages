@@ -50,22 +50,25 @@ currentChildBlock: uint256
 totalDeposit: uint256
 exits: map(bytes32, Exit)
 challenges: map(bytes32, Challenge)
+# [end:start]
+withdrawals: map(uint256, uint256)
 TOTAL_DEPOSIT: constant(uint256) = 2**48
 
 @private
 @constant
 def checkMembership(
-  _range: uint256,
+  _start: uint256,
+  _end: uint256,
   _leaf: bytes32,
   _totalAmount: uint256,
-  _leftOffset: uint256,
   _rootHash: bytes32,
   _proof: bytes[512]
 ) -> bool:
-  proofElement: bytes32
-  currentAmount: uint256 = _range
-  lastLeftAmount: uint256 = 0
+  currentAmount: uint256 = _end - _start
+  currentLeft: uint256 = 0
+  currentRight: uint256 = _totalAmount
   computedHash: bytes32 = _leaf
+  proofElement: bytes32
 
   for i in range(16):
     if (i * 41) >= len(_proof):
@@ -74,14 +77,15 @@ def checkMembership(
     amount: uint256 = convert(slice(_proof, start=i * 41 + 1, len=8), uint256)
     proofElement = extract32(_proof, i * 41 + 9, type=bytes32)
     if leftOrRight == 0:
+      currentRight -= amount
       computedHash = sha3(concat(
         convert(currentAmount, bytes32), computedHash, convert(amount, bytes32), proofElement))
     else:
+      currentLeft += amount
       computedHash = sha3(concat(
         convert(amount, bytes32), proofElement, convert(currentAmount, bytes32), computedHash))
-      lastLeftAmount = currentAmount - _range
     currentAmount += amount
-  return (computedHash == _rootHash) and (lastLeftAmount == _leftOffset) and (currentAmount == _totalAmount)
+  return (computedHash == _rootHash) and (currentLeft == _start) and (currentRight == _end) and (currentAmount == _totalAmount)
 
 @private
 @constant
@@ -98,10 +102,10 @@ def checkTransaction(
   root: bytes32 = self.childChain[_blkNum].root
   if _blkNum % 2 == 0:
     assert self.checkMembership(
-      _end - _start,
+      _start,
+      _end,
       _txHash,
       TOTAL_DEPOSIT,
-      _start,
       root,
       _proof
     ) == True
@@ -179,13 +183,13 @@ def exit(
   root: bytes32 = self.childChain[blkNum].root
   txHash: bytes32 = sha3(_txBytes)
   assert self.checkMembership(
-    _end - _start,
+    _start,
+    _end,
     txHash,
     TOTAL_DEPOSIT,
-    _start,
     root,
     _proof
-  ) == True
+  )
   # verify signature, owner and segment
   assert TransactionVerifier(self.txverifier).verify(
     txHash,
@@ -200,10 +204,29 @@ def exit(
     owner: msg.sender,
     exitableAt: exitableAt,
     utxoPos: _utxoPos,
-    segment: _start * (2 ** 32) + _end,
+    segment: _start * TOTAL_DEPOSIT + _end,
     challengeCount: 0
   })
   log.ExitStarted(txHash, msg.sender, exitableAt, _start, _end)
+
+# @dev
+# @param _exitTxHash hash of the exiting transaction
+# @param _segment uint256 format of a segment which is already withdrawn
+@public
+def challengeByWithdrawal(
+  _exitTxHash: bytes32,
+  _segment: uint256
+):
+  exit: Exit = self.exits[_exitTxHash]
+  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
+  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  start: uint256 = _segment / TOTAL_DEPOSIT
+  end: uint256 = _segment - start * TOTAL_DEPOSIT
+  # challenge by older withdrawal
+  assert exit.utxoPos > self.withdrawals[_segment]
+  assert (end > exitSegmentStart) and (start < exitSegmentEnd)
+  # break exit procedure
+  self.exits[_exitTxHash].owner = ZERO_ADDRESS
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx
@@ -228,10 +251,10 @@ def challenge(
   exitBlkNum: uint256 = self.exits[exitTxHash].utxoPos / 100
   exitIndex: uint256 = self.exits[exitTxHash].utxoPos - exitBlkNum * 100
   assert self.checkMembership(
-    _end - _start,
+    _start,
+    _end,
     sha3(_txBytes),
     TOTAL_DEPOSIT,
-    _start,
     root,
     _proof
   )
@@ -280,8 +303,8 @@ def challengeBefore(
   blkNum: uint256 = _utxoPos / 100
   outputIndex: uint256 = _utxoPos - blkNum * 100
   exit: Exit = self.exits[exitTxHash]
-  exitSegmentStart: uint256 = exit.segment / (2 ** 32)
-  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * (2 ** 32)
+  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
+  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
   txHash: bytes32 = sha3(_txBytes)
   self.checkTransaction(
     _start,
@@ -328,10 +351,10 @@ def respondChallenge(
   cBlkNum: uint256 = challenge.utxoPos / 100
   cOutputIndex: uint256 = challenge.utxoPos - cBlkNum * 100
   assert self.checkMembership(
-    _end - _start,
+    _start,
+    _end,
     sha3(_txBytes),
     TOTAL_DEPOSIT,
-    _start,
     root,
     _proof
   )
@@ -362,12 +385,14 @@ def finalizeExit(
   _exitTxHash: bytes32
 ):
   exit: Exit = self.exits[_exitTxHash]
-  exitSegmentStart: uint256 = exit.segment / (2 ** 32)
-  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * (2 ** 32)
+  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
+  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  assert self.withdrawals[exit.segment] == 0
   assert exit.exitableAt < as_unitless_number(block.timestamp)
   assert exit.challengeCount == 0
   send(exit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei"))
   self.exits[_exitTxHash].owner = ZERO_ADDRESS
+  self.withdrawals[exit.segment] = exit.utxoPos
   log.FinalizedExit(_exitTxHash, exitSegmentStart, exitSegmentEnd)
 
 # @dev getExit

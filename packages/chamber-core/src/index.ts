@@ -1,9 +1,11 @@
 // core module
 
 export {
-  Block
+  Block,
+  TotalAmount
 } from './block'
 export {
+  MerkleProof,
   Address,
   TransactionDecoder,
   TransferTransaction,
@@ -20,6 +22,5 @@ export {
 
 export {
   SumMerkleTreeNode,
-  SumMerkleTree,
-  MerkleProof
+  SumMerkleTree
 } from './merkle'

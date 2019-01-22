@@ -4,6 +4,9 @@ import {
 import {
   RLPItem
 } from './helpers/ethers'
+import {
+  TotalAmount
+} from './block'
 import BigNumber = utils.BigNumber
 import RLP = utils.RLP
 
@@ -29,6 +32,10 @@ export class Segment {
 
   getAmount() {
     return this.end.sub(this.start)
+  }
+
+  toBigNumber(): BigNumber {
+    return this.start.mul(TotalAmount).add(this.end)
   }
 
   toTuple(): BigNumber[] {

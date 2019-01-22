@@ -2,9 +2,6 @@ import { utils } from "ethers"
 import {
   Segment
 } from './segment'
-import {
-  MerkleProof
-} from './merkle'
 import { RLPItem } from './helpers/ethers'
 import RLP = utils.RLP
 import { BigNumber } from 'ethers/utils';
@@ -15,6 +12,7 @@ export type Address = string
 export type Uint256 = BigNumber
 export type RLPItem = Address | Uint256
 export type RLPTx = RLPItem[]
+export type MerkleProof = string
 
 /**
  * BaseTransaction is raw transaction data structure
@@ -370,6 +368,10 @@ export class SignedTransaction {
     this.signatures.push(utils.joinSignature(key.signDigest(this.tx.hash())))
   }
 
+  toHex() {
+    return this.tx.encode()
+  }
+
   hash() {
     return this.tx.hash()
   }
@@ -399,7 +401,7 @@ export class SignedTransactionWithProof extends SignedTransaction {
   }
 
   getProofs() {
-    return utils.hexlify(this.proofs)
+    return this.proofs
   }
 
 }

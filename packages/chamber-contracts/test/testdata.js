@@ -35,6 +35,10 @@ const segment2 = new Segment(
   utils.bigNumberify('1000000'),
   utils.bigNumberify('2000000'))
 
+const segment3 = new Segment(
+  utils.bigNumberify('500000'),
+  utils.bigNumberify('1000000'))
+  
 /*
  * 1->3->4-x>5
  */
@@ -49,6 +53,7 @@ const blkNum5 = utils.bigNumberify('10')
 const block3 = new Block(6)
 const block4 = new Block(8)
 const block5 = new Block(10)
+const block6 = new Block(12)
 
 const tx31 = new TransferTransaction(AliceAddress, segment1, blkNum1, BobAddress)
 const tx32 = new TransferTransaction(User4Address, segment2, blkNum2, User5Address)
@@ -59,6 +64,9 @@ const tx42 = new TransferTransaction(User5Address, segment2, blkNum3, User4Addre
 const tx51 = new TransferTransaction(User5Address, segment1, blkNum4, OperatorAddress)
 const tx52 = new TransferTransaction(User4Address, segment2, blkNum4, User5Address)
 
+const tx61 = new TransferTransaction(User5Address, segment3, blkNum1, OperatorAddress)
+const tx62 = new TransferTransaction(User5Address, segment2, blkNum4, User4Address)
+
 block3.appendTx(tx31)
 block3.appendTx(tx32)
 
@@ -68,9 +76,13 @@ block4.appendTx(tx42)
 block5.appendTx(tx51)
 block5.appendTx(tx52)
 
+block6.appendTx(tx61)
+block6.appendTx(tx62)
+
 const tree3 = block3.createTree()
 const tree4 = block4.createTree()
 const tree5 = block5.createTree()
+const tree6 = block6.createTree()
 
 const signedTx31 = new SignedTransactionWithProof(
   tx31,
@@ -99,22 +111,39 @@ const signedTx52 = new SignedTransactionWithProof(
   block5.getProof(tx52.hash()))
 signedTx52.sign(User4PrivateKey)
 
+const signedTx61 = new SignedTransactionWithProof(
+  tx61,
+  block6.getProof(tx61.hash()))
+signedTx61.sign(User5PrivateKey)
+const signedTx62 = new SignedTransactionWithProof(
+  tx62,
+  block6.getProof(tx62.hash()))
+signedTx62.sign(User5PrivateKey)
+
 module.exports = {
   Scenario1: {
-    segments: [segment1, segment2],
+    segments: [segment1, segment2, segment3],
     blocks: [
       {
+        block: block3,
         tree: tree3,
         transactions: [tx31, tx32],
         signedTransactions: [signedTx31, signedTx32]
       },{
+        block: block4,
         tree: tree4,
         transactions: [tx41, tx42],
         signedTransactions: [signedTx41, signedTx42]
       },{
+        block: block5,
         tree: tree5,
         transactions: [tx51, tx52],
         signedTransactions: [signedTx51, signedTx52]
+      },{
+        block: block6,
+        tree: tree6,
+        transactions: [tx61, tx62],
+        signedTransactions: [signedTx61, signedTx62]
       }
     ]
   }

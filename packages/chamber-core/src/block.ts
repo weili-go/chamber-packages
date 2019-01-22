@@ -1,5 +1,5 @@
 import {
-  SignedTransaction
+  SignedTransaction, SignedTransactionWithProof
 } from './tx'
 import {
   SumMerkleTreeNode,
@@ -8,8 +8,10 @@ import {
 import {
   Segment
 } from './segment'
-import { HashZero } from 'ethers/constants';
-import { BigNumber } from 'ethers/utils';
+import * as ethers from 'ethers'
+import { HashZero } from 'ethers/constants'
+import { BigNumber } from 'ethers/utils'
+import { utils } from 'ethers';
 
 class SegmentNode {
   segment: Segment
@@ -28,7 +30,7 @@ class SegmentNode {
  * @title TotalAmount
  * total amount is 2^48
  */
-const TotalAmount = new BigNumber(2).pow(48)
+export const TotalAmount = new BigNumber(2).pow(48)
 /**
  * @title Block
  * @description Plasma Block
@@ -64,12 +66,37 @@ export class Block {
   appendTx(tx: SignedTransaction) {
     this.txs.push(tx)
   }
-  
-  getProof(hash: string) {
+
+  getRoot() {
     if(this.tree === null) {
       this.tree = this.createTree()
     }
-    return this.tree.proof(Buffer.from(hash.substr(2), 'hex'))
+    return ethers.utils.hexlify(this.tree.root())
+  }
+  
+  getProof(hash: string): string {
+    if(this.tree === null) {
+      this.tree = this.createTree()
+    }
+    return ethers.utils.hexlify(this.tree.proof(Buffer.from(hash.substr(2), 'hex')))
+  }
+
+  checkInclusion(
+    tx: SignedTransactionWithProof,
+    start: BigNumber,
+    end: BigNumber
+  ) {
+    if(this.tree === null) {
+      this.tree = this.createTree()
+    }
+    return this.tree.verify(
+      start,
+      end,
+      Buffer.from(tx.hash().substr(2), 'hex'),
+      TotalAmount,
+      Buffer.from(this.getRoot().substr(2), 'hex'),
+      Buffer.from(tx.getProofs().substr(2), 'hex')      
+    )
   }
 
   /**
@@ -93,7 +120,7 @@ export class Block {
       if(acc.length > 0)
         prevEnd = acc[acc.length - 1].segment.end
       if(segmentNode.segment.start.gt(prevEnd)) {
-        return acc.concat([new SegmentNode(new Segment(prevEnd, segmentNode.segment.start), HashZero), segmentNode])
+        return acc.concat([new SegmentNode(new Segment(prevEnd, segmentNode.segment.start), utils.keccak256(HashZero)), segmentNode])
       }else if(segmentNode.segment.start.eq(prevEnd)) {
         return acc.concat([segmentNode])
       }else{
@@ -105,7 +132,7 @@ export class Block {
     if(lastSegment.end.lt(TotalAmount)) {
       const lastExclusion = new SegmentNode(
         new Segment(lastSegment.end, TotalAmount),
-        HashZero)
+        utils.keccak256(HashZero))
       nodes.push(lastExclusion)
     }
     const leaves = nodes.map(n => new SumMerkleTreeNode(

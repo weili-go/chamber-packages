@@ -39,10 +39,10 @@ describe('SumMerkleTree', function() {
       const proof = tree.proof(leaves[2].getHash());
       //assert.equal(root.toString('hex'), '95cb4e0012c0cd6674800bc14c15d1af47a202067789e652d49c60b3f4f1c1cc');
       assert.equal(tree.verify(
-        leaves[2].getLengthAsBigNumber(), // leaf amount
+        new BigNumber(5),
+        new BigNumber(9),
         leaves[2].getHash(),    // leaf hash
         new BigNumber(24), // total deposit
-        new BigNumber(5), // left offset
         root,
         proof), true);
     });
@@ -52,10 +52,10 @@ describe('SumMerkleTree', function() {
       const root = tree.root();
       const proof = tree.proof(leaves[2].getHash());
       assert.equal(tree.verify(
-        leaves[2].getLengthAsBigNumber(), // leaf amount
+        new BigNumber(5),
+        new BigNumber(9),
         leaves[2].getHash(),    // leaf hash
         new BigNumber(30), // total deposit
-        new BigNumber(5), // left offset
         root,
         proof), false);
     });
@@ -65,10 +65,10 @@ describe('SumMerkleTree', function() {
       const root = tree.root();
       const proof = tree.proof(leaves[2].getHash());
       assert.equal(tree.verify(
-        leaves[2].getLengthAsBigNumber(), // leaf amount
+        new BigNumber(7),
+        new BigNumber(9),
         leaves[2].getHash(),    // leaf hash
         new BigNumber(24), // total deposit
-        new BigNumber(7), // left offset
         root,
         proof), false);
     });
@@ -78,10 +78,10 @@ describe('SumMerkleTree', function() {
       const root = tree.root();
       const proof = tree.proof(leaves[2].getHash());
       assert.equal(tree.verify(
-        leaves[0].getLengthAsBigNumber(), // leaf amount
+        new BigNumber(5),
+        new BigNumber(9),
         leaves[0].getHash(),    // leaf hash
         new BigNumber(24), // total deposit
-        new BigNumber(5), // left offset
         root,
         proof), false);
     });

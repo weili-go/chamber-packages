@@ -9,15 +9,15 @@ const {
   assertRevert
 } = require('./helpers/assertRevert');
 
-const utils = require("ethereumjs-util")
 const RootChain = artifacts.require("RootChain")
 const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
 const MultisigVerifier = artifacts.require("MultisigVerifier")
-
 const ethers = require('ethers')
-
 const BigNumber = ethers.utils.BigNumber
+const {
+  TotalAmount
+} = require('@layer2/core')
 
 const {
   Scenario1
@@ -49,12 +49,10 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
   });
 
   describe("submit", () => {
-    const root = Scenario1.blocks[0].tree.root();
 
     it("should submit", async () => {
-      const hex = utils.bufferToHex(root)
       const result = await this.rootChain.submit(
-        hex,
+        Scenario1.blocks[0].block.getRoot(),
         {
           from: operator
         });
@@ -75,21 +73,17 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob,
           value: '1000000'
         });
-      await this.rootChain.submit(
-        utils.bufferToHex(Scenario1.blocks[0].tree.root()),
-        {
-          from: operator
-        });
-      await this.rootChain.submit(
-        utils.bufferToHex(Scenario1.blocks[1].tree.root()),
-        {
-          from: operator
-        });
-      await this.rootChain.submit(
-        utils.bufferToHex(Scenario1.blocks[2].tree.root()),
-        {
-          from: operator
-        });
+      const submit = async (root) => {
+        await this.rootChain.submit(
+          root,
+          {
+            from: operator
+          });
+      }
+      await submit(Scenario1.blocks[0].block.getRoot())
+      await submit(Scenario1.blocks[1].block.getRoot())
+      await submit(Scenario1.blocks[2].block.getRoot())
+      await submit(Scenario1.blocks[3].block.getRoot())
     })
 
     it("should success to exit and finalizeExit", async () => {
@@ -110,7 +104,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.tx.encode(),
+        tx.toHex(),
         tx.getProofs(),
         tx.getSignatures(),
         {
@@ -120,7 +114,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        tx.tx.hash(),
+        tx.hash(),
         {
           from: bob
         });
@@ -132,7 +126,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.tx.encode(),
+        tx.toHex(),
         tx.getProofs(),
         tx.getSignatures(),
         {
@@ -145,7 +139,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         -1,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        challengeTx.tx.encode(),
+        challengeTx.toHex(),
         challengeTx.getProofs(),
         challengeTx.getSignatures(),
         {
@@ -160,7 +154,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         10 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.tx.encode(),
+        tx.toHex(),
         tx.getProofs(),
         tx.getSignatures(),
         {
@@ -169,12 +163,12 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.challengeBefore(
-        tx.tx.encode(),
+        tx.toHex(),
         8 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        challengeTx.tx.encode(),
-        challengeTx.tx.hash(),
+        challengeTx.toHex(),
+        challengeTx.hash(),
         challengeTx.getProofs(),
         challengeTx.getSignatures(),
         {
@@ -199,7 +193,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         10 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.tx.encode(),
+        tx.toHex(),
         tx.getProofs(),
         tx.getSignatures(),
         {
@@ -208,12 +202,12 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const challengeTx = Scenario1.blocks[0].signedTransactions[0]
       await this.rootChain.challengeBefore(
-        tx.tx.encode(),
+        tx.toHex(),
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        challengeTx.tx.encode(),
-        challengeTx.tx.hash(),
+        challengeTx.toHex(),
+        challengeTx.hash(),
         challengeTx.getProofs(),
         challengeTx.getSignatures(),
         {
@@ -222,11 +216,11 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
       const respondTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.respondChallenge(
-        challengeTx.tx.encode(),
+        challengeTx.toHex(),
         8 * 100 + 10,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        respondTx.tx.encode(),
+        respondTx.toHex(),
         respondTx.getProofs(),
         respondTx.getSignatures(),
         {
@@ -237,6 +231,46 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // challengeCount is 0
       assert.equal(exitResult[1].toNumber(), 0)
     })
+
+    it("should success to challengeByWithdrawal", async () => {
+      const tx = Scenario1.blocks[0].signedTransactions[0]
+      await this.rootChain.exit(
+        6 * 100,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        tx.toHex(),
+        tx.getProofs(),
+        tx.getSignatures(),
+        {
+          from: bob
+        });
+      // 6 weeks after
+      await increaseTime(duration.weeks(6));
+      await this.rootChain.finalizeExit(
+        tx.hash(),
+        {
+          from: bob
+        });
+      const invalidTx = Scenario1.blocks[3].signedTransactions[0]
+      await this.rootChain.exit(
+        12 * 100,
+        Scenario1.segments[2].start,
+        Scenario1.segments[2].end,
+        invalidTx.toHex(),
+        invalidTx.getProofs(),
+        invalidTx.getSignatures(),
+        {
+          from: operator
+        });
+      await this.rootChain.challengeByWithdrawal(
+        invalidTx.hash(),
+        Scenario1.segments[0].toBigNumber(),
+        {
+          from: bob
+        });
+    
+    })
+
 
   });
 

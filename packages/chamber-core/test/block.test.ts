@@ -14,6 +14,7 @@ import {
   AlicePrivateKey,
   BobPrivateKey
 } from "./testdata"
+import { SignedTransactionWithProof } from '../dist';
 
 describe('Block', () => {
 
@@ -40,7 +41,12 @@ describe('Block', () => {
     block.appendTx(tx1)
     block.appendTx(tx2)
     assert.equal(block.createTree().getLeaves().length, 8)
-    assert.equal(utils.hexlify(block.createTree().getLeaves()[2].getHash()), constants.HashZero)
+    assert.equal(utils.hexlify(block.createTree().getLeaves()[2].getHash()), '0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563')
+    const sptx1 = new SignedTransactionWithProof(rawTx1, block.getProof(rawTx1.hash()))
+    const sptx2 = new SignedTransactionWithProof(rawTx2, block.getProof(rawTx2.hash()))
+
+    assert.equal(block.checkInclusion(sptx1, segment1.start, segment1.end), true)
+    assert.equal(block.checkInclusion(sptx2, segment3.start, segment3.end), true)
   });
 
 })

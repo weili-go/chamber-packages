@@ -42,14 +42,12 @@ export class SumMerkleTreeNode {
 
   static getEmpty() {
     return new SumMerkleTreeNode(
-      Buffer.from(constants.HashZero, 'hex'),
+      utils.keccak256(constants.HashZero),
       new BigNumber(0)
     );
   }
 
 }
-
-export type MerkleProof = Buffer
 
 /**
  * @description SumMerkleTree
@@ -77,7 +75,7 @@ export class SumMerkleTree {
       Array.from(
         Array(Math.pow(2, depth) - leaves.length),
         () => SumMerkleTreeNode.getEmpty()))
-
+    
     this.leaves = layer
     this.layers = [layer].concat(this.createLayers(layer))
   }
@@ -140,7 +138,7 @@ export class SumMerkleTree {
     return index
   }
 
-  proof(leaf: Buffer): MerkleProof {
+  proof(leaf: Buffer): Buffer {
     let index = this.getIndex(leaf)
     if(index < 0) {
       throw new Error('invalid leaf')
@@ -166,23 +164,24 @@ export class SumMerkleTree {
    * @param {Number} totalAmount is total amount of tree
    * @param {Number} leftOffset is the position of the leaf from left
    * @param {Buffer} root is root of tree
-   * @param {MerkleProof} proof is proof buffer for the leaf
+   * @param {Buffer} proof is proof buffer for the leaf
    */
   verify(
-    range: BigNumber,
+    start: BigNumber,
+    end: BigNumber,
     value: Buffer,
     totalAmount: BigNumber,
-    leftOffset: BigNumber,
     root: Buffer,
-    proof: MerkleProof
+    proof: Buffer
   ) {
     if(!value || !root) {
       return false
     }
 
-    let currentAmount = range
+    let currentAmount = end.sub(start)
+    let currentLeft = new BigNumber(0)
+    let currentRight = totalAmount
     let hash = value
-    let lastLeftAmount = new BigNumber(0)
     for(let i = 0; i < proof.length; i += 41) {
       const leftOrRight = proof.slice(i, i + 1).readUInt8(0)
       const amount = proof.slice(i + 1, i + 9)
@@ -190,19 +189,21 @@ export class SumMerkleTree {
       const currentAmountBuf = bignumTo32BytesBuffer(currentAmount)
       let buf = []
       if(leftOrRight === 0) {
+        currentRight = currentRight.sub(utils.bigNumberify(amount))
         buf = [currentAmountBuf, hash, convert32(amount), node]
       }else{
+        currentLeft = currentLeft.add(utils.bigNumberify(amount))
         buf = [convert32(amount), node, currentAmountBuf, hash]
-        lastLeftAmount = currentAmount.sub(range)
       }
       currentAmount = currentAmount.add(utils.bigNumberify(amount))
       hash = keccak256(Buffer.concat(buf))
     }
-    
+
     return (
       Buffer.compare(hash, root) === 0
       && currentAmount.eq(totalAmount)
-      && lastLeftAmount.eq(leftOffset))
+      && currentLeft.eq(start)
+      && currentRight.eq(end))
   }
 }
 
