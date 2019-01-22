@@ -55,7 +55,7 @@ describe('Transaction', () => {
       AliceAddress, segment1, segment2, blkNum1, blkNum2, BobAddress)
     const encoded = tx.encode()
     const decoded: MergeTransaction = TransactionDecoder.decode(encoded) as MergeTransaction
-    assert.equal(encoded, '0xf84103b83ef83c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf834c4b40835b8d80835b8d80836acfc032349434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
+    assert.equal(encoded, '0xf83d03b83af83894953b8fb338ef870eda6d74c1dd4769b6c977b8cf834c4b40835b8d80836acfc032349434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
     assert.equal(decoded.getOutput().getSegment().start.toString(), '5000000');
   });
 

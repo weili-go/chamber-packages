@@ -129,18 +129,18 @@ export class SumMerkleTree {
    * 
    * @param {SumMerkleTreeNode} leaf 
    */
-  getIndex(leaf: SumMerkleTreeNode) {
+  getIndex(leaf: Buffer) {
     let index = -1
 
     for(let i = 0; i < this.leaves.length; i++) {
-      if(Buffer.compare(leaf.getHash(), this.leaves[i].getHash()) === 0) {
+      if(Buffer.compare(leaf, this.leaves[i].getHash()) === 0) {
         index = i
       }
     }
     return index
   }
 
-  proof(leaf: SumMerkleTreeNode): MerkleProof {
+  proof(leaf: Buffer): MerkleProof {
     let index = this.getIndex(leaf)
     if(index < 0) {
       throw new Error('invalid leaf')

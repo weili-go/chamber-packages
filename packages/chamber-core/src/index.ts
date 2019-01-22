@@ -1,6 +1,9 @@
 // core module
 
 export {
+  Block
+} from './block'
+export {
   Address,
   TransactionDecoder,
   TransferTransaction,
