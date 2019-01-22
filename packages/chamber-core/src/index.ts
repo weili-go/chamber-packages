@@ -4,7 +4,6 @@ export {
   TOTAL_AMOUNT
 } from './helpers/constants'
 export {
-  MerkleProof,
   Address,
 } from './helpers/types'
 export {
@@ -17,9 +16,11 @@ export {
   MergeTransaction,
   SwapTransaction,
   Multisig2Transaction,
+} from './tx'
+export {
   SignedTransaction,
   SignedTransactionWithProof
-} from './tx'
+} from './SignedTransaction'
 export {
   Segment
 } from './segment'

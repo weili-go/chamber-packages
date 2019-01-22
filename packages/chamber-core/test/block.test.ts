@@ -31,12 +31,15 @@ describe('Block', () => {
   const segment3 = new Segment(
     utils.bigNumberify('7000000'),
     utils.bigNumberify('8000000'))
-  
+
+  const rawTx1 = new TransferTransaction(AliceAddress, segment1, blkNum, BobAddress)
+  const rawTx2 = new TransferTransaction(AliceAddress, segment3, blkNum, BobAddress)
+  const tx1 = new SignedTransaction(rawTx1)
+  const tx2 = new SignedTransaction(rawTx2)
+  tx1.sign(AlicePrivateKey)
+  tx2.sign(AlicePrivateKey)
+
   it('should create tree', () => {
-    const rawTx1 = new TransferTransaction(AliceAddress, segment1, blkNum, BobAddress)
-    const rawTx2 = new TransferTransaction(AliceAddress, segment3, blkNum, BobAddress)
-    const tx1 = new SignedTransaction(rawTx1)
-    const tx2 = new SignedTransaction(rawTx2)
     const block = new Block(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
@@ -47,6 +50,16 @@ describe('Block', () => {
 
     assert.equal(block.checkInclusion(sptx1, segment1.start, segment1.end), true)
     assert.equal(block.checkInclusion(sptx2, segment3.start, segment3.end), true)
-  });
+  })
+
+  it('serialize and deserialize', () => {
+    const block = new Block(2)
+    block.appendTx(tx1)
+    block.appendTx(tx2)
+    const serialized = block.serialize()
+    const deserialized = Block.deserialize(serialized)
+    assert.equal(deserialized.number, block.number)
+    assert.equal(deserialized.getRoot(), block.getRoot())
+  })
 
 })

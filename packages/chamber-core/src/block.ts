@@ -1,6 +1,6 @@
 import {
   SignedTransaction, SignedTransactionWithProof
-} from './tx'
+} from './SignedTransaction'
 import {
   SumMerkleTreeNode,
   SumMerkleTree
@@ -67,6 +67,22 @@ class SegmentNode {
 
   appendTx(tx: SignedTransaction) {
     this.txs.push(tx)
+  }
+
+  serialize() {
+    return {
+      number: this.number,
+      txs: this.txs.map(tx => tx.serialize()),
+      root: this.getRoot()
+    }
+  }
+
+  static deserialize(data: any): Block {
+    let block = new Block(data.number)
+    data.txs.forEach((tx: any) => {
+      block.appendTx(SignedTransaction.deserialize(tx))
+    })
+    return block
   }
 
   getRoot(): Hash {

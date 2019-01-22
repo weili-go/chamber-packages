@@ -5,11 +5,9 @@ import {
 import RLP = utils.RLP
 import {
   Address,
-  HexString,
   LockState,
   RLPTx,
   RLPItem,
-  Signature
 } from './helpers/types';
 import BigNumber = utils.BigNumber
 
@@ -340,67 +338,6 @@ export class Multisig2Transaction extends BaseTransaction {
       tuple[6],
       Segment.fromTuple(tuple.slice(7, 9)),
       tuple[9])
-  }
-
-}
-
-/**
- * SignedTransaction is the transaction and its signatures
- */
-export class SignedTransaction {
-  tx: BaseTransaction
-  signatures: Signature[]
-
-  constructor(
-    tx: BaseTransaction
-  ) {
-    this.tx = tx
-    this.signatures = []
-  }
-
-  /**
-   * sign
-   * @param pkey is hex string of private key
-   */
-  sign(pkey: string) {
-    const key = new utils.SigningKey(pkey)
-    this.signatures.push(utils.joinSignature(key.signDigest(this.tx.hash())))
-  }
-
-  toHex() {
-    return this.tx.encode()
-  }
-
-  hash() {
-    return this.tx.hash()
-  }
-
-  getSegments() {
-    return this.tx.getSegments()
-  }
-
-  getSignatures() {
-    return utils.hexlify(utils.concat(this.signatures.map(s => utils.arrayify(s))))
-  }
-
-}
-
-/**
- * SignedTransactionWithProof is the transaction and its signatures and proof
- */
-export class SignedTransactionWithProof extends SignedTransaction {
-  proofs: HexString
-
-  constructor(
-    tx: BaseTransaction,
-    proofs: HexString
-  ) {
-    super(tx)
-    this.proofs = proofs
-  }
-
-  getProofs(): HexString {
-    return this.proofs
   }
 
 }
