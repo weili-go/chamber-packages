@@ -9,7 +9,8 @@
     "build:ci": "yarn run build",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "mocha -r ts-node/register 'test/**/*.ts'",
-    "test:ci": "istanbul cover _mocha -- -r ts-node/register 'test/**/*.ts' && remap-istanbul -i coverage/coverage.json -o coverage/lcov.info -t lcovonly && istanbul-coveralls"
+    "pretest:ci": "tsc --build ./tsconfig-ci.json",
+    "test:ci": "yarn run pretest:ci && istanbul cover _mocha -- 'dist-ci/test/**/*.js' && remap-istanbul -i coverage/coverage.json -o coverage/lcov.info -t lcovonly && istanbul-coveralls"
   },
   "dependencies": {
     "@types/chai": "^4.1.7",

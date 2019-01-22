@@ -6,7 +6,8 @@ import {
   TransferTransaction,
   SplitTransaction,
   MergeTransaction,
-  SignedTransaction
+  SignedTransaction,
+  SignedTransactionWithProof
 } from '../src'
 import { assert } from "chai"
 import { constants, utils } from "ethers"
@@ -14,7 +15,6 @@ import {
   AlicePrivateKey,
   BobPrivateKey
 } from "./testdata"
-import { SignedTransactionWithProof } from '../dist';
 
 describe('Block', () => {
 
