@@ -1,21 +1,26 @@
 // core module
 
 export {
+  TOTAL_AMOUNT
+} from './helpers/constants'
+export {
+  Address,
+} from './helpers/types'
+export {
   Block,
-  TotalAmount
 } from './block'
 export {
-  MerkleProof,
-  Address,
   TransactionDecoder,
   TransferTransaction,
   SplitTransaction,
   MergeTransaction,
   SwapTransaction,
   Multisig2Transaction,
+} from './tx'
+export {
   SignedTransaction,
   SignedTransactionWithProof
-} from './tx'
+} from './SignedTransaction'
 export {
   Segment
 } from './segment'

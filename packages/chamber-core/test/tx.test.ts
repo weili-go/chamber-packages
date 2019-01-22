@@ -4,7 +4,8 @@ import {
   TransactionDecoder,
   TransferTransaction,
   SplitTransaction,
-  MergeTransaction
+  MergeTransaction,
+  SignedTransaction
 } from '../src'
 import { assert } from "chai"
 import { utils } from "ethers"
@@ -32,7 +33,6 @@ describe('Transaction', () => {
   const blkNum1 = utils.bigNumberify('50')
   const blkNum2 = utils.bigNumberify('52')
 
-
   it('encode and decode transfer transaction', () => {
     const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
     const encoded = tx.encode()
@@ -59,5 +59,18 @@ describe('Transaction', () => {
     assert.equal(decoded.getOutput().getSegment().start.toString(), '5000000');
   });
 
+  describe('SignedTransaction', () => {
 
+    it('serialize and deserialize', () => {
+      const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
+      const signedTx = new SignedTransaction(tx)
+      signedTx.sign(AlicePrivateKey)
+      const serialized = signedTx.serialize()
+      const deserialized = SignedTransaction.deserialize(serialized)
+      assert.equal(deserialized.hash(), signedTx.hash())
+      assert.equal(deserialized.getSignatures(), signedTx.getSignatures())
+    });
+  
+  })
+  
 })

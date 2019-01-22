@@ -2,17 +2,14 @@ import { utils } from "ethers"
 import {
   Segment
 } from './segment'
-import { RLPItem } from './helpers/ethers'
 import RLP = utils.RLP
-import { BigNumber } from 'ethers/utils';
-
-export type Signature = string
-export type LockState = string
-export type Address = string
-export type Uint256 = BigNumber
-export type RLPItem = Address | Uint256
-export type RLPTx = RLPItem[]
-export type MerkleProof = string
+import {
+  Address,
+  LockState,
+  RLPTx,
+  RLPItem,
+} from './helpers/types';
+import BigNumber = utils.BigNumber
 
 /**
  * BaseTransaction is raw transaction data structure
@@ -112,13 +109,13 @@ class TransactionOutput {
 export class TransferTransaction extends BaseTransaction {
   from: Address
   segment: Segment
-  blkNum: Uint256
+  blkNum: BigNumber
   to: Address
 
   constructor(
     from: Address,
     segment: Segment,
-    blkNum: Uint256,
+    blkNum: BigNumber,
     to: Address
   ) {
     super(1, [from, segment.start, segment.end, blkNum, to])
@@ -152,18 +149,18 @@ export class TransferTransaction extends BaseTransaction {
 export class SplitTransaction extends BaseTransaction {
   from: Address
   segment: Segment
-  blkNum: Uint256
+  blkNum: BigNumber
   to1: Address
   to2: Address
-  offset: Uint256
+  offset: BigNumber
 
   constructor(
     from: Address,
     segment: Segment,
-    blkNum: Uint256,
+    blkNum: BigNumber,
     to1: Address,
     to2: Address,
-    offset: Uint256,
+    offset: BigNumber,
   ) {
     super(2, [from, segment.start, segment.end, blkNum, to1, to2, offset])
     this.from = from
@@ -215,16 +212,16 @@ export class MergeTransaction extends BaseTransaction {
   from: Address
   segment1: Segment
   segment2: Segment
-  blkNum1: Uint256
-  blkNum2: Uint256
+  blkNum1: BigNumber
+  blkNum2: BigNumber
   to: Address
 
   constructor(
     from: Address,
     segment1: Segment,
     segment2: Segment,
-    blkNum1: Uint256,
-    blkNum2: Uint256,
+    blkNum1: BigNumber,
+    blkNum2: BigNumber,
     to: Address
   ) {
     super(3, 
@@ -278,10 +275,10 @@ export class SwapTransaction extends BaseTransaction {
   constructor(
     from1: Address,
     segment1: Segment,
-    blkNum1: Uint256,
+    blkNum1: BigNumber,
     from2: Address,
     segment2: Segment,
-    blkNum2: Uint256
+    blkNum2: BigNumber
   ) {
     super(4,
       [from1,
@@ -313,10 +310,10 @@ export class Multisig2Transaction extends BaseTransaction {
     nextstate: LockState,
     from1: Address,
     segment1: Segment,
-    blkNum1: Uint256,
+    blkNum1: BigNumber,
     from2: Address,
     segment2: Segment,
-    blkNum2: Uint256
+    blkNum2: BigNumber
   ) {
     super(10,
       [lockstate,
@@ -341,67 +338,6 @@ export class Multisig2Transaction extends BaseTransaction {
       tuple[6],
       Segment.fromTuple(tuple.slice(7, 9)),
       tuple[9])
-  }
-
-}
-
-/**
- * SignedTransaction is the transaction and its signatures
- */
-export class SignedTransaction {
-  tx: BaseTransaction
-  signatures: Signature[]
-
-  constructor(
-    tx: BaseTransaction
-  ) {
-    this.tx = tx
-    this.signatures = []
-  }
-
-  /**
-   * sign
-   * @param pkey is hex string of private key
-   */
-  sign(pkey: string) {
-    const key = new utils.SigningKey(pkey)
-    this.signatures.push(utils.joinSignature(key.signDigest(this.tx.hash())))
-  }
-
-  toHex() {
-    return this.tx.encode()
-  }
-
-  hash() {
-    return this.tx.hash()
-  }
-
-  getSegments() {
-    return this.tx.getSegments()
-  }
-
-  getSignatures() {
-    return utils.hexlify(utils.concat(this.signatures.map(s => utils.arrayify(s))))
-  }
-
-}
-
-/**
- * SignedTransactionWithProof is the transaction and its signatures and proof
- */
-export class SignedTransactionWithProof extends SignedTransaction {
-  proofs: MerkleProof
-
-  constructor(
-    tx: BaseTransaction,
-    proofs: MerkleProof
-  ) {
-    super(tx)
-    this.proofs = proofs
-  }
-
-  getProofs() {
-    return this.proofs
   }
 
 }

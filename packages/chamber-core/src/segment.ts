@@ -3,10 +3,10 @@ import {
 } from "ethers"
 import {
   RLPItem
-} from './helpers/ethers'
+} from './helpers/types'
 import {
-  TotalAmount
-} from './block'
+  TOTAL_AMOUNT
+} from './helpers/constants'
 import BigNumber = utils.BigNumber
 import RLP = utils.RLP
 
@@ -35,7 +35,7 @@ export class Segment {
   }
 
   toBigNumber(): BigNumber {
-    return this.start.mul(TotalAmount).add(this.end)
+    return this.start.mul(TOTAL_AMOUNT).add(this.end)
   }
 
   toTuple(): BigNumber[] {
