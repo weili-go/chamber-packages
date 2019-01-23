@@ -171,13 +171,3 @@ def getTxoHash(
   elif label == 10:
     return MultisigVerifier(self.multisigverifier).getTxoHashOfMultisig2(body, _index, _blkNum)
   return sha3("txo")
-
-# check segment within the transaction
-@public
-@constant
-def checkWithin(
-  _start: uint256,
-  _end: uint256,
-  _txBytes: bytes[1024]
-) -> bool:
-  return True
