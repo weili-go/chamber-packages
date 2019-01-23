@@ -13,6 +13,7 @@ struct Challenge:
   owner: address
   exitTxHash: bytes32
   utxoPos: uint256
+  segment: uint256
   status: uint256
 
 contract TransactionVerifier():
@@ -109,7 +110,7 @@ def checkMembership(
       computedHash = sha3(concat(
         convert(amount, bytes32), proofElement, convert(currentAmount, bytes32), computedHash))
     currentAmount += amount
-  return (computedHash == _rootHash) and (currentLeft == _start) and (currentRight == _end) and (currentAmount == _totalAmount)
+  return (computedHash == _rootHash) and (currentLeft <= _start) and (_end <= currentRight) and (currentAmount == _totalAmount)
 
 @public
 @constant
@@ -281,6 +282,9 @@ def challenge(
   spentTxoHash: bytes32
   exitBlkNum: uint256 = self.exits[exitTxHash].utxoPos / 100
   exitIndex: uint256 = self.exits[exitTxHash].utxoPos - exitBlkNum * 100
+  exitSegmentStart: uint256 = self.exits[exitTxHash].segment / TOTAL_DEPOSIT
+  exitSegmentEnd: uint256 = self.exits[exitTxHash].segment - exitSegmentStart * TOTAL_DEPOSIT
+  assert exitSegmentStart >= _start and _end <= exitSegmentEnd
   assert self.challenges[sha3(_txBytes)].status != STATUS_FORCE_INCLUDE
   self.checkTransaction(
     _start,
@@ -346,14 +350,15 @@ def challengeBefore(
     outputIndex
   )
   assert blkNum < (exit.utxoPos / 100)
-  assert (_end > exitSegmentStart) and (_start < exitSegmentEnd)
+  assert exitSegmentStart >= _start and _end <= exitSegmentEnd
   if self.challenges[_cTxHash].status == 0:
     assert _cTxHash == txHash
     self.challenges[_cTxHash] = Challenge({
       owner: msg.sender,
       exitTxHash: _exitTxHash,
       utxoPos: _utxoPos,
-      status: STATUS_CHALLENGED
+      status: STATUS_CHALLENGED,
+      segment: (_start) * TOTAL_DEPOSIT + (_end)
     })
   elif self.challenges[_cTxHash].status == STATUS_RESPONDED:
     assert self.challenges[_cTxHash].exitTxHash == _exitTxHash
@@ -381,8 +386,11 @@ def respondChallenge(
   challenge: Challenge = self.challenges[cTxHash]
   cBlkNum: uint256 = challenge.utxoPos / 100
   cOutputIndex: uint256 = challenge.utxoPos - cBlkNum * 100
+  cSegmentStart: uint256 = challenge.segment / TOTAL_DEPOSIT
+  cSegmentEnd: uint256 = challenge.segment - cSegmentStart * TOTAL_DEPOSIT
   txHash: bytes32 = sha3(_txBytes)
   assert self.challenges[txHash].status != STATUS_FORCE_INCLUDE
+  assert cSegmentStart >= _start and _end <= cSegmentEnd
   assert self.checkMembership(
     _start,
     _end,
@@ -491,13 +499,14 @@ def forceInclude(
     _end,
     hasSig)
   assert blkNum < (exit.utxoPos / 100)
-  assert (_end > exitSegmentStart) and (_start < exitSegmentEnd)
+  assert exitSegmentStart >= _start and _end <= exitSegmentEnd
   assert self.challenges[txHash].status == 0
   self.challenges[txHash] = Challenge({
     owner: msg.sender,
     exitTxHash: _exitTxHash,
     utxoPos: _utxoPos,
-    status: STATUS_FORCE_INCLUDE
+    status: STATUS_FORCE_INCLUDE,
+    segment: _start * TOTAL_DEPOSIT + _end
   })
   self.exits[_exitTxHash].challengeCount += 1
   log.ChallengeStarted(_exitTxHash, txHash)
