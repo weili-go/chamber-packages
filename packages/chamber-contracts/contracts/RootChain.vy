@@ -66,6 +66,10 @@ withdrawals: map(uint256, uint256)
 
 TOTAL_DEPOSIT: constant(uint256) = 2**48
 
+EXIT_BOND: constant(wei_value) = as_wei_value(1, "finney")
+CHALLENGE_BOND: constant(wei_value) = as_wei_value(1, "finney")
+FORCE_INCLUDE_BOND: constant(wei_value) = as_wei_value(1, "finney")
+
 STATUS_CHALLENGED: constant(uint256) = 1
 STATUS_RESPONDED: constant(uint256) = 2
 STATUS_CHALLENGED2: constant(uint256) = 3
@@ -191,6 +195,7 @@ def deposit():
 
 # @dev exit
 @public
+@payable
 def exit(
   _utxoPos: uint256,
   _start: uint256,
@@ -203,6 +208,7 @@ def exit(
   outputIndex: uint256 = _utxoPos - blkNum * 100
   root: bytes32 = self.childChain[blkNum].root
   txHash: bytes32 = sha3(_txBytes)
+  assert msg.value == EXIT_BOND
   assert self.checkMembership(
     _start,
     _end,
@@ -249,6 +255,7 @@ def challengeByWithdrawal(
   assert (end > exitSegmentStart) and (start < exitSegmentEnd)
   # break exit procedure
   self.exits[_exitTxHash].owner = ZERO_ADDRESS
+  send(msg.sender, EXIT_BOND)
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx
@@ -302,10 +309,12 @@ def challenge(
   assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_txBytes, txoIndex, blkNum)
   # break exit procedure
   self.exits[exitTxHash].owner = ZERO_ADDRESS
+  send(msg.sender, EXIT_BOND)
 
 # @dev challengeBefore start challenge game
 # @param _utxoPos is blknum and index of challenge tx
 @public
+@payable
 def challengeBefore(
   _exitTxHash: bytes32,
   _utxoPos: uint256,
@@ -323,6 +332,7 @@ def challengeBefore(
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
   txHash: bytes32 = sha3(_txBytes)
   assert self.challenges[txHash].status != STATUS_FORCE_INCLUDE
+  assert msg.value == CHALLENGE_BOND
   self.checkTransaction(
     _start,
     _end,
@@ -398,8 +408,11 @@ def respondChallenge(
     challenge.status = STATUS_RESPONDED
   elif challenge.status == STATUS_CHALLENGED2:
     challenge.status = STATUS_RESPONDED2
+    # exitor gets bond
+    send(msg.sender, CHALLENGE_BOND)
   elif challenge.status == STATUS_FORCE_INCLUDE:
     challenge.status = STATUS_FORCE_INCLUDE_CHALLENGED
+    send(msg.sender, FORCE_INCLUDE_BOND)
   else:
     assert False
   self.exits[challenge.exitTxHash].challengeCount -= 1
@@ -416,15 +429,30 @@ def finalizeExit(
   assert self.withdrawals[exit.segment] == 0
   assert exit.exitableAt < as_unitless_number(block.timestamp)
   assert exit.challengeCount == 0
-  send(exit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei"))
+  send(exit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei") + EXIT_BOND)
   self.exits[_exitTxHash].owner = ZERO_ADDRESS
   self.withdrawals[exit.segment] = exit.utxoPos
   log.FinalizedExit(_exitTxHash, exitSegmentStart, exitSegmentEnd)
+
+# @dev finalizeChallenge
+#     challenger gets Challenge bond and exit bond
+@public
+def finalizeChallenge(
+  _cTxHash: bytes32
+):
+  challenge: Challenge = self.challenges[_cTxHash]
+  exit: Exit = self.exits[challenge.exitTxHash]
+  assert exit.exitableAt < as_unitless_number(block.timestamp)
+  assert exit.challengeCount > 0
+  assert challenge.status == STATUS_CHALLENGED or challenge.status == STATUS_CHALLENGED2
+  send(challenge.owner, EXIT_BOND + CHALLENGE_BOND)
+  self.exits[challenge.exitTxHash].owner = ZERO_ADDRESS
 
 # @dev forceInclude starts special challenge game
 #     forceInclude cancel any exits of sub segments unless challenge by spent of output.
 #     The transaction forceIncluded will be removed from plasma block if someone don't show remain signatures.
 @public
+@payable
 def forceInclude(
   _exitTxHash: bytes32,
   _utxoPos: uint256,
@@ -442,6 +470,7 @@ def forceInclude(
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
   txHash: bytes32 = sha3(_txBytes)
   root: bytes32 = self.childChain[blkNum].root
+  assert msg.value == FORCE_INCLUDE_BOND
   assert self.checkMembership(
     _start,
     _end,
@@ -498,6 +527,7 @@ def respondForceInclude(
   assert challenge.status == STATUS_FORCE_INCLUDE
   self.exits[challenge.exitTxHash].challengeCount -= 1
   self.challenges[txHash].status = STATUS_FORCE_INCLUDE_FINALIZED
+  send(challenge.owner, FORCE_INCLUDE_BOND)
 
 # @dev getExit
 @public

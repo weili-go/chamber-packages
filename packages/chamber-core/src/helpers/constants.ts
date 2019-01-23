@@ -1,13 +1,16 @@
-import { BigNumber, keccak256 } from 'ethers/utils';
+import { utils } from 'ethers';
+import BigNumber = utils.BigNumber
 import { HashZero } from 'ethers/constants';
 import {
   Hash
 } from './types'
-
 
 /**
  * @title TotalAmount
  * total amount is 2^48
  */
 export const TOTAL_AMOUNT = new BigNumber(2).pow(48)
-export const ZERO_HASH: Hash = keccak256(HashZero)
+export const ZERO_HASH: Hash = utils.keccak256(HashZero)
+export const EXIT_BOND: BigNumber = utils.parseEther('0.001')
+export const CHALLENGE_BOND: BigNumber = utils.parseEther('0.001')
+export const FORCE_INCLUDE_BOND: BigNumber = utils.parseEther('0.001')
