@@ -6,6 +6,7 @@ struct Exit:
   owner: address
   exitableAt: uint256
   utxoPos: uint256
+  priority: uint256
   segment: uint256
   challengeCount: uint256
 
@@ -235,10 +236,54 @@ def exit(
     owner: msg.sender,
     exitableAt: exitableAt,
     utxoPos: _utxoPos,
+    priority: blkNum,
     segment: _start * TOTAL_DEPOSIT + _end,
     challengeCount: 0
   })
   log.ExitStarted(txHash, msg.sender, exitableAt, _start, _end)
+
+# @dev sendParentOfExit
+#     send parent transaction of the exiting transaction and update priority of exit
+@public
+def sendParentOfExit(
+  _cTxHash: bytes32,
+  _exitTxBytes: bytes[1024],
+  _inputIndex: uint256,
+  _utxoPos: uint256,
+  _start: uint256,
+  _end: uint256,
+  _txBytes: bytes[1024],
+  _proof: bytes[512],
+  _sig: bytes[260]
+):
+  blkNum: uint256 = _utxoPos / 100
+  outputIndex: uint256 = _utxoPos - blkNum * 100
+  root: bytes32 = self.childChain[blkNum].root
+  txHash: bytes32 = sha3(_txBytes)
+  self.checkTransaction(
+    _start,
+    _end,
+    txHash,
+    _txBytes,
+    blkNum,
+    _proof,
+    _sig,
+    outputIndex
+  )
+  exitTxHash: bytes32 = sha3(_exitTxBytes)
+  exit: Exit = self.exits[exitTxHash]
+  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
+  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  assert (exitSegmentStart <= _start) and (_end <= exitSegmentEnd)
+  spentTxoHash: bytes32 = TransactionVerifier(self.txverifier).getTxoHash(_txBytes, outputIndex, blkNum)
+  assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_exitTxBytes, _inputIndex, 0)
+  self.exits[exitTxHash].priority = blkNum
+  # if already challenge-game started, check block number
+  challenge: Challenge = self.challenges[_cTxHash]
+  assert challenge.exitTxHash == exitTxHash
+  if challenge.utxoPos > _utxoPos and (challenge.status == STATUS_CHALLENGED or challenge.status == STATUS_CHALLENGED2):
+    self.challenges[_cTxHash].status = STATUS_RESPONDED2
+    self.exits[exitTxHash].challengeCount -= 1
 
 # @dev
 # @param _exitTxHash hash of the exiting transaction
@@ -349,7 +394,7 @@ def challengeBefore(
     _sig,
     outputIndex
   )
-  assert blkNum < (exit.utxoPos / 100)
+  assert blkNum < exit.priority
   assert exitSegmentStart >= _start and _end <= exitSegmentEnd
   if self.challenges[_cTxHash].status == 0:
     assert _cTxHash == txHash
