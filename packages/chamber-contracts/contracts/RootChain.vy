@@ -111,7 +111,7 @@ def checkMembership(
     currentAmount += amount
   return (computedHash == _rootHash) and (currentLeft == _start) and (currentRight == _end) and (currentAmount == _totalAmount)
 
-@private
+@public
 @constant
 def checkTransaction(
   _start: uint256,
@@ -122,7 +122,7 @@ def checkTransaction(
   _proof: bytes[512],
   _sigs: bytes[260],
   _outputIndex: uint256
-):
+) -> bool:
   root: bytes32 = self.childChain[_blkNum].root
   if _blkNum % 2 == 0:
     assert self.checkMembership(
@@ -132,7 +132,7 @@ def checkTransaction(
       TOTAL_DEPOSIT,
       root,
       _proof
-    ) == True
+    )
     assert TransactionVerifier(self.txverifier).verify(
       _txHash,
       sha3(concat(_txHash, root)),
@@ -142,11 +142,13 @@ def checkTransaction(
       ZERO_ADDRESS,
       _start,
       _end)
+    return True
   else:
     # deposit transaction
     assert _txHash == root
     assert convert(slice(_txBytes, start=64, len=32), uint256) == _start
     assert convert(slice(_txBytes, start=96, len=32), uint256) == _end
+    return True
 
 # @dev Constructor
 @public
