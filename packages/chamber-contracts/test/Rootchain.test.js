@@ -285,7 +285,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   });
 
-  describe("forceInclude", () => {
+  describe("forceIncludeRequest", () => {
 
     beforeEach(async () => {
       await this.rootChain.deposit(
@@ -335,7 +335,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: operator,
           value: BOND
         });
-      await this.rootChain.forceInclude(
+      await this.rootChain.forceIncludeRequest(
         tx2.hash(),
         6 * 100 + 1,
         Scenario2.segments[4].start,
@@ -386,7 +386,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: operator,
           value: BOND
         });
-      await this.rootChain.forceInclude(
+      await this.rootChain.forceIncludeRequest(
         tx2.hash(),
         6 * 100 + 1,
         Scenario2.segments[4].start,
@@ -399,7 +399,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: alice,
           value: BOND
         });
-      await this.rootChain.respondForceInclude(
+      await this.rootChain.includeSignature(
         6 * 100 + 1,
         Scenario2.segments[4].start,
         Scenario2.segments[4].end,

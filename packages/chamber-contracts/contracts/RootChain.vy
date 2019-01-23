@@ -48,6 +48,8 @@ BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: address, _start: uint256, _end: uint256, _blkNum: uint256})
 ExitStarted: event({_txHash: bytes32, _exitor: address, exitableAt: uint256, _start: uint256, _end: uint256})
 ChallengeStarted: event({_eTxHash: bytes32, _cTxHash: bytes32})
+Responded: event({_eTxHash: bytes32, _cTxHash: bytes32})
+ForceIncluded: event({_cTxHash: bytes32})
 FinalizedExit: event({_eTxHash: bytes32, _start: uint256, _end: uint256})
 Log: event({_a: bytes32})
 
@@ -467,6 +469,7 @@ def respondChallenge(
     assert False
   self.exits[challenge.exitTxHash].challengeCount -= 1
   self.exits[challenge.exitTxHash].exitableAt = as_unitless_number(block.timestamp + 1 * 7 * 24 * 60 * 60)
+  log.Responded(challenge.exitTxHash, cTxHash)
 
 # @dev finalizeExit
 @public
@@ -498,12 +501,12 @@ def finalizeChallenge(
   send(challenge.owner, EXIT_BOND + CHALLENGE_BOND)
   self.exits[challenge.exitTxHash].owner = ZERO_ADDRESS
 
-# @dev forceInclude starts special challenge game
-#     forceInclude cancel any exits of sub segments unless challenge by spent of output.
+# @dev forceIncludeRequest starts special challenge game
+#     forceIncludeRequest cancel any exits of sub segments unless challenge by spent of output.
 #     The transaction forceIncluded will be removed from plasma block if someone don't show remain signatures.
 @public
 @payable
-def forceInclude(
+def forceIncludeRequest(
   _exitTxHash: bytes32,
   _utxoPos: uint256,
   _start: uint256,
@@ -552,7 +555,7 @@ def forceInclude(
   log.ChallengeStarted(_exitTxHash, txHash)
 
 @public
-def respondForceInclude(
+def includeSignature(
   _utxoPos: uint256,
   _start: uint256,
   _end: uint256,
@@ -578,6 +581,7 @@ def respondForceInclude(
   assert challenge.status == STATUS_FORCE_INCLUDE
   self.challenges[txHash].status = STATUS_FORCE_INCLUDE_FINALIZED
   send(challenge.owner, FORCE_INCLUDE_BOND)
+  log.ForceIncluded(txHash)
 
 # @dev getExit
 @public
