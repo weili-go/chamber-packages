@@ -271,6 +271,10 @@ export class MergeTransaction extends BaseTransaction {
 }
 
 export class SwapTransaction extends BaseTransaction {
+  from1: Address
+  from2: Address
+  segment1: Segment
+  segment2: Segment
 
   constructor(
     from1: Address,
@@ -289,6 +293,10 @@ export class SwapTransaction extends BaseTransaction {
         segment2.start,
         segment2.end,
         blkNum2])
+    this.from1 = from1
+    this.from2 = from2
+    this.segment1 = segment1
+    this.segment2 = segment2
   }
 
   static fromTuple(tuple: RLPItem[]): SwapTransaction {
@@ -299,6 +307,31 @@ export class SwapTransaction extends BaseTransaction {
       tuple[4],
       Segment.fromTuple(tuple.slice(5, 7)),
       tuple[7])
+  }
+
+  static decode(bytes: string): SwapTransaction {
+    return SwapTransaction.fromTuple(RLP.decode(bytes))
+  }
+
+  getOutputWith(index: number): TransactionOutput {
+    if(index == 0) {
+      return new TransactionOutput(
+        this.segment1,
+        this.from2
+      )
+    }else {
+      return new TransactionOutput(
+        this.segment2,
+        this.from1
+      )
+    }
+  }
+  
+  getSegments(): Segment[] {
+    return [
+      this.segment1,
+      this.segment2
+    ]
   }
 
 }

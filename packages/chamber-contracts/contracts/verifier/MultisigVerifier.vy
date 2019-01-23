@@ -1,9 +1,5 @@
 # multisig
 
-#
-# Library
-#
-
 # @dev from https://github.com/LayerXcom/plasma-mvp-vyper
 @private
 @constant
@@ -43,7 +39,7 @@ def getOwnState(
     )
 
 # atomic swap
-@private
+@public
 @constant
 def verifySwap(
   _txHash: bytes32,
@@ -74,7 +70,7 @@ def verifySwap(
   return check1 and check2
 
 # not enough signature
-@private
+@public
 @constant
 def verifySwapForceInclude(
   _txHash: bytes32,
@@ -101,7 +97,7 @@ def verifySwapForceInclude(
     assert self.ecrecoverSig(_merkleHash, slice(_sigs, start=130, len=65)) == tList[4]
   return check1 and check2
 
-@private
+@public
 @constant
 def getTxoHashOfSwap(
   _tBytes: bytes[1024],
@@ -122,7 +118,7 @@ def getTxoHashOfSwap(
   return sha3("swap")
 
 # multisig
-@private
+@public
 @constant
 def verifyMultisig2(
   _txHash: bytes32,
@@ -138,7 +134,7 @@ def verifyMultisig2(
     uint256, uint256, bytes, bytes, address, uint256, uint256, uint256, address, uint256, uint256, uint256])
   return True
 
-@private
+@public
 @constant
 def getTxoHashOfMultisig2(
   _tBytes: bytes[1024],

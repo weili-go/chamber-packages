@@ -5,7 +5,8 @@ import {
   TransferTransaction,
   SplitTransaction,
   MergeTransaction,
-  SignedTransaction
+  SignedTransaction,
+  SignedTransactionWithProof
 } from '../src'
 import { assert } from "chai"
 import { utils } from "ethers"
@@ -72,5 +73,5 @@ describe('Transaction', () => {
     });
   
   })
-  
+
 })

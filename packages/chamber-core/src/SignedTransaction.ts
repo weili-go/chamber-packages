@@ -5,8 +5,10 @@ import {
 } from './tx'
 import {
   HexString,
-  Signature
+  Signature,
+  Hash
 } from './helpers/types';
+import { keccak256 } from 'ethers/utils';
 
 /**
  * SignedTransaction is the transaction and its signatures
@@ -71,21 +73,41 @@ export class SignedTransaction {
  */
 export class SignedTransactionWithProof extends SignedTransaction {
   proofs: HexString
+  root: Hash
+  confSigs: Signature[]
 
   constructor(
     tx: BaseTransaction,
+    root: Hash,
     proofs: HexString
   ) {
     super(tx)
+    this.root = root
     this.proofs = proofs
+    this.confSigs = []
   }
 
   getProofs(): HexString {
     return this.proofs
   }
 
-  merkleHash() {
-    return this.tx.hash()
+  getSignatures() {
+    return utils.hexlify(
+      utils.concat(
+        this.signatures.map(s => utils.arrayify(s)).concat(this.confSigs.map(s => utils.arrayify(s)))))
+  }
+
+  merkleHash(): Hash {
+    return keccak256(
+      utils.hexlify(
+        utils.concat([
+          utils.arrayify(this.tx.hash()),
+          utils.arrayify(this.root)])))
+  }
+
+  confirmMerkleProofs(pkey: string) {
+    const key = new utils.SigningKey(pkey)
+    this.confSigs.push(utils.joinSignature(key.signDigest(this.merkleHash())))
   }
 
 }
