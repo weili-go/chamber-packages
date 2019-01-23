@@ -74,7 +74,7 @@ def verifyTransfer(
   (_from, start, end, blkNum, to) = self.decodeTransfer(_tBytes)
   if _owner != ZERO_ADDRESS:
     assert(_owner == to and _outputIndex == 0)
-  return (self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == _from) and (_start == start) and (_end == end)
+  return (self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == _from) and (start <= _start) and (_end <= end)
 
 @public
 @constant
@@ -115,9 +115,9 @@ def verifySplit(
     else:
       assert(_owner == tList[5])
   if _outputIndex == 0:
-    assert (_start == tList[1]) and (_end == tList[6])
+    assert (_start >= tList[1]) and (_end <= tList[6])
   else:
-    assert (_start == tList[6]) and (_end == tList[2])
+    assert (_start >= tList[6]) and (_end <= tList[2])
   return (self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == tList[0])
 
 @public
@@ -151,7 +151,7 @@ def verifyMerge(
   tList = RLPList(_tBytes, [
     address, uint256, uint256, uint256, uint256, uint256, address])
   if _owner != ZERO_ADDRESS:
-    assert(_owner == tList[6]) and (_start == tList[1]) and (_end == tList[3])
+    assert(_owner == tList[6]) and (_start >= tList[1]) and (_end <= tList[3])
   return (self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == tList[0])
 
 @public

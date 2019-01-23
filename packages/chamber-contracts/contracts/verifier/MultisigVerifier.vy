@@ -64,9 +64,9 @@ def verifySwap(
     elif _outputIndex == 1:
       assert _owner == tList[0]
   if _outputIndex == 0:
-    assert _start == tList[1] and _end == tList[2]
+    assert _start >= tList[1] and _end <= tList[2]
   elif _outputIndex == 1:
-    assert _start == tList[5] and _end == tList[6]
+    assert _start >= tList[5] and _end <= tList[6]
   return check1 and check2
 
 # not enough signature
@@ -88,9 +88,9 @@ def verifySwapForceInclude(
   check1: bool = self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == tList[0]
   check2: bool = self.ecrecoverSig(_txHash, slice(_sigs, start=65, len=65)) == tList[4]
   if _outputIndex == 0:
-    assert _start == tList[1] and _end == tList[2]
+    assert _start >= tList[1] and _end <= tList[2]
   elif _outputIndex == 1:
-    assert _start == tList[5] and _end == tList[6]
+    assert _start >= tList[5] and _end <= tList[6]
   if _hasSig == 0:
     assert self.ecrecoverSig(_merkleHash, slice(_sigs, start=130, len=65)) == tList[0]
   elif _hasSig == 1:
