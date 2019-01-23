@@ -17,6 +17,10 @@ const ethers = require('ethers')
 const BigNumber = ethers.utils.BigNumber
 
 const {
+  constants
+} = require('@layer2/core')
+
+const {
   Scenario1,
   Scenario2
 } = require('./testdata')
@@ -26,6 +30,7 @@ require('chai')
   .use(require('chai-bignumber')(BigNumber))
   .should();
 
+const BOND = constants.EXIT_BOND
 
 contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
@@ -94,7 +99,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx.getProofs(),
         tx.getSignatures(),
         {
-          from: bob
+          from: bob,
+          value: BOND
         });
       // gas cost of exit is 116480
       console.log('gasCost', gasCost)
@@ -106,7 +112,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx.getProofs(),
         tx.getSignatures(),
         {
-          from: bob
+          from: bob,
+          value: BOND
         });
       assert.equal(result.logs[0].event, 'ExitStarted')
       // 6 weeks after
@@ -128,7 +135,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx.getProofs(),
         tx.getSignatures(),
         {
-          from: bob
+          from: bob,
+          value: BOND
         });
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.challenge(
@@ -156,7 +164,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx.getProofs(),
         tx.getSignatures(),
         {
-          from: operator
+          from: operator,
+          value: BOND
         });
 
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
@@ -171,7 +180,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         challengeTx.getSignatures(),
         {
           from: alice,
-          gas: '500000'
+          gas: '500000',
+          value: BOND
         });
       // 6 weeks after
       const exitResult = await this.rootChain.getExit(tx.tx.hash())
@@ -195,7 +205,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx.getProofs(),
         tx.getSignatures(),
         {
-          from: operator
+          from: operator,
+          value: BOND
         });
 
       const challengeTx = Scenario1.blocks[0].signedTransactions[0]
@@ -210,7 +221,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         challengeTx.getSignatures(),
         {
           from: bob,
-          gas: '500000'
+          gas: '500000',
+          value: BOND
         });
       const respondTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.respondChallenge(
@@ -240,7 +252,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx.getProofs(),
         tx.getSignatures(),
         {
-          from: bob
+          from: bob,
+          value: BOND
         });
       // 6 weeks after
       await increaseTime(duration.weeks(6));
@@ -258,7 +271,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         invalidTx.getProofs(),
         invalidTx.getSignatures(),
         {
-          from: operator
+          from: operator,
+          value: BOND
         });
       await this.rootChain.challengeByWithdrawal(
         invalidTx.hash(),
@@ -307,7 +321,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx1.getProofs(),
         tx1.getSignatures(),
         {
-          from: operator
+          from: operator,
+          value: BOND
         });
       await this.rootChain.exit(
         8 * 100,
@@ -317,7 +332,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx2.getProofs(),
         tx2.getSignatures(),
         {
-          from: operator
+          from: operator,
+          value: BOND
         });
       await this.rootChain.forceInclude(
         tx2.hash(),
@@ -330,7 +346,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         0,
         {
           from: alice,
-          gas: '800000'
+          gas: '800000',
+          value: BOND
         });
       // 6 weeks after
       await increaseTime(duration.weeks(6));
@@ -355,7 +372,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx1.getProofs(),
         tx1.getSignatures(),
         {
-          from: operator
+          from: operator,
+          value: BOND
         });
       await this.rootChain.exit(
         8 * 100,
@@ -365,7 +383,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx2.getProofs(),
         tx2.getSignatures(),
         {
-          from: operator
+          from: operator,
+          value: BOND
         });
       await this.rootChain.forceInclude(
         tx2.hash(),
@@ -377,7 +396,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         forceIncludeTx.getSignatures(),
         0,
         {
-          from: alice
+          from: alice,
+          value: BOND
         });
       await this.rootChain.respondForceInclude(
         6 * 100 + 1,

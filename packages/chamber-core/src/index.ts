@@ -1,8 +1,9 @@
 // core module
 
+import * as constants from './helpers/constants'
 export {
-  TOTAL_AMOUNT
-} from './helpers/constants'
+  constants
+}
 export {
   Address,
 } from './helpers/types'
