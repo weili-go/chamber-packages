@@ -2,7 +2,7 @@ contract StandardVerifier():
   def verifyTransfer(
     _txHash: bytes32,
     _txBytes: bytes[1024],
-    _sigs: bytes[130],
+    _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
     _start: uint256,
@@ -16,7 +16,7 @@ contract StandardVerifier():
   def verifySplit(
     _txHash: bytes32,
     _txBytes: bytes[1024],
-    _sigs: bytes[130],
+    _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
     _start: uint256,
@@ -30,7 +30,7 @@ contract StandardVerifier():
   def verifyMerge(
     _txHash: bytes32,
     _txBytes: bytes[1024],
-    _sigs: bytes[130],
+    _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
     _start: uint256,
@@ -46,22 +46,33 @@ contract StandardVerifier():
 contract MultisigVerifier():
   def verifySwap(
     _txHash: bytes32,
+    _merkleHash: bytes32,
     _txBytes: bytes[1024],
-    _sigs: bytes[130],
+    _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
     _start: uint256,
     _end: uint256
   ) -> bool: constant
+  def verifySwapForceInclude(
+    _txHash: bytes32,
+    _merkleHash: bytes32,
+    _tBytes: bytes[1024],
+    _sigs: bytes[260],
+    _outputIndex: uint256,
+    _start: uint256,
+    _end: uint256,
+    _hasSig: uint256
+  ) -> bool: constant
   def getTxoHashOfSwap(
     _txBytes: bytes[1024],
-    _outputIndex: uint256,
+    _index: uint256,
     _blkNum: uint256
   ) -> bytes32: constant
   def verifyMultisig2(
     _txHash: bytes32,
     _txBytes: bytes[1024],
-    _sigs: bytes[130],
+    _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
     _start: uint256,
@@ -69,7 +80,7 @@ contract MultisigVerifier():
   ) -> bool: constant
   def getTxoHashOfMultisig2(
     _txBytes: bytes[1024],
-    _outputIndex: uint256,
+    _index: uint256,
     _blkNum: uint256
   ) -> bytes32: constant
 
@@ -95,8 +106,9 @@ def __init__(_stdverifier: address, _multisig: address):
 @constant
 def verify(
   _txHash: bytes32,
+  _merkleHash: bytes32,
   _txBytes: bytes[1024],
-  _sigs: bytes[130],
+  _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
   _start: uint256,
@@ -112,9 +124,29 @@ def verify(
   elif label == 3:
     return StandardVerifier(self.stdverifier).verifyMerge(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
   elif label == 4:
-    return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
+    return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, body, _sigs, _outputIndex, _owner, _start, _end)
   elif label == 10:
     return MultisigVerifier(self.multisigverifier).verifyMultisig2(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
+  return False
+
+@public
+@constant
+def verifyForceInclude(
+  _txHash: bytes32,
+  _merkleHash: bytes32,
+  _txBytes: bytes[1024],
+  _sigs: bytes[260],
+  _outputIndex: uint256,
+  _start: uint256,
+  _end: uint256,
+  _hasSig: uint256
+) -> bool:
+  label: uint256
+  body: bytes[1024]
+  (label, body) = self.decodeBaseTx(_txBytes)
+  if label == 4:
+    return MultisigVerifier(self.multisigverifier).verifySwapForceInclude(
+      _txHash, _merkleHash, body, _sigs, _outputIndex, _start, _end, _hasSig)
   return False
 
 # @dev get hash of input state of the transaction

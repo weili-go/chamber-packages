@@ -163,7 +163,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.challengeBefore(
-        tx.toHex(),
+        tx.hash(),
         8 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
@@ -202,7 +202,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const challengeTx = Scenario1.blocks[0].signedTransactions[0]
       await this.rootChain.challengeBefore(
-        tx.toHex(),
+        tx.hash(),
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,

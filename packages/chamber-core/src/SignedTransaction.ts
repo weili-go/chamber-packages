@@ -84,4 +84,8 @@ export class SignedTransactionWithProof extends SignedTransaction {
     return this.proofs
   }
 
+  merkleHash() {
+    return this.tx.hash()
+  }
+
 }
