@@ -43,11 +43,6 @@ contract TransactionVerifier():
     _index: uint256,
     _blkNum: uint256
   ) -> bytes32: constant
-  def checkWithin(
-    _start: uint256,
-    _end: uint256,
-    _txBytes: bytes[1024]
-  ) -> bool: constant
 
 BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: address, _start: uint256, _end: uint256, _blkNum: uint256})
