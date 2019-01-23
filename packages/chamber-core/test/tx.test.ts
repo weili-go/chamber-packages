@@ -5,6 +5,7 @@ import {
   TransferTransaction,
   SplitTransaction,
   MergeTransaction,
+  SwapTransaction,
   SignedTransaction,
   SignedTransactionWithProof
 } from '../src'
@@ -58,6 +59,15 @@ describe('Transaction', () => {
     const decoded: MergeTransaction = TransactionDecoder.decode(encoded) as MergeTransaction
     assert.equal(encoded, '0xf83d03b83af83894953b8fb338ef870eda6d74c1dd4769b6c977b8cf834c4b40835b8d80836acfc032349434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
     assert.equal(decoded.getOutput().getSegment().start.toString(), '5000000');
+  });
+
+  it('encode and decode swap transaction', () => {
+    const tx = new SwapTransaction(
+      AliceAddress, segment1, blkNum1, BobAddress, segment2, blkNum2)
+    const encoded = tx.encode()
+    const decoded: SwapTransaction = TransactionDecoder.decode(encoded) as SwapTransaction
+    assert.equal(encoded, '0xf84104b83ef83c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf834c4b40835b8d80329434fdeadc2b69fd24f3043a89f9231f10f1284a4a835b8d80836acfc034');
+    assert.equal(decoded.hash(), tx.hash());
   });
 
   describe('SignedTransaction', () => {

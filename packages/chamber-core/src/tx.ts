@@ -55,13 +55,6 @@ export class BaseTransaction {
     return []
   }
   
-  verify(): boolean {
-    return false
-  }
-
-  getOutput() {
-
-  }
 }
 
 /**
@@ -83,6 +76,8 @@ export class TransactionDecoder {
       return SplitTransaction.decode(tuple[1])
     }else if(label === 3) {
       return MergeTransaction.decode(tuple[1])
+    }else if(label === 4) {
+      return SwapTransaction.decode(tuple[1])
     }else{
       return TransferTransaction.decode(tuple[1])
     }
