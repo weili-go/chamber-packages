@@ -413,11 +413,11 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       // operator can't exit tx2
-      await this.rootChain.finalizeExit(
+      await assertRevert(this.rootChain.finalizeExit(
         tx2.hash(),
         {
           from: operator
-        })
+        }))
     })
 
   });

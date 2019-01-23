@@ -527,7 +527,6 @@ def respondForceInclude(
     outputIndex
   )
   assert challenge.status == STATUS_FORCE_INCLUDE
-  self.exits[challenge.exitTxHash].challengeCount -= 1
   self.challenges[txHash].status = STATUS_FORCE_INCLUDE_FINALIZED
   send(challenge.owner, FORCE_INCLUDE_BOND)
 
