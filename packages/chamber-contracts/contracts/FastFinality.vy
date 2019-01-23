@@ -166,7 +166,7 @@ def secondDispute(
   txHash: bytes32 = sha3(_txBytes)
   blkNum: uint256 = _pos / 100
   index: uint256 = _pos - blkNum * 100
-  RootChain(self.rootchain).checkTransaction(
+  assert RootChain(self.rootchain).checkTransaction(
     _start,
     _end,
     txHash,
@@ -185,7 +185,7 @@ def secondDispute(
     10,
     0 # dummy
   )
-  self.disputes[txHash].status = STATE_SECOND_DISPUTED
+  self.disputes[sha3(_disputeTxBytes)].status = STATE_SECOND_DISPUTED
 
 # @dev finalizeDispute
 @public
@@ -197,7 +197,7 @@ def finalizeDispute(
   assert dispute.withdrawableAt < block.timestamp
   assert dispute.status == STATE_FIRST_DISPUTED or dispute.status == STATE_SECOND_DISPUTED
   send(dispute.recipient, as_wei_value(dispute.amount, "wei") + BOND)
-  dispute.status = STATE_FINALIZED
+  self.disputes[_txHash].status = STATE_FINALIZED
 
 # @dev getDispute
 @public
