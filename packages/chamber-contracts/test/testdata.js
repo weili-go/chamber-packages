@@ -7,9 +7,8 @@ const BigNumber = utils.BigNumber
 const {
   Block,
   Segment,
-  SumMerkleTree,
-  SumMerkleTreeNode,
   TransferTransaction,
+  SplitTransaction,
   SwapTransaction,
   SignedTransaction,
   SignedTransactionWithProof
@@ -73,9 +72,6 @@ function scenario1() {
 
   const tx61 = new TransferTransaction(User5Address, segment3, blkNum1, OperatorAddress)
   const tx62 = new TransferTransaction(User5Address, segment2, blkNum4, User4Address)
-
-  const tx71 = new SwapTransaction(
-    User4Address, segment4, blkNum1, OperatorAddress, segment5, blkNum2)
 
   block3.appendTx(tx31)
   block3.appendTx(tx32)
@@ -144,7 +140,8 @@ function scenario1() {
         block: block3,
         tree: tree3,
         transactions: [tx31, tx32],
-        signedTransactions: [signedTx31, signedTx32]
+        signedTransactions: [signedTx31, signedTx32],
+        operatorSignes: [signedTx31.justSign(OperatorPrivateKey)]
       },{
         block: block4,
         tree: tree4,
@@ -243,7 +240,79 @@ function scenario2() {
   }
 }
 
+/*
+ * fast finality scenario
+ */
+function scenario3() {
+  // deposits
+  const blkNum1 = utils.bigNumberify('3')
+  const blkNum2 = utils.bigNumberify('5')
+  // transactinos
+  const blkNum3 = utils.bigNumberify('6')
+  const blkNum4 = utils.bigNumberify('8')
+  const block3 = new Block(6)
+  const block4 = new Block(8)
+  const block5 = new Block(10)
+
+  const tx31 = new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, BobAddress, utils.bigNumberify('500000'))
+  const tx32 = new TransferTransaction(User4Address, segment2, blkNum2, User5Address)
+  const tx41 = new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, OperatorAddress, utils.bigNumberify('500000'))
+  const tx42 = new TransferTransaction(OperatorAddress, segment5, blkNum3, OperatorAddress)
+  
+  block3.appendTx(tx31)
+  block3.appendTx(tx32)
+
+  block4.appendTx(tx41)
+  block4.appendTx(tx42)
+
+  const tree3 = block3.createTree()
+  const tree4 = block4.createTree()
+
+  const signedTx31 = new SignedTransactionWithProof(
+    tx31,
+    block3.getRoot(),
+    block3.getProof(tx31.hash()))
+  signedTx31.sign(AlicePrivateKey)
+
+  const signedTx32 = new SignedTransactionWithProof(
+    tx32,
+    block3.getRoot(),
+    block3.getProof(tx32.hash()))
+  signedTx32.sign(User4PrivateKey)
+
+  const signedTx41 = new SignedTransactionWithProof(
+    tx41,
+    block4.getRoot(),
+    block4.getProof(tx41.hash()))
+  signedTx41.sign(AlicePrivateKey)
+  const signedTx42 = new SignedTransactionWithProof(
+    tx42,
+    block4.getRoot(),
+    block4.getProof(tx42.hash()))
+  signedTx42.sign(OperatorPrivateKey)
+
+  return {
+    segments: [segment1, segment2, segment3, segment4, segment5],
+    blocks: [
+      {
+        block: block3,
+        tree: tree3,
+        transactions: [tx31, tx32],
+        signedTransactions: [signedTx31, signedTx32],
+        operatorSignes: [signedTx31.justSign(OperatorPrivateKey)]
+      },{
+        block: block4,
+        tree: tree4,
+        transactions: [tx41, tx42],
+        signedTransactions: [signedTx41, signedTx42],
+        operatorSignes: [signedTx41.justSign(OperatorPrivateKey)]
+      }
+    ]
+  }
+}
+
 module.exports = {
   Scenario1: scenario1(),
-  Scenario2: scenario2()
+  Scenario2: scenario2(),
+  Scenario3: scenario3()
 }

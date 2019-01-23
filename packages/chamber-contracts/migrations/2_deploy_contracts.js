@@ -2,6 +2,7 @@ const RootChain = artifacts.require("RootChain")
 const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
 const MultisigVerifier = artifacts.require("MultisigVerifier")
+const FastFinality = artifacts.require("FastFinality")
 
 module.exports = (deployer) => {
   deployer.deploy(StandardVerifier)
@@ -13,6 +14,11 @@ module.exports = (deployer) => {
   ))
   .then(() => deployer.deploy(
     RootChain,
+    TransactionVerifier.address
+  ))
+  .then(() => deployer.deploy(
+    FastFinality,
+    RootChain.address,
     TransactionVerifier.address
   ))
 }

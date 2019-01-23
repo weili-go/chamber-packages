@@ -34,8 +34,12 @@ export class SignedTransaction {
    * @param pkey is hex string of private key
    */
   sign(pkey: string) {
+    this.signatures.push(this.justSign(pkey))
+  }
+
+  justSign(pkey: string) {
     const key = new utils.SigningKey(pkey)
-    this.signatures.push(utils.joinSignature(key.signDigest(this.tx.hash())))
+    return utils.joinSignature(key.signDigest(this.tx.hash()))
   }
 
   toHex() {
