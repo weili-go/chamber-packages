@@ -15,12 +15,10 @@ const StandardVerifier = artifacts.require("StandardVerifier")
 const MultisigVerifier = artifacts.require("MultisigVerifier")
 const ethers = require('ethers')
 const BigNumber = ethers.utils.BigNumber
-const {
-  TotalAmount
-} = require('@layer2/core')
 
 const {
-  Scenario1
+  Scenario1,
+  Scenario2
 } = require('./testdata')
 
 require('chai')
@@ -163,7 +161,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.challengeBefore(
-        tx.toHex(),
+        tx.hash(),
         8 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
@@ -202,7 +200,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const challengeTx = Scenario1.blocks[0].signedTransactions[0]
       await this.rootChain.challengeBefore(
-        tx.toHex(),
+        tx.hash(),
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
@@ -271,6 +269,136 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     
     })
 
+  });
+
+  describe("forceInclude", () => {
+
+    beforeEach(async () => {
+      await this.rootChain.deposit(
+        {
+          from: alice,
+          value: '1000000'
+        });
+      await this.rootChain.deposit(
+        {
+          from: operator,
+          value: '1000000'
+        });
+      const submit = async (root) => {
+        await this.rootChain.submit(
+          root,
+          {
+            from: operator
+          });
+      }
+      await submit(Scenario2.blocks[0].block.getRoot())
+      await submit(Scenario2.blocks[1].block.getRoot())
+    })
+
+    it("should success to force include", async () => {
+      const tx1 = Scenario2.blocks[1].signedTransactions[0]
+      const tx2 = Scenario2.blocks[1].signedTransactions[1]
+      const forceIncludeTx = Scenario2.blocks[0].testTxs[0]
+      await this.rootChain.exit(
+        8 * 100,
+        Scenario2.segments[3].start,
+        Scenario2.segments[3].end,
+        tx1.toHex(),
+        tx1.getProofs(),
+        tx1.getSignatures(),
+        {
+          from: operator
+        });
+      await this.rootChain.exit(
+        8 * 100,
+        Scenario2.segments[4].start,
+        Scenario2.segments[4].end,
+        tx2.toHex(),
+        tx2.getProofs(),
+        tx2.getSignatures(),
+        {
+          from: operator
+        });
+      await this.rootChain.forceInclude(
+        tx2.hash(),
+        6 * 100 + 1,
+        Scenario2.segments[4].start,
+        Scenario2.segments[4].end,
+        forceIncludeTx.toHex(),
+        forceIncludeTx.getProofs(),
+        forceIncludeTx.getSignatures(),
+        0,
+        {
+          from: alice,
+          gas: '800000'
+        });
+      // 6 weeks after
+      await increaseTime(duration.weeks(6));
+      // operator can't exit tx2
+      await assertRevert(this.rootChain.finalizeExit(
+        tx2.hash(),
+        {
+          from: operator
+        }))
+    })
+
+    it("should success to respond a force include", async () => {
+      const tx1 = Scenario2.blocks[1].signedTransactions[0]
+      const tx2 = Scenario2.blocks[1].signedTransactions[1]
+      const forceIncludeTx = Scenario2.blocks[0].testTxs[0]
+      const fullForceIncludeTx = Scenario2.blocks[0].signedTransactions[0]
+      await this.rootChain.exit(
+        8 * 100,
+        Scenario2.segments[3].start,
+        Scenario2.segments[3].end,
+        tx1.toHex(),
+        tx1.getProofs(),
+        tx1.getSignatures(),
+        {
+          from: operator
+        });
+      await this.rootChain.exit(
+        8 * 100,
+        Scenario2.segments[4].start,
+        Scenario2.segments[4].end,
+        tx2.toHex(),
+        tx2.getProofs(),
+        tx2.getSignatures(),
+        {
+          from: operator
+        });
+      await this.rootChain.forceInclude(
+        tx2.hash(),
+        6 * 100 + 1,
+        Scenario2.segments[4].start,
+        Scenario2.segments[4].end,
+        forceIncludeTx.toHex(),
+        forceIncludeTx.getProofs(),
+        forceIncludeTx.getSignatures(),
+        0,
+        {
+          from: alice
+        });
+      await this.rootChain.respondForceInclude(
+        6 * 100 + 1,
+        Scenario2.segments[4].start,
+        Scenario2.segments[4].end,
+        fullForceIncludeTx.toHex(),
+        fullForceIncludeTx.getProofs(),
+        fullForceIncludeTx.getSignatures(),
+        {
+          from: operator,
+          gas: '800000'
+        });
+      // 6 weeks after
+      await increaseTime(duration.weeks(6));
+      // operator can't exit tx2
+      await this.rootChain.finalizeExit(
+        tx2.hash(),
+        {
+          from: operator
+        })
+    })
 
   });
 

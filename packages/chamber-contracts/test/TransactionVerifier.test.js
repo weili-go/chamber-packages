@@ -33,8 +33,9 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
     it("should be verified", async () => {
       const tx = Scenario1.blocks[0].signedTransactions[0]
       const result = await this.transactionVerifier.verify(
-        tx.tx.hash(),
-        tx.tx.encode(),
+        tx.hash(),
+        tx.merkleHash(),
+        tx.toHex(),
         tx.getSignatures(),
         0,
         ethers.constants.AddressZero,

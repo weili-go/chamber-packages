@@ -59,7 +59,7 @@ def __init__():
 def verifyTransfer(
   _txHash: bytes32,
   _tBytes: bytes[1024],
-  _sigs: bytes[130],
+  _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
   _start: uint256,
@@ -101,7 +101,7 @@ def getTxoHashOfTransfer(
 def verifySplit(
   _txHash: bytes32,
   _tBytes: bytes[1024],
-  _sigs: bytes[130],
+  _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
   _start: uint256,
@@ -141,7 +141,7 @@ def getTxoHashOfSplit(
 def verifyMerge(
   _txHash: bytes32,
   _tBytes: bytes[1024],
-  _sigs: bytes[130],
+  _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
   _start: uint256,
