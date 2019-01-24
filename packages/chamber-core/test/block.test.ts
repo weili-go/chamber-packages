@@ -45,8 +45,8 @@ describe('Block', () => {
     block.appendTx(tx2)
     assert.equal(block.createTree().getLeaves().length, 8)
     assert.equal(utils.hexlify(block.createTree().getLeaves()[2].getHash()), '0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563')
-    const sptx1 = new SignedTransactionWithProof(rawTx1, block.getRoot(), block.getProof(rawTx1.hash()))
-    const sptx2 = new SignedTransactionWithProof(rawTx2, block.getRoot(), block.getProof(rawTx2.hash()))
+    const sptx1 = block.getSignedTransactionWithProof(tx1.hash())[0]
+    const sptx2 = block.getSignedTransactionWithProof(tx2.hash())[0]
 
     assert.equal(block.checkInclusion(sptx1, segment1.start, segment1.end), true)
     assert.equal(block.checkInclusion(sptx2, segment3.start, segment3.end), true)
@@ -68,8 +68,18 @@ describe('Block', () => {
       const block = new Block(2)
       block.appendTx(tx1)
       block.appendTx(tx2)
-      const sinedTx = new SignedTransactionWithProof(rawTx1, block.getRoot(), block.getProof(rawTx1.hash()))
+      const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]
       assert.equal(sinedTx.merkleHash(), '0xf6610ee09cafa15f998f19b9754864a671d56b8f353a98ac29893eb55db99989')
+    });
+
+    it('serialize and deserialize', () => {
+      const block = new Block(2)
+      block.appendTx(tx1)
+      block.appendTx(tx2)
+      const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]
+      const deserialized = SignedTransactionWithProof.deserialize(sinedTx.serialize())
+      assert.equal(deserialized.merkleHash(), sinedTx.merkleHash())
+      assert.equal(deserialized.getProof().segment.toBigNumber().toString(), sinedTx.getProof().segment.toBigNumber().toString())
     });
   
   })

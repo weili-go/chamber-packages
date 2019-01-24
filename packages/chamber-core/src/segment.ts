@@ -63,4 +63,18 @@ export class Segment {
     return Segment.fromTuple(RLP.decode(bytes))
   }
 
+  serialize(): string[] {
+    return [
+      this.start.toString(),
+      this.end.toString()
+    ]
+  }
+
+  static deserialize(data: string[]): Segment {
+    return new Segment(
+      utils.bigNumberify(data[0]),
+      utils.bigNumberify(data[1])
+    )
+  }
+
 }

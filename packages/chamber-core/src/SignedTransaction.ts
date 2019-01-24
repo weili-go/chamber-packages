@@ -7,8 +7,11 @@ import {
   HexString,
   Signature,
   Hash
-} from './helpers/types';
-import { keccak256 } from 'ethers/utils';
+} from './helpers/types'
+import { keccak256 } from 'ethers/utils'
+import {
+  SumMerkleProof
+} from './merkle'
 
 /**
  * SignedTransaction is the transaction and its signatures
@@ -75,43 +78,82 @@ export class SignedTransaction {
 /**
  * SignedTransactionWithProof is the transaction and its signatures and proof
  */
-export class SignedTransactionWithProof extends SignedTransaction {
-  proofs: HexString
+export class SignedTransactionWithProof {
+  signedTx: SignedTransaction
+  proof: SumMerkleProof
   root: Hash
   confSigs: Signature[]
 
   constructor(
-    tx: BaseTransaction,
+    tx: SignedTransaction,
     root: Hash,
-    proofs: HexString
+    proof: SumMerkleProof
   ) {
-    super(tx)
+    this.signedTx = tx
     this.root = root
-    this.proofs = proofs
+    this.proof = proof
     this.confSigs = []
   }
 
-  getProofs(): HexString {
-    return this.proofs
+  withRawConfSigs(sigs: Signature[]): SignedTransactionWithProof {
+    this.confSigs = sigs
+    return this
   }
 
-  getSignatures() {
+  getSignedTx(): SignedTransaction {
+    return this.signedTx
+  }
+
+  getTxBytes(): HexString {
+    return this.getSignedTx().toHex()
+  }
+
+  getTxHash(): Hash {
+    return this.getSignedTx().hash()
+  }
+
+  getProof(): SumMerkleProof {
+    return this.proof
+  }
+
+  getProofAsHex(): HexString {
+    return this.proof.proof
+  }
+
+  getSignatures(): HexString {
     return utils.hexlify(
       utils.concat(
-        this.signatures.map(s => utils.arrayify(s)).concat(this.confSigs.map(s => utils.arrayify(s)))))
+        this.signedTx.signatures.map(s => utils.arrayify(s)).concat(this.confSigs.map(s => utils.arrayify(s)))))
   }
 
   merkleHash(): Hash {
     return keccak256(
       utils.hexlify(
         utils.concat([
-          utils.arrayify(this.tx.hash()),
+          utils.arrayify(this.signedTx.hash()),
           utils.arrayify(this.root)])))
   }
 
   confirmMerkleProofs(pkey: string) {
     const key = new utils.SigningKey(pkey)
     this.confSigs.push(utils.joinSignature(key.signDigest(this.merkleHash())))
+  }
+
+  serialize() {
+    return {
+      signedTx: this.getSignedTx().serialize(),
+      root: this.root,
+      proof: this.proof.serialize(),
+      confSigs: this.confSigs
+    }
+  }
+
+  static deserialize(data: any): SignedTransactionWithProof {
+    return new SignedTransactionWithProof(
+      SignedTransaction.deserialize(data.signedTx),
+      data.root,
+      SumMerkleProof.deserialize(data.proof)
+    ).withRawConfSigs(data.confSigs)
   }
 
 }

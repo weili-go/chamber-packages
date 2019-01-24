@@ -2,6 +2,9 @@ import {
   constants,
   utils
 } from "ethers"
+import {
+  Segment
+} from './segment'
 import BigNumber = utils.BigNumber
 
 export class SumMerkleTreeNode {
@@ -47,6 +50,38 @@ export class SumMerkleTreeNode {
     );
   }
 
+}
+
+export class SumMerkleProof {
+  index: number
+  segment: Segment
+  proof: string
+
+  constructor(
+    index: number,
+    segment: Segment,
+    proof: string
+  ) {
+    this.index = index
+    this.segment = segment
+    this.proof = proof
+  }
+
+  serialize() {
+    return {
+      index: this.index,
+      segment: this.segment.serialize(),
+      proof: this.proof
+    }
+  }
+
+  static deserialize(data: any): SumMerkleProof {
+    return new SumMerkleProof(
+      data.index,
+      Segment.deserialize(data.segment),
+      data.proof
+    )
+  }
 }
 
 /**
@@ -127,19 +162,25 @@ export class SumMerkleTree {
    * 
    * @param {SumMerkleTreeNode} leaf 
    */
-  getIndex(leaf: Buffer) {
-    let index = -1
+  proofs(leaf: Buffer): SumMerkleProof[] {
+    let proofs = []
+    let start = new BigNumber(0)
+    let end = new BigNumber(0)
 
     for(let i = 0; i < this.leaves.length; i++) {
+      const amount = this.leaves[i].getLengthAsBigNumber()
       if(Buffer.compare(leaf, this.leaves[i].getHash()) === 0) {
-        index = i
+        proofs.push(new SumMerkleProof(
+          i,
+          new Segment(start, start.add(amount)),
+          utils.hexlify(this._proof(i))))
       }
+      start = start.add(amount)
     }
-    return index
+    return proofs
   }
 
-  proof(leaf: Buffer): Buffer {
-    let index = this.getIndex(leaf)
+  _proof(index: number): Buffer {
     if(index < 0) {
       throw new Error('invalid leaf')
     }
@@ -164,7 +205,7 @@ export class SumMerkleTree {
    * @param {Number} totalAmount is total amount of tree
    * @param {Number} leftOffset is the position of the leaf from left
    * @param {Buffer} root is root of tree
-   * @param {Buffer} proof is proof buffer for the leaf
+   * @param {SumMerkleProof} proof is proof buffer for the leaf
    */
   verify(
     start: BigNumber,
@@ -172,12 +213,12 @@ export class SumMerkleTree {
     value: Buffer,
     totalAmount: BigNumber,
     root: Buffer,
-    proof: Buffer
+    sumMerkleProof: SumMerkleProof
   ) {
     if(!value || !root) {
       return false
     }
-
+    const proof = Buffer.from(sumMerkleProof.proof.substr(2), 'hex')
     let currentAmount = end.sub(start)
     let currentLeft = new BigNumber(0)
     let currentRight = totalAmount
@@ -235,9 +276,4 @@ function convert32(amount: Buffer): Buffer {
  */
 function keccak256(b: Buffer): Buffer {
   return Buffer.from(utils.keccak256(utils.hexlify(b)).substr(2), 'hex')
-}
-
-module.exports = {
-  SumMerkleTreeNode,
-  SumMerkleTree
 }
