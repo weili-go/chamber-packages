@@ -7,7 +7,7 @@ const {
 } = require('./helpers/increaseTime')
 const {
   assertRevert
-} = require('./helpers/assertRevert');
+} = require('./helpers/assertRevert')
 
 const RootChain = artifacts.require("RootChain")
 const TransactionVerifier = artifacts.require("TransactionVerifier")
