@@ -1,8 +1,10 @@
 import {
-  SignedTransaction, SignedTransactionWithProof
+  SignedTransaction,
+  SignedTransactionWithProof
 } from './SignedTransaction'
 import {
   SumMerkleTreeNode,
+  SumMerkleProof,
   SumMerkleTree
 } from './merkle'
 import {
@@ -92,11 +94,23 @@ class SegmentNode {
     return ethers.utils.hexlify(this.tree.root())
   }
   
-  getProof(hash: string): HexString {
+  getProof(hash: string): SumMerkleProof[] {
     if(this.tree === null) {
       this.tree = this.createTree()
     }
-    return ethers.utils.hexlify(this.tree.proof(Buffer.from(hash.substr(2), 'hex')))
+    return this.tree.proofs(Buffer.from(hash.substr(2), 'hex'))
+  }
+
+  getSignedTransaction(hash: string): SignedTransaction {
+    return this.txs.filter(tx => tx.hash() == hash)[0]
+  }
+
+  getSignedTransactionWithProof(hash: string) {
+    const signedTx = this.getSignedTransaction(hash)
+    return this.getProof(hash).map(p => new SignedTransactionWithProof(
+        signedTx,
+        this.getRoot(),
+        p))
   }
 
   checkInclusion(
@@ -110,10 +124,10 @@ class SegmentNode {
     return this.tree.verify(
       start,
       end,
-      Buffer.from(tx.hash().substr(2), 'hex'),
+      Buffer.from(tx.signedTx.hash().substr(2), 'hex'),
       TOTAL_AMOUNT,
       Buffer.from(this.getRoot().substr(2), 'hex'),
-      Buffer.from(tx.getProofs().substr(2), 'hex')      
+      tx.getProof()   
     )
   }
 

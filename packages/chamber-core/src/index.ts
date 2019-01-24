@@ -28,5 +28,6 @@ export {
 
 export {
   SumMerkleTreeNode,
+  SumMerkleProof,
   SumMerkleTree
 } from './merkle'

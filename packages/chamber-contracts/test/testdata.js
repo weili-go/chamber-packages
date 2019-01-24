@@ -44,6 +44,11 @@ const segment5 = new Segment(
   utils.bigNumberify('3100000'),
   utils.bigNumberify('3200000'))
     
+function createTransfer(privKey, from, seg, blkNum, to) {
+  const tx= new SignedTransaction(new TransferTransaction(from, seg, blkNum, to))
+  tx.sign(privKey)
+  return tx
+}
 
 /*
  * 1->3->4-x>5
@@ -61,27 +66,21 @@ function scenario1() {
   const block5 = new Block(10)
   const block6 = new Block(12)
 
-  const tx31 = new TransferTransaction(AliceAddress, segment1, blkNum1, BobAddress)
-  const tx32 = new TransferTransaction(User4Address, segment2, blkNum2, User5Address)
-
-  const tx41 = new TransferTransaction(BobAddress, segment1, blkNum3, AliceAddress)
-  const tx42 = new TransferTransaction(User5Address, segment2, blkNum3, User4Address)
-
-  const tx51 = new TransferTransaction(User5Address, segment1, blkNum4, OperatorAddress)
-  const tx52 = new TransferTransaction(User4Address, segment2, blkNum4, User5Address)
-
-  const tx61 = new TransferTransaction(User5Address, segment3, blkNum1, OperatorAddress)
-  const tx62 = new TransferTransaction(User5Address, segment2, blkNum4, User4Address)
-
+  const tx31 = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
+  const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
+  const tx41 = createTransfer(BobPrivateKey, BobAddress, segment1, blkNum3, AliceAddress)
+  const tx42 = createTransfer(User5PrivateKey, User5Address, segment2, blkNum3, User4Address)
+  const tx51 = createTransfer(User5PrivateKey, User5Address, segment1, blkNum4, OperatorAddress)
+  const tx52 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum4, User5Address)
+  const tx61 = createTransfer(User5PrivateKey, User5Address, segment3, blkNum1, OperatorAddress)
+  const tx62 = createTransfer(User5PrivateKey, User5Address, segment2, blkNum4, User4Address)
+  
   block3.appendTx(tx31)
   block3.appendTx(tx32)
-
   block4.appendTx(tx41)
   block4.appendTx(tx42)
-
   block5.appendTx(tx51)
   block5.appendTx(tx52)
-
   block6.appendTx(tx61)
   block6.appendTx(tx62)
 
@@ -90,49 +89,15 @@ function scenario1() {
   const tree5 = block5.createTree()
   const tree6 = block6.createTree()
 
-  const signedTx31 = new SignedTransactionWithProof(
-    tx31,
-    block3.getRoot(),
-    block3.getProof(tx31.hash()))
-  signedTx31.sign(AlicePrivateKey)
-  const signedTx32 = new SignedTransactionWithProof(
-    tx32,
-    block3.getRoot(),
-    block3.getProof(tx32.hash()))
-  signedTx32.sign(User4PrivateKey)
+  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())[0]
+  const signedTx32 = block3.getSignedTransactionWithProof(tx32.hash())[0]
+  const signedTx41 = block4.getSignedTransactionWithProof(tx41.hash())[0]
+  const signedTx42 = block4.getSignedTransactionWithProof(tx42.hash())[0]
+  const signedTx51 = block5.getSignedTransactionWithProof(tx51.hash())[0]
+  const signedTx52 = block5.getSignedTransactionWithProof(tx52.hash())[0]
+  const signedTx61 = block6.getSignedTransactionWithProof(tx61.hash())[0]
+  const signedTx62 = block6.getSignedTransactionWithProof(tx62.hash())[0]
 
-  const signedTx41 = new SignedTransactionWithProof(
-    tx41,
-    block4.getRoot(),
-    block4.getProof(tx41.hash()))
-  signedTx41.sign(BobPrivateKey)
-  const signedTx42 = new SignedTransactionWithProof(
-    tx42,
-    block4.getRoot(),
-    block4.getProof(tx42.hash()))
-  signedTx42.sign(User5PrivateKey)
-
-  const signedTx51 = new SignedTransactionWithProof(
-    tx51,
-    block5.getRoot(),
-    block5.getProof(tx51.hash()))
-  signedTx51.sign(User5PrivateKey)
-  const signedTx52 = new SignedTransactionWithProof(
-    tx52,
-    block5.getRoot(),
-    block5.getProof(tx52.hash()))
-  signedTx52.sign(User4PrivateKey)
-
-  const signedTx61 = new SignedTransactionWithProof(
-    tx61,
-    block6.getRoot(),
-    block6.getProof(tx61.hash()))
-  signedTx61.sign(User5PrivateKey)
-  const signedTx62 = new SignedTransactionWithProof(
-    tx62,
-    block6.getRoot(),
-    block6.getProof(tx62.hash()))
-  signedTx62.sign(User5PrivateKey)
   return {
     segments: [segment1, segment2, segment3],
     blocks: [
@@ -141,7 +106,7 @@ function scenario1() {
         tree: tree3,
         transactions: [tx31, tx32],
         signedTransactions: [signedTx31, signedTx32],
-        operatorSignes: [signedTx31.justSign(OperatorPrivateKey)]
+        operatorSignes: [signedTx31.signedTx.justSign(OperatorPrivateKey)]
       },{
         block: block4,
         tree: tree4,
@@ -173,53 +138,33 @@ function scenario2() {
   const block4 = new Block(8)
   const block5 = new Block(10)
 
-  const tx31 = new SwapTransaction(
-    AliceAddress, segment4, blkNum1, OperatorAddress, segment5, blkNum2)
-  const tx32 = new TransferTransaction(User4Address, segment2, blkNum2, User5Address)
-  const tx41 = new TransferTransaction(OperatorAddress, segment4, blkNum3, OperatorAddress)
-  const tx42 = new TransferTransaction(OperatorAddress, segment5, blkNum3, OperatorAddress)
-  
+  const tx31 = new SignedTransaction(new SwapTransaction(
+    AliceAddress, segment4, blkNum1, OperatorAddress, segment5, blkNum2))
+  tx31.sign(AlicePrivateKey)
+  tx31.sign(OperatorPrivateKey)
+  const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
+  const tx41 = createTransfer(OperatorPrivateKey, OperatorAddress, segment4, blkNum3, OperatorAddress)
+  const tx42 = createTransfer(OperatorPrivateKey, OperatorAddress, segment5, blkNum3, OperatorAddress)
+
   block3.appendTx(tx31)
   block3.appendTx(tx32)
-
   block4.appendTx(tx41)
   block4.appendTx(tx42)
 
   const tree3 = block3.createTree()
   const tree4 = block4.createTree()
 
-  const signedTx31 = new SignedTransactionWithProof(
-    tx31,
-    block3.getRoot(),
-    block3.getProof(tx31.hash()))
-  signedTx31.sign(AlicePrivateKey)
-  signedTx31.sign(OperatorPrivateKey)
+  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())[1]
   signedTx31.confirmMerkleProofs(AlicePrivateKey)
   signedTx31.confirmMerkleProofs(OperatorPrivateKey)
-  const signedTx31NotEnough = new SignedTransactionWithProof(
-    tx31,
-    block3.getRoot(),
-    block3.getProof(tx31.hash()))
-  signedTx31NotEnough.sign(AlicePrivateKey)
-  signedTx31NotEnough.sign(OperatorPrivateKey)
+
+  const signedTx31NotEnough = block3.getSignedTransactionWithProof(tx31.hash())[1]
   signedTx31NotEnough.confirmMerkleProofs(AlicePrivateKey)
 
-  const signedTx32 = new SignedTransactionWithProof(
-    tx32,
-    block3.getRoot(),
-    block3.getProof(tx32.hash()))
-  signedTx32.sign(User4PrivateKey)
+  const signedTx32 = block3.getSignedTransactionWithProof(tx32.hash())[0]
 
-  const signedTx41 = new SignedTransactionWithProof(
-    tx41,
-    block4.getRoot(),
-    block4.getProof(tx41.hash()))
-  signedTx41.sign(OperatorPrivateKey)
-  const signedTx42 = new SignedTransactionWithProof(
-    tx42,
-    block4.getRoot(),
-    block4.getProof(tx42.hash()))
-  signedTx42.sign(OperatorPrivateKey)
+  const signedTx41 = block4.getSignedTransactionWithProof(tx41.hash())[0]
+  const signedTx42 = block4.getSignedTransactionWithProof(tx42.hash())[0]
 
   return {
     segments: [segment1, segment2, segment3, segment4, segment5],
@@ -254,42 +199,25 @@ function scenario3() {
   const block4 = new Block(8)
   const block5 = new Block(10)
 
-  const tx31 = new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, BobAddress, utils.bigNumberify('500000'))
-  const tx32 = new TransferTransaction(User4Address, segment2, blkNum2, User5Address)
-  const tx41 = new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, OperatorAddress, utils.bigNumberify('500000'))
-  const tx42 = new TransferTransaction(OperatorAddress, segment5, blkNum3, OperatorAddress)
+  const tx31 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, BobAddress, utils.bigNumberify('500000')))
+  tx31.sign(AlicePrivateKey)
+  const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
+  const tx41 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, OperatorAddress, utils.bigNumberify('500000')))
+  tx41.sign(AlicePrivateKey)
+  const tx42 = createTransfer(OperatorPrivateKey, OperatorAddress, segment5, blkNum3, OperatorAddress)
   
   block3.appendTx(tx31)
   block3.appendTx(tx32)
-
   block4.appendTx(tx41)
   block4.appendTx(tx42)
 
   const tree3 = block3.createTree()
   const tree4 = block4.createTree()
 
-  const signedTx31 = new SignedTransactionWithProof(
-    tx31,
-    block3.getRoot(),
-    block3.getProof(tx31.hash()))
-  signedTx31.sign(AlicePrivateKey)
-
-  const signedTx32 = new SignedTransactionWithProof(
-    tx32,
-    block3.getRoot(),
-    block3.getProof(tx32.hash()))
-  signedTx32.sign(User4PrivateKey)
-
-  const signedTx41 = new SignedTransactionWithProof(
-    tx41,
-    block4.getRoot(),
-    block4.getProof(tx41.hash()))
-  signedTx41.sign(AlicePrivateKey)
-  const signedTx42 = new SignedTransactionWithProof(
-    tx42,
-    block4.getRoot(),
-    block4.getProof(tx42.hash()))
-  signedTx42.sign(OperatorPrivateKey)
+  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())[1]
+  const signedTx32 = block3.getSignedTransactionWithProof(tx32.hash())[0]
+  const signedTx41 = block4.getSignedTransactionWithProof(tx41.hash())[1]
+  const signedTx42 = block4.getSignedTransactionWithProof(tx42.hash())[0]
 
   return {
     segments: [segment1, segment2, segment3, segment4, segment5],
@@ -299,13 +227,13 @@ function scenario3() {
         tree: tree3,
         transactions: [tx31, tx32],
         signedTransactions: [signedTx31, signedTx32],
-        operatorSignes: [signedTx31.justSign(OperatorPrivateKey)]
+        operatorSignes: [signedTx31.signedTx.justSign(OperatorPrivateKey)]
       },{
         block: block4,
         tree: tree4,
         transactions: [tx41, tx42],
         signedTransactions: [signedTx41, signedTx42],
-        operatorSignes: [signedTx41.justSign(OperatorPrivateKey)]
+        operatorSignes: [signedTx41.signedTx.justSign(OperatorPrivateKey)]
       }
     ]
   }

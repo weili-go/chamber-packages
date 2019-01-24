@@ -95,8 +95,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.tx.encode(),
-        tx.getProofs(),
+        tx.getTxBytes(),
+        tx.getProofAsHex(),
         tx.getSignatures(),
         {
           from: bob,
@@ -108,8 +108,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.toHex(),
-        tx.getProofs(),
+        tx.getTxBytes(),
+        tx.getProofAsHex(),
         tx.getSignatures(),
         {
           from: bob,
@@ -119,7 +119,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        tx.hash(),
+        tx.getTxHash(),
         {
           from: bob
         });
@@ -131,8 +131,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.toHex(),
-        tx.getProofs(),
+        tx.getTxBytes(),
+        tx.getProofAsHex(),
         tx.getSignatures(),
         {
           from: bob,
@@ -140,13 +140,13 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.challenge(
-        tx.tx.encode(),
+        tx.getTxBytes(),
         8 * 100 + 10,
         -1,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        challengeTx.toHex(),
-        challengeTx.getProofs(),
+        challengeTx.getTxBytes(),
+        challengeTx.getProofAsHex(),
         challengeTx.getSignatures(),
         {
           from: alice,
@@ -160,8 +160,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         10 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.toHex(),
-        tx.getProofs(),
+        tx.getTxBytes(),
+        tx.getProofAsHex(),
         tx.getSignatures(),
         {
           from: operator,
@@ -170,13 +170,13 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.challengeBefore(
-        tx.hash(),
+        tx.getTxHash(),
         8 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        challengeTx.toHex(),
-        challengeTx.hash(),
-        challengeTx.getProofs(),
+        challengeTx.getTxBytes(),
+        challengeTx.getTxHash(),
+        challengeTx.getProofAsHex(),
         challengeTx.getSignatures(),
         {
           from: alice,
@@ -184,12 +184,12 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           value: BOND
         });
       // 6 weeks after
-      const exitResult = await this.rootChain.getExit(tx.tx.hash())
+      const exitResult = await this.rootChain.getExit(tx.getTxHash())
       // challengeCount is 1
       assert.equal(exitResult[1].toNumber(), 1)
       await increaseTime(duration.weeks(6))
       await assertRevert(this.rootChain.finalizeExit(
-        tx.tx.hash(),
+        tx.getTxHash(),
         {
           from: operator
         }))
@@ -201,8 +201,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         10 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.toHex(),
-        tx.getProofs(),
+        tx.getTxBytes(),
+        tx.getProofAsHex(),
         tx.getSignatures(),
         {
           from: operator,
@@ -211,13 +211,13 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const challengeTx = Scenario1.blocks[0].signedTransactions[0]
       await this.rootChain.challengeBefore(
-        tx.hash(),
+        tx.getTxHash(),
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        challengeTx.toHex(),
-        challengeTx.hash(),
-        challengeTx.getProofs(),
+        challengeTx.getTxBytes(),
+        challengeTx.getTxHash(),
+        challengeTx.getProofAsHex(),
         challengeTx.getSignatures(),
         {
           from: bob,
@@ -226,18 +226,18 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
       const respondTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.respondChallenge(
-        challengeTx.toHex(),
+        challengeTx.getTxBytes(),
         8 * 100 + 10,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        respondTx.toHex(),
-        respondTx.getProofs(),
+        respondTx.getTxBytes(),
+        respondTx.getProofAsHex(),
         respondTx.getSignatures(),
         {
           from: operator,
           gas: '500000'
         });
-      const exitResult = await this.rootChain.getExit(tx.tx.hash())
+      const exitResult = await this.rootChain.getExit(tx.getTxHash())
       // challengeCount is 0
       assert.equal(exitResult[1].toNumber(), 0)
     })
@@ -248,8 +248,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         6 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
-        tx.toHex(),
-        tx.getProofs(),
+        tx.getTxBytes(),
+        tx.getProofAsHex(),
         tx.getSignatures(),
         {
           from: bob,
@@ -258,7 +258,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        tx.hash(),
+        tx.getTxHash(),
         {
           from: bob
         });
@@ -267,15 +267,15 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         12 * 100,
         Scenario1.segments[2].start,
         Scenario1.segments[2].end,
-        invalidTx.toHex(),
-        invalidTx.getProofs(),
+        invalidTx.getTxBytes(),
+        invalidTx.getProofAsHex(),
         invalidTx.getSignatures(),
         {
           from: operator,
           value: BOND
         });
       await this.rootChain.challengeByWithdrawal(
-        invalidTx.hash(),
+        invalidTx.getTxHash(),
         Scenario1.segments[0].toBigNumber(),
         {
           from: bob
@@ -317,8 +317,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         8 * 100,
         Scenario2.segments[3].start,
         Scenario2.segments[3].end,
-        tx1.toHex(),
-        tx1.getProofs(),
+        tx1.getTxBytes(),
+        tx1.getProofAsHex(),
         tx1.getSignatures(),
         {
           from: operator,
@@ -328,20 +328,20 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         8 * 100,
         Scenario2.segments[4].start,
         Scenario2.segments[4].end,
-        tx2.toHex(),
-        tx2.getProofs(),
+        tx2.getTxBytes(),
+        tx2.getProofAsHex(),
         tx2.getSignatures(),
         {
           from: operator,
           value: BOND
         });
       await this.rootChain.forceIncludeRequest(
-        tx2.hash(),
+        tx2.getTxHash(),
         6 * 100 + 1,
         Scenario2.segments[4].start,
         Scenario2.segments[4].end,
-        forceIncludeTx.toHex(),
-        forceIncludeTx.getProofs(),
+        forceIncludeTx.getTxBytes(),
+        forceIncludeTx.getProofAsHex(),
         forceIncludeTx.getSignatures(),
         0,
         {
@@ -353,7 +353,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await increaseTime(duration.weeks(6));
       // operator can't exit tx2
       await assertRevert(this.rootChain.finalizeExit(
-        tx2.hash(),
+        tx2.getTxHash(),
         {
           from: operator
         }))
@@ -368,8 +368,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         8 * 100,
         Scenario2.segments[3].start,
         Scenario2.segments[3].end,
-        tx1.toHex(),
-        tx1.getProofs(),
+        tx1.getTxBytes(),
+        tx1.getProofAsHex(),
         tx1.getSignatures(),
         {
           from: operator,
@@ -379,20 +379,20 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         8 * 100,
         Scenario2.segments[4].start,
         Scenario2.segments[4].end,
-        tx2.toHex(),
-        tx2.getProofs(),
+        tx2.getTxBytes(),
+        tx2.getProofAsHex(),
         tx2.getSignatures(),
         {
           from: operator,
           value: BOND
         });
       await this.rootChain.forceIncludeRequest(
-        tx2.hash(),
+        tx2.getTxHash(),
         6 * 100 + 1,
         Scenario2.segments[4].start,
         Scenario2.segments[4].end,
-        forceIncludeTx.toHex(),
-        forceIncludeTx.getProofs(),
+        forceIncludeTx.getTxBytes(),
+        forceIncludeTx.getProofAsHex(),
         forceIncludeTx.getSignatures(),
         0,
         {
@@ -403,8 +403,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         6 * 100 + 1,
         Scenario2.segments[4].start,
         Scenario2.segments[4].end,
-        fullForceIncludeTx.toHex(),
-        fullForceIncludeTx.getProofs(),
+        fullForceIncludeTx.getTxBytes(),
+        fullForceIncludeTx.getProofAsHex(),
         fullForceIncludeTx.getSignatures(),
         {
           from: operator,
@@ -414,7 +414,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await increaseTime(duration.weeks(6));
       // operator can't exit tx2
       await assertRevert(this.rootChain.finalizeExit(
-        tx2.hash(),
+        tx2.getTxHash(),
         {
           from: operator
         }))
