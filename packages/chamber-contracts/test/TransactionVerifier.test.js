@@ -6,7 +6,7 @@ const ethers = require('ethers')
 const BigNumber = ethers.utils.BigNumber
 
 const {
-  Scenario1
+  transactions
 } = require('./testdata')
 
 require('chai')
@@ -31,7 +31,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
   describe("TransferTransaction", () => {
 
     it("should be verified", async () => {
-      const tx = Scenario1.blocks[0].signedTransactions[0]
+      const tx = transactions.tx
       const result = await this.transactionVerifier.verify(
         tx.getTxHash(),
         tx.merkleHash(),
@@ -39,13 +39,48 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         tx.getSignatures(),
         0,
         ethers.constants.AddressZero,
-        Scenario1.segments[0].start,
-        Scenario1.segments[0].end,
+        transactions.segments[0].start,
+        transactions.segments[0].end,
         {
           from: alice
         });
       assert.equal(result, true)
     })
+
+    it("should be failed to verified", async () => {
+      const invalidTx = transactions.invalidTx
+      const result = await this.transactionVerifier.verify(
+        invalidTx.getTxHash(),
+        invalidTx.merkleHash(),
+        invalidTx.getTxBytes(),
+        invalidTx.getSignatures(),
+        0,
+        ethers.constants.AddressZero,
+        transactions.segments[0].start,
+        transactions.segments[0].end,
+        {
+          from: alice
+        });
+      assert.equal(result, false)
+    })
+
+    it("should be failed to verified by invalid segment", async () => {
+      const tx = transactions.tx
+      const result = await this.transactionVerifier.verify(
+        tx.getTxHash(),
+        tx.merkleHash(),
+        tx.getTxBytes(),
+        tx.getSignatures(),
+        0,
+        ethers.constants.AddressZero,
+        transactions.segments[1].start,
+        transactions.segments[1].end,
+        {
+          from: alice
+        });
+      assert.equal(result, false)
+    })    
+
   });
   
 })

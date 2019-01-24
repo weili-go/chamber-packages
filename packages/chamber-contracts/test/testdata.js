@@ -1,3 +1,6 @@
+/**
+ * test data generator
+ */
 const {
   utils
 } = require('ethers')
@@ -239,8 +242,34 @@ function scenario3() {
   }
 }
 
+/**
+ * transactions
+ */
+function transactions() {
+  const blkNum1 = utils.bigNumberify('3')
+  const blkNum2 = utils.bigNumberify('5')
+  const block = new Block(6)
+
+  const tx = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
+  const invalidTx = createTransfer(OperatorPrivateKey, AliceAddress, segment2, blkNum2, BobAddress)
+  
+  block.appendTx(tx)
+  block.appendTx(invalidTx)
+  
+  const includedTx = block.getSignedTransactionWithProof(tx.hash())[0]
+  const includedInvalidTx = block.getSignedTransactionWithProof(invalidTx.hash())[0]
+
+  return {
+    segments: [segment1, segment2],
+    tx: includedTx,
+    invalidTx: includedInvalidTx
+  }
+}
+
+
 module.exports = {
   Scenario1: scenario1(),
   Scenario2: scenario2(),
-  Scenario3: scenario3()
+  Scenario3: scenario3(),
+  transactions: transactions()
 }
