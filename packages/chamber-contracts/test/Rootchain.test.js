@@ -242,6 +242,53 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       assert.equal(exitResult[1].toNumber(), 0)
     })
 
+    it("should success to challengeBefore by deposit transaction", async () => {
+      const tx = Scenario1.blocks[0].signedTransactions[0]
+      await this.rootChain.exit(
+        6 * 100,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        tx.getTxBytes(),
+        tx.getProofAsHex(),
+        tx.getSignatures(),
+        {
+          from: bob,
+          value: BOND
+        });
+
+      const depositTx = Scenario1.deposits[0]
+      await this.rootChain.challengeBefore(
+        tx.getTxHash(),
+        3 * 100,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        depositTx.encode(),
+        depositTx.hash(),
+        '0x',
+        '0x',
+        {
+          from: alice,
+          gas: '500000',
+          value: BOND
+        });
+      const respondTx = Scenario1.blocks[0].signedTransactions[0]
+      await this.rootChain.respondChallenge(
+        depositTx.encode(),
+        6 * 100 + 10,
+        Scenario1.segments[0].start,
+        Scenario1.segments[0].end,
+        respondTx.getTxBytes(),
+        respondTx.getProofAsHex(),
+        respondTx.getSignatures(),
+        {
+          from: bob,
+          gas: '500000'
+        });
+      const exitResult = await this.rootChain.getExit(tx.getTxHash())
+      // challengeCount is 0
+      assert.equal(exitResult[1].toNumber(), 0)
+    })
+
     it("should success to challengeByWithdrawal", async () => {
       const tx = Scenario1.blocks[0].signedTransactions[0]
       await this.rootChain.exit(

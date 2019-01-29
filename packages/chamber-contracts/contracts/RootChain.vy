@@ -43,6 +43,13 @@ contract TransactionVerifier():
     _index: uint256,
     _blkNum: uint256
   ) -> bytes32: constant
+  def decodeDepositTx(
+    _tBytes: bytes[1024],
+    _blkNum: uint256
+  ) -> bytes32: constant
+  def getDepositHash(
+    _tBytes: bytes[1024]
+  ) -> bytes32: constant
 
 BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: address, _start: uint256, _end: uint256, _blkNum: uint256})
@@ -132,22 +139,20 @@ def checkTransaction(
       root,
       _proof
     )
-    assert TransactionVerifier(self.txverifier).verify(
-      _txHash,
-      sha3(concat(_txHash, root)),
-      _txBytes,
-      _sigs,
-      _outputIndex,
-      ZERO_ADDRESS,
-      _start,
-      _end)
-    return True
   else:
     # deposit transaction
-    assert _txHash == root
-    assert convert(slice(_txBytes, start=64, len=32), uint256) == _start
-    assert convert(slice(_txBytes, start=96, len=32), uint256) == _end
-    return True
+    depositHash: bytes32 = TransactionVerifier(self.txverifier).getDepositHash(_txBytes)
+    assert depositHash == root
+  return True
+  return TransactionVerifier(self.txverifier).verify(
+    _txHash,
+    sha3(concat(_txHash, root)),
+    _txBytes,
+    _sigs,
+    _outputIndex,
+    ZERO_ADDRESS,
+    _start,
+    _end)
 
 # @dev Constructor
 @public
