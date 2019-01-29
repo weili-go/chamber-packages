@@ -95,6 +95,71 @@ def decodeBaseTx(_tBytes: bytes[1024]) -> (uint256, bytes[1024]):
     uint256, bytes])
   return txList[0], txList[1]
 
+@private
+@constant
+def getOwnState(
+  owner: address,
+  start: uint256,
+  end: uint256,
+  blkNum: uint256
+) -> (bytes32):
+  return sha3(
+      concat("own",
+        convert(owner, bytes32),
+        convert(start, bytes32),
+        convert(end, bytes32),
+        convert(blkNum, bytes32)
+      )
+    )
+
+@public
+@constant
+def getDepositHash(
+  _tBytes: bytes[1024]
+) -> (bytes32):
+  label: uint256
+  body: bytes[1024]
+  (label, body) = self.decodeBaseTx(_tBytes)
+  if label == 5:
+    txList = RLPList(body, [
+      address, address, uint256, uint256])
+    return sha3(
+            concat(
+              convert(txList[0], bytes32),
+              convert(txList[1], bytes32),
+              convert(txList[2], bytes32),
+              convert(txList[3], bytes32)
+            )
+          )
+
+@private
+@constant
+def verifyDepositTx(
+  _tBytes: bytes[1024],
+  _owner: address,
+  _start: uint256,
+  _end: uint256
+) -> (bool):
+  # depositor, token, start, end
+  txList = RLPList(_tBytes, [
+    address, address, uint256, uint256])
+  assert _start == txList[2]
+  assert _end == txList[3]
+  if _owner != ZERO_ADDRESS:
+    assert _owner == txList[0]
+  return True
+
+@private
+@constant
+def getDepositTxoHash(
+  _tBytes: bytes[1024],
+  _blkNum: uint256
+) -> bytes32:
+  # depositor, token, start, end
+  txList = RLPList(_tBytes, [
+    address, address, uint256, uint256])
+  return self.getOwnState(txList[0], txList[2], txList[3], _blkNum)
+
 # @dev Constructor
 @public
 def __init__(_stdverifier: address, _multisig: address):
@@ -125,6 +190,8 @@ def verify(
     return StandardVerifier(self.stdverifier).verifyMerge(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
   elif label == 4:
     return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, body, _sigs, _outputIndex, _owner, _start, _end)
+  elif label == 5:
+    return self.verifyDepositTx(body, _owner, _start, _end)
   elif label == 10:
     return MultisigVerifier(self.multisigverifier).verifyMultisig2(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
   return False
@@ -168,6 +235,8 @@ def getTxoHash(
     return StandardVerifier(self.stdverifier).getTxoHashOfMerge(body, _index, _blkNum)
   elif label == 4:
     return MultisigVerifier(self.multisigverifier).getTxoHashOfSwap(body, _index, _blkNum)
+  elif label == 5:
+    return self.getDepositTxoHash(body, _blkNum)
   elif label == 10:
     return MultisigVerifier(self.multisigverifier).getTxoHashOfMultisig2(body, _index, _blkNum)
   return sha3("txo")

@@ -2,6 +2,7 @@
  * test data generator
  */
 const {
+  constants,
   utils
 } = require('ethers')
 
@@ -9,6 +10,7 @@ const BigNumber = utils.BigNumber
 
 const {
   Block,
+  DepositTransaction,
   Segment,
   TransferTransaction,
   SplitTransaction,
@@ -69,6 +71,8 @@ function scenario1() {
   const block5 = new Block(10)
   const block6 = new Block(12)
 
+  const depositTx1 = new DepositTransaction(AliceAddress, constants.AddressZero, segment1)
+  const depositTx2 = new DepositTransaction(BobAddress, constants.AddressZero, segment2)
   const tx31 = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
   const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
   const tx41 = createTransfer(BobPrivateKey, BobAddress, segment1, blkNum3, AliceAddress)
@@ -103,6 +107,7 @@ function scenario1() {
 
   return {
     segments: [segment1, segment2, segment3],
+    deposits: [depositTx1, depositTx2],
     blocks: [
       {
         block: block3,

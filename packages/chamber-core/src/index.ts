@@ -11,6 +11,7 @@ export {
   Block,
 } from './block'
 export {
+  DepositTransaction,
   TransactionDecoder,
   TransferTransaction,
   SplitTransaction,

@@ -101,6 +101,43 @@ class TransactionOutput {
   }
 }
 
+export class DepositTransaction extends BaseTransaction {
+  depositor: Address
+  token: Address
+  segment: Segment
+
+  constructor(
+    depositor: Address,
+    token: Address,
+    segment: Segment
+  ) {
+    super(5, [depositor, token, segment.start, segment.end])
+    this.depositor = depositor
+    this.token = token
+    this.segment = segment
+  }
+
+  static fromTuple(tuple: RLPItem[]): DepositTransaction {
+    return new DepositTransaction(tuple[0], tuple[1], Segment.fromTuple(tuple.slice(2, 4)))
+  }
+
+  static decode(bytes: string): DepositTransaction {
+    return DepositTransaction.fromTuple(RLP.decode(bytes))
+  }
+
+  getOutput(): TransactionOutput {
+    return new TransactionOutput(
+      this.segment,
+      this.depositor
+    )
+  }
+
+  getSegments(): Segment[] {
+    return [this.segment]
+  }
+
+}
+
 export class TransferTransaction extends BaseTransaction {
   from: Address
   segment: Segment
