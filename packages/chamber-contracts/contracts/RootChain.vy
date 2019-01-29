@@ -143,7 +143,6 @@ def checkTransaction(
     # deposit transaction
     depositHash: bytes32 = TransactionVerifier(self.txverifier).getDepositHash(_txBytes)
     assert depositHash == root
-  return True
   return TransactionVerifier(self.txverifier).verify(
     _txHash,
     sha3(concat(_txHash, root)),
