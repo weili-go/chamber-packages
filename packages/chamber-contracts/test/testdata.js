@@ -222,9 +222,9 @@ function scenario3() {
   const tree3 = block3.createTree()
   const tree4 = block4.createTree()
 
-  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())[1]
+  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())
   const signedTx32 = block3.getSignedTransactionWithProof(tx32.hash())[0]
-  const signedTx41 = block4.getSignedTransactionWithProof(tx41.hash())[1]
+  const signedTx41 = block4.getSignedTransactionWithProof(tx41.hash())
   const signedTx42 = block4.getSignedTransactionWithProof(tx42.hash())[0]
 
   return {
@@ -235,13 +235,13 @@ function scenario3() {
         tree: tree3,
         transactions: [tx31, tx32],
         signedTransactions: [signedTx31, signedTx32],
-        operatorSignes: [signedTx31.signedTx.justSign(OperatorPrivateKey)]
+        operatorSignes: [signedTx31[1].signedTx.justSign(OperatorPrivateKey)]
       },{
         block: block4,
         tree: tree4,
         transactions: [tx41, tx42],
         signedTransactions: [signedTx41, signedTx42],
-        operatorSignes: [signedTx41.signedTx.justSign(OperatorPrivateKey)]
+        operatorSignes: [signedTx41[1].signedTx.justSign(OperatorPrivateKey)]
       }
     ]
   }

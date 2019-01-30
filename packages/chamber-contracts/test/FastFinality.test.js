@@ -95,7 +95,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     })
 
     it('should success to dispute and finalizeDispute', async () => {
-      const tx = Scenario3.blocks[0].signedTransactions[0]
+      const tx = Scenario3.blocks[0].signedTransactions[0][1]
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
       await this.fastFinality.dispute(
@@ -121,7 +121,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     });
     
     it('should failed to finalizeDispute', async () => {
-      const tx = Scenario3.blocks[0].signedTransactions[0]
+      const tx = Scenario3.blocks[0].signedTransactions[0][1]
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
       await this.fastFinality.dispute(
@@ -163,7 +163,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
       await submit(Scenario3.blocks[0].block.getRoot())
       await submit(Scenario3.blocks[1].block.getRoot())
 
-      const tx = Scenario3.blocks[0].signedTransactions[0]
+      const tx = Scenario3.blocks[0].signedTransactions[0][1]
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
       await this.fastFinality.dispute(
@@ -180,7 +180,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     });
 
     it('should be success to challenge', async () => {
-      const tx = Scenario3.blocks[0].signedTransactions[0]
+      const tx = Scenario3.blocks[0].signedTransactions[0][1]
       await this.fastFinality.challenge(
         tx.getTxBytes(),
         tx.getProofAsHex(),
@@ -195,7 +195,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     });
 
     it('should be failed to challenge', async () => {
-      const invalidTx = Scenario3.blocks[1].signedTransactions[0]
+      const invalidTx = Scenario3.blocks[1].signedTransactions[0][1]
 
       await assertRevert(this.fastFinality.challenge(
         invalidTx.getTxBytes(),
@@ -211,8 +211,8 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     })
 
     it('should be success to secondDispute', async () => {
-      const tx = Scenario3.blocks[0].signedTransactions[0]
-      const secondDisputeTx = Scenario3.blocks[1].signedTransactions[0]
+      const tx = Scenario3.blocks[0].signedTransactions[0][1]
+      const secondDisputeTx = Scenario3.blocks[1].signedTransactions[0][1]
       await this.fastFinality.challenge(
         tx.getTxBytes(),
         tx.getProofAsHex(),

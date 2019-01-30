@@ -22,7 +22,8 @@ const {
 
 const {
   Scenario1,
-  Scenario2
+  Scenario2,
+  Scenario3
 } = require('./testdata')
 
 require('chai')
@@ -335,6 +336,68 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     })
 
   });
+
+  describe("SplitTransaction", () => {
+
+    beforeEach(async () => {
+      await this.rootChain.deposit(
+        {
+          from: alice,
+          value: '1000000'
+        });
+      await this.rootChain.deposit(
+        {
+          from: bob,
+          value: '1000000'
+        });
+      const submit = async (root) => {
+        await this.rootChain.submit(
+          root,
+          {
+            from: operator
+          });
+      }
+      await submit(Scenario3.blocks[0].block.getRoot())
+      await submit(Scenario3.blocks[1].block.getRoot())
+    })
+
+    it("should success to exits diffirent UTXO with same transaction", async () => {
+      const tx0 = Scenario3.blocks[0].signedTransactions[0][0]
+      const tx1 = Scenario3.blocks[0].signedTransactions[0][1]
+      const result1 = await this.rootChain.exit(
+        6 * 100,
+        ethers.utils.bigNumberify('0'),
+        ethers.utils.bigNumberify('500000'),
+        tx0.getTxBytes(),
+        tx0.getProofAsHex(),
+        tx0.getSignatures(),
+        {
+          from: alice,
+          value: BOND
+        });
+      const result2 = await this.rootChain.exit(
+        6 * 100 + 1,
+        ethers.utils.bigNumberify('500000'),
+        ethers.utils.bigNumberify('1000000'),
+        tx1.getTxBytes(),
+        tx1.getProofAsHex(),
+        tx1.getSignatures(),
+        {
+          from: bob,
+          value: BOND
+        });
+
+      assert.equal(result1.logs[0].event, 'ExitStarted')
+      assert.equal(result2.logs[0].event, 'ExitStarted')
+      // 6 weeks after
+      await increaseTime(duration.weeks(6));
+      await this.rootChain.finalizeExit(
+        tx0.signedTx.tx.getOutputWith(0).hash(6),
+        {
+          from: bob
+        });
+    })
+  })
 
   describe("forceIncludeRequest", () => {
 
