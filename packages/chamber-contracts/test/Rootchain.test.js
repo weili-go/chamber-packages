@@ -220,7 +220,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
         challengeTx.getTxBytes(),
-        challengeTx.getTxHash(),
+        1,
         challengeTx.getProofAsHex(),
         challengeTx.getSignatures(),
         {
@@ -230,6 +230,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
       const respondTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.respondChallenge(
+        1,
         challengeTx.getTxBytes(),
         8 * 100 + 10,
         Scenario1.segments[0].start,
@@ -262,13 +263,14 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const depositTx = Scenario1.deposits[0]
       const exitHash = tx.signedTx.tx.getOutput().hash(6)
+      const challengeId = 1
       await this.rootChain.challengeBefore(
         exitHash,
         3 * 100,
         Scenario1.segments[0].start,
         Scenario1.segments[0].end,
         depositTx.encode(),
-        depositTx.hash(),
+        challengeId,
         '0x',
         '0x',
         {
@@ -278,6 +280,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
       const respondTx = Scenario1.blocks[0].signedTransactions[0]
       await this.rootChain.respondChallenge(
+        challengeId,
         depositTx.encode(),
         6 * 100 + 10,
         Scenario1.segments[0].start,
@@ -455,6 +458,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         6 * 100 + 1,
         Scenario2.segments[4].start,
         Scenario2.segments[4].end,
+        1,
         forceIncludeTx.getTxBytes(),
         forceIncludeTx.getProofAsHex(),
         forceIncludeTx.getSignatures(),
@@ -502,11 +506,13 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           value: BOND
         });
       const exitHash = tx2.signedTx.tx.getOutput().hash(8)
+      const challengeId = 1
       await this.rootChain.forceIncludeRequest(
         exitHash,
         6 * 100 + 1,
         Scenario2.segments[4].start,
         Scenario2.segments[4].end,
+        challengeId,
         forceIncludeTx.getTxBytes(),
         forceIncludeTx.getProofAsHex(),
         forceIncludeTx.getSignatures(),
@@ -516,6 +522,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           value: BOND
         });
       await this.rootChain.includeSignature(
+        challengeId,
         6 * 100 + 1,
         Scenario2.segments[4].start,
         Scenario2.segments[4].end,
