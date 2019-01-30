@@ -8,6 +8,7 @@ import {
   LockState,
   RLPTx,
   RLPItem,
+  Hash,
 } from './helpers/types';
 import BigNumber = utils.BigNumber
 
@@ -99,6 +100,20 @@ class TransactionOutput {
   getSegment() {
     return this.segment
   }
+
+  hash(blkNum: BigNumber): Hash {
+    return utils.keccak256(join([
+      utils.hexlify(utils.toUtf8Bytes('own')),
+      utils.hexZeroPad(utils.hexlify(this.owner), 32),
+      utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
+      utils.hexZeroPad(utils.hexlify(this.segment.end), 32),
+      utils.hexZeroPad(utils.hexlify(blkNum), 32)
+    ]))
+    function join(a: string[]) {
+      return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
+    }
+  }
+
 }
 
 export class DepositTransaction extends BaseTransaction {

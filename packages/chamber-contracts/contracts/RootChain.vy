@@ -12,7 +12,7 @@ struct Exit:
 
 struct Challenge:
   owner: address
-  exitTxHash: bytes32
+  exitHash: bytes32
   utxoPos: uint256
   segment: uint256
   status: uint256
@@ -232,8 +232,9 @@ def exit(
     msg.sender,
     _start,
     _end)
+  exitHash: bytes32 = TransactionVerifier(self.txverifier).getTxoHash(_txBytes, outputIndex, blkNum)
   exitableAt: uint256 = as_unitless_number(block.timestamp + 4 * 7 * 24 * 60 * 60)
-  self.exits[txHash] = Exit({
+  self.exits[exitHash] = Exit({
     owner: msg.sender,
     exitableAt: exitableAt,
     utxoPos: _utxoPos,
@@ -241,13 +242,14 @@ def exit(
     segment: _start * TOTAL_DEPOSIT + _end,
     challengeCount: 0
   })
-  log.ExitStarted(txHash, msg.sender, exitableAt, _start, _end)
+  log.ExitStarted(exitHash, msg.sender, exitableAt, _start, _end)
 
 # @dev sendParentOfExit
 #     send parent transaction of the exiting transaction and update priority of exit
 @public
 def sendParentOfExit(
   _cTxHash: bytes32,
+  _exitHash: bytes32,
   _exitTxBytes: bytes[1024],
   _inputIndex: uint256,
   _utxoPos: uint256,
@@ -271,30 +273,29 @@ def sendParentOfExit(
     _sig,
     outputIndex
   )
-  exitTxHash: bytes32 = sha3(_exitTxBytes)
-  exit: Exit = self.exits[exitTxHash]
+  exit: Exit = self.exits[_exitHash]
   exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
   assert (exitSegmentStart <= _start) and (_end <= exitSegmentEnd)
   spentTxoHash: bytes32 = TransactionVerifier(self.txverifier).getTxoHash(_txBytes, outputIndex, blkNum)
   assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_exitTxBytes, _inputIndex, 0)
-  self.exits[exitTxHash].priority = blkNum
+  self.exits[_exitHash].priority = blkNum
   # if already challenge-game started, check block number
   challenge: Challenge = self.challenges[_cTxHash]
-  assert challenge.exitTxHash == exitTxHash
+  assert challenge.exitHash == _exitHash
   if challenge.utxoPos > _utxoPos and (challenge.status == STATUS_CHALLENGED or challenge.status == STATUS_CHALLENGED2):
     self.challenges[_cTxHash].status = STATUS_RESPONDED2
-    self.exits[exitTxHash].challengeCount -= 1
+    self.exits[_exitHash].challengeCount -= 1
 
 # @dev
-# @param _exitTxHash hash of the exiting transaction
+# @param _exitHash hash of the exiting transaction
 # @param _segment uint256 format of a segment which is already withdrawn
 @public
 def challengeByWithdrawal(
-  _exitTxHash: bytes32,
+  _exitHash: bytes32,
   _segment: uint256
 ):
-  exit: Exit = self.exits[_exitTxHash]
+  exit: Exit = self.exits[_exitHash]
   exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
   start: uint256 = _segment / TOTAL_DEPOSIT
@@ -303,7 +304,7 @@ def challengeByWithdrawal(
   assert exit.utxoPos > self.withdrawals[_segment]
   assert (end > exitSegmentStart) and (start < exitSegmentEnd)
   # break exit procedure
-  self.exits[_exitTxHash].owner = ZERO_ADDRESS
+  self.exits[_exitHash].owner = ZERO_ADDRESS
   send(msg.sender, EXIT_BOND)
 
 # @dev challenge
@@ -312,6 +313,7 @@ def challengeByWithdrawal(
 #     if _eInputPos >= 0 then it's double spend challenge and _eInputPos is input index
 @public
 def challenge(
+  _exitHash: bytes32,
   _exitTxBytes: bytes[1024],
   _utxoPos: uint256,
   _eInputPos: int128,
@@ -321,15 +323,14 @@ def challenge(
   _proof: bytes[512],
   _sig: bytes[260]
 ):
-  exitTxHash: bytes32 = sha3(_exitTxBytes)
   blkNum: uint256 = _utxoPos / 100
   txoIndex: uint256 = _utxoPos - blkNum * 100
   root: bytes32 = self.childChain[blkNum].root
   spentTxoHash: bytes32
-  exitBlkNum: uint256 = self.exits[exitTxHash].utxoPos / 100
-  exitIndex: uint256 = self.exits[exitTxHash].utxoPos - exitBlkNum * 100
-  exitSegmentStart: uint256 = self.exits[exitTxHash].segment / TOTAL_DEPOSIT
-  exitSegmentEnd: uint256 = self.exits[exitTxHash].segment - exitSegmentStart * TOTAL_DEPOSIT
+  exitBlkNum: uint256 = self.exits[_exitHash].utxoPos / 100
+  exitIndex: uint256 = self.exits[_exitHash].utxoPos - exitBlkNum * 100
+  exitSegmentStart: uint256 = self.exits[_exitHash].segment / TOTAL_DEPOSIT
+  exitSegmentEnd: uint256 = self.exits[_exitHash].segment - exitSegmentStart * TOTAL_DEPOSIT
   assert exitSegmentStart >= _start and _end <= exitSegmentEnd
   assert self.challenges[sha3(_txBytes)].status != STATUS_FORCE_INCLUDE
   self.checkTransaction(
@@ -360,7 +361,7 @@ def challenge(
     assert blkNum < exitBlkNum
   assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_txBytes, txoIndex, blkNum)
   # break exit procedure
-  self.exits[exitTxHash].owner = ZERO_ADDRESS
+  self.exits[_exitHash].owner = ZERO_ADDRESS
   send(msg.sender, EXIT_BOND)
 
 # @dev challengeBefore start challenge game
@@ -368,7 +369,7 @@ def challenge(
 @public
 @payable
 def challengeBefore(
-  _exitTxHash: bytes32,
+  _exitHash: bytes32,
   _utxoPos: uint256,
   _start: uint256,
   _end: uint256,
@@ -379,7 +380,7 @@ def challengeBefore(
 ):
   blkNum: uint256 = _utxoPos / 100
   outputIndex: uint256 = _utxoPos - blkNum * 100
-  exit: Exit = self.exits[_exitTxHash]
+  exit: Exit = self.exits[_exitHash]
   exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
   txHash: bytes32 = sha3(_txBytes)
@@ -401,18 +402,18 @@ def challengeBefore(
     assert _cTxHash == txHash
     self.challenges[_cTxHash] = Challenge({
       owner: msg.sender,
-      exitTxHash: _exitTxHash,
+      exitHash: _exitHash,
       utxoPos: _utxoPos,
       status: STATUS_CHALLENGED,
       segment: (_start) * TOTAL_DEPOSIT + (_end)
     })
   elif self.challenges[_cTxHash].status == STATUS_RESPONDED:
-    assert self.challenges[_cTxHash].exitTxHash == _exitTxHash
+    assert self.challenges[_cTxHash].exitHash == _exitHash
     self.challenges[_cTxHash].status = STATUS_CHALLENGED2
   else:
     assert False
-  self.exits[_exitTxHash].challengeCount += 1
-  log.ChallengeStarted(_exitTxHash, _cTxHash)
+  self.exits[_exitHash].challengeCount += 1
+  log.ChallengeStarted(_exitHash, _cTxHash)
 
 # @dev respond challenge
 @public
@@ -471,25 +472,25 @@ def respondChallenge(
     send(msg.sender, FORCE_INCLUDE_BOND)
   else:
     assert False
-  self.exits[challenge.exitTxHash].challengeCount -= 1
-  self.exits[challenge.exitTxHash].exitableAt = as_unitless_number(block.timestamp + 1 * 7 * 24 * 60 * 60)
-  log.Responded(challenge.exitTxHash, cTxHash)
+  self.exits[challenge.exitHash].challengeCount -= 1
+  self.exits[challenge.exitHash].exitableAt = as_unitless_number(block.timestamp + 1 * 7 * 24 * 60 * 60)
+  log.Responded(challenge.exitHash, cTxHash)
 
 # @dev finalizeExit
 @public
 def finalizeExit(
-  _exitTxHash: bytes32
+  _exitHash: bytes32
 ):
-  exit: Exit = self.exits[_exitTxHash]
+  exit: Exit = self.exits[_exitHash]
   exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
   assert self.withdrawals[exit.segment] == 0
   assert exit.exitableAt < as_unitless_number(block.timestamp)
   assert exit.challengeCount == 0
   send(exit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei") + EXIT_BOND)
-  self.exits[_exitTxHash].owner = ZERO_ADDRESS
+  self.exits[_exitHash].owner = ZERO_ADDRESS
   self.withdrawals[exit.segment] = exit.utxoPos
-  log.FinalizedExit(_exitTxHash, exitSegmentStart, exitSegmentEnd)
+  log.FinalizedExit(_exitHash, exitSegmentStart, exitSegmentEnd)
 
 # @dev finalizeChallenge
 #     challenger gets Challenge bond and exit bond
@@ -498,12 +499,12 @@ def finalizeChallenge(
   _cTxHash: bytes32
 ):
   challenge: Challenge = self.challenges[_cTxHash]
-  exit: Exit = self.exits[challenge.exitTxHash]
+  exit: Exit = self.exits[challenge.exitHash]
   assert exit.exitableAt < as_unitless_number(block.timestamp)
   assert exit.challengeCount > 0
   assert challenge.status == STATUS_CHALLENGED or challenge.status == STATUS_CHALLENGED2
   send(challenge.owner, EXIT_BOND + CHALLENGE_BOND)
-  self.exits[challenge.exitTxHash].owner = ZERO_ADDRESS
+  self.exits[challenge.exitHash].owner = ZERO_ADDRESS
 
 # @dev forceIncludeRequest starts special challenge game
 #     forceIncludeRequest cancel any exits of sub segments unless challenge by spent of output.
@@ -511,7 +512,7 @@ def finalizeChallenge(
 @public
 @payable
 def forceIncludeRequest(
-  _exitTxHash: bytes32,
+  _exitHash: bytes32,
   _utxoPos: uint256,
   _start: uint256,
   _end: uint256,
@@ -522,7 +523,7 @@ def forceIncludeRequest(
 ):
   blkNum: uint256 = _utxoPos / 100
   outputIndex: uint256 = _utxoPos - blkNum * 100
-  exit: Exit = self.exits[_exitTxHash]
+  exit: Exit = self.exits[_exitHash]
   exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
   txHash: bytes32 = sha3(_txBytes)
@@ -550,13 +551,13 @@ def forceIncludeRequest(
   assert self.challenges[txHash].status == 0
   self.challenges[txHash] = Challenge({
     owner: msg.sender,
-    exitTxHash: _exitTxHash,
+    exitHash: _exitHash,
     utxoPos: _utxoPos,
     status: STATUS_FORCE_INCLUDE,
     segment: _start * TOTAL_DEPOSIT + _end
   })
-  self.exits[_exitTxHash].challengeCount += 1
-  log.ChallengeStarted(_exitTxHash, txHash)
+  self.exits[_exitHash].challengeCount += 1
+  log.ChallengeStarted(_exitHash, txHash)
 
 @public
 def includeSignature(
@@ -591,7 +592,7 @@ def includeSignature(
 @public
 @constant
 def getExit(
-  _exitTxHash: bytes32
+  _exitHash: bytes32
 ) -> (address, uint256):
-  exit: Exit = self.exits[_exitTxHash]
+  exit: Exit = self.exits[_exitHash]
   return (exit.owner, exit.challengeCount)
