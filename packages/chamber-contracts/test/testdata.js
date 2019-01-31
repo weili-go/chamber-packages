@@ -6,26 +6,22 @@ const {
   utils
 } = require('ethers')
 
-const BigNumber = utils.BigNumber
-
 const {
   Block,
   DepositTransaction,
   Segment,
   TransferTransaction,
   SplitTransaction,
+  MergeTransaction,
   SwapTransaction,
-  SignedTransaction,
-  SignedTransactionWithProof
+  SignedTransaction
 } = require('@layer2/core')
-
 
 const AlicePrivateKey = '0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
 const BobPrivateKey = '0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f'
 const OperatorPrivateKey = '0x0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1'
 const User4PrivateKey = '0xc88b703fb08cbea894b6aeff5a544fb92e78a18e19814cd85da83b71f772aa6c'
 const User5PrivateKey = '0x388c684f0ba1ef5017716adb5d21a053ea8e90277d0868337519f97bede61418'
-
 
 const AliceAddress = utils.computeAddress(AlicePrivateKey)
 const BobAddress = utils.computeAddress(BobPrivateKey)
@@ -251,26 +247,42 @@ function scenario3() {
  * transactions
  */
 function transactions() {
+  const segment4 = new Segment(
+    utils.bigNumberify('3000000'),
+    utils.bigNumberify('3100000'))
+  const segment5 = new Segment(
+    utils.bigNumberify('3100000'),
+    utils.bigNumberify('3200000'))
+  const segment45 = new Segment(
+    utils.bigNumberify('3000000'),
+    utils.bigNumberify('3200000'))
+  
+    
   const blkNum1 = utils.bigNumberify('3')
   const blkNum2 = utils.bigNumberify('5')
   const block = new Block(6)
 
   const tx = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
   const invalidTx = createTransfer(OperatorPrivateKey, AliceAddress, segment2, blkNum2, BobAddress)
+  const mergeTx = new SignedTransaction(new MergeTransaction(AliceAddress, segment4, segment5, blkNum1, blkNum2, BobAddress))
+  mergeTx.sign(AlicePrivateKey)
   
   block.appendTx(tx)
   block.appendTx(invalidTx)
+  block.appendTx(mergeTx)
   
   const includedTx = block.getSignedTransactionWithProof(tx.hash())[0]
   const includedInvalidTx = block.getSignedTransactionWithProof(invalidTx.hash())[0]
+  const includedMergeTx = block.getSignedTransactionWithProof(mergeTx.hash())[0]
 
   return {
-    segments: [segment1, segment2],
+    segments: [segment1, segment2, segment3, segment4, segment5],
+    segment45: segment45,
     tx: includedTx,
-    invalidTx: includedInvalidTx
+    invalidTx: includedInvalidTx,
+    mergeTx: includedMergeTx
   }
 }
-
 
 module.exports = {
   Scenario1: scenario1(),
