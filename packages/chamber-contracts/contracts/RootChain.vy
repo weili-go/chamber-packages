@@ -468,13 +468,13 @@ def respondChallenge(
   assert blkNum > cBlkNum
   # change challenge status
   if challenge.status == STATUS_CHALLENGED:
-    challenge.status = STATUS_RESPONDED
+    self.challenges[_challengeId].status = STATUS_RESPONDED
   elif challenge.status == STATUS_CHALLENGED2:
-    challenge.status = STATUS_RESPONDED2
+    self.challenges[_challengeId].status = STATUS_RESPONDED2
     # exitor gets bond
     send(msg.sender, CHALLENGE_BOND)
   elif challenge.status == STATUS_FORCE_INCLUDE:
-    challenge.status = STATUS_FORCE_INCLUDE_CHALLENGED
+    self.challenges[_challengeId].status = STATUS_FORCE_INCLUDE_CHALLENGED
     self.removed[challenge.cTxHash] = False
     send(msg.sender, FORCE_INCLUDE_BOND)
   else:
@@ -599,6 +599,73 @@ def includeSignature(
   self.removed[challenge.cTxHash] = False
   send(challenge.owner, FORCE_INCLUDE_BOND)
   log.ForceIncluded(_challengeId)
+
+@public
+def challengeTooOldExit(
+  _utxoPos: uint256,
+  _exitHash: bytes32,
+  _start: uint256,
+  _end: uint256,
+  _txBytes: bytes[1024],
+  _proof: bytes[512],
+  _sig: bytes[260]
+):
+  blkNum: uint256 = _utxoPos / 100
+  outputIndex: uint256 = _utxoPos - blkNum * 100
+  exit: Exit = self.exits[_exitHash]
+  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
+  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  txHash: bytes32 = sha3(_txBytes)
+  # if tx is 12 weeks before
+  assert self.childChain[blkNum].blockTimestamp  < as_unitless_number(block.timestamp) - 12 * 7 * 24 * 60 * 60
+  assert blkNum > exit.priority
+  assert exitSegmentStart >= _start and _end <= exitSegmentEnd
+  self.checkTransaction(
+    _start,
+    _end,
+    txHash,
+    _txBytes,
+    blkNum,
+    _proof,
+    _sig,
+    outputIndex
+  )
+  # break exit
+  self.exits[_exitHash].owner = ZERO_ADDRESS
+
+@public
+def respondTooOldChallenge(
+  _utxoPos: uint256,
+  _challengeId: uint256,
+  _start: uint256,
+  _end: uint256,
+  _txBytes: bytes[1024],
+  _proof: bytes[512],
+  _sig: bytes[260]
+):
+  blkNum: uint256 = _utxoPos / 100
+  outputIndex: uint256 = _utxoPos - blkNum * 100
+  challenge: Challenge = self.challenges[_challengeId]
+  cSegmentStart: uint256 = challenge.segment / TOTAL_DEPOSIT
+  cSegmentEnd: uint256 = challenge.segment - cSegmentStart * TOTAL_DEPOSIT
+  txHash: bytes32 = sha3(_txBytes)
+  # if tx is 12 weeks before
+  assert self.childChain[blkNum].blockTimestamp  < as_unitless_number(block.timestamp) - 12 * 7 * 24 * 60 * 60
+  assert blkNum > (challenge.utxoPos / 100)
+  assert cSegmentStart >= _start and _end <= cSegmentEnd
+  assert challenge.status == STATUS_CHALLENGED or challenge.status == STATUS_CHALLENGED2
+  self.checkTransaction(
+    _start,
+    _end,
+    txHash,
+    _txBytes,
+    blkNum,
+    _proof,
+    _sig,
+    outputIndex
+  )
+  self.challenges[_challengeId].status = STATUS_RESPONDED2
+  self.exits[challenge.exitHash].challengeCount -= 1
 
 # @dev getExit
 @public
