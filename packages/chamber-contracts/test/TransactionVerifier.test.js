@@ -79,8 +79,29 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
           from: alice
         });
       assert.equal(result, false)
-    })    
+    })
 
-  });
+  })
   
+  describe("MergeTransaction", () => {
+
+    it("should be verified", async () => {
+      const tx = transactions.mergeTx
+      const result = await this.transactionVerifier.verify(
+        tx.getTxHash(),
+        tx.merkleHash(),
+        tx.getTxBytes(),
+        tx.getSignatures(),
+        0,
+        ethers.constants.AddressZero,
+        transactions.segment45.start,
+        transactions.segment45.end,
+        {
+          from: alice
+        });
+      assert.equal(result, true)
+    })
+
+  })
+
 })
