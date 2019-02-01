@@ -29,5 +29,6 @@
   },
   "devDependencies": {
     "typechain": "^0.3.11"
-  }
+  },
+  "gitHead": "5f67728c2891607fde37600cf40293ebede7d763"
 }
