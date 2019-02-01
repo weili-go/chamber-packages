@@ -75,7 +75,7 @@ describe('Transaction', () => {
     const tx2 = new TransferTransaction(BobAddress, segment, blkNum2, AliceAddress)
     assert.equal(tx1.getOutput().withBlkNum(blkNum2).hash(), tx2.getInput().hash())
   });
-
+    
   describe('SignedTransaction', () => {
 
     it('serialize and deserialize', () => {
