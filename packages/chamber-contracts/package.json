@@ -1,6 +1,6 @@
 {
   "name": "@layer2/contracts",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -11,7 +11,7 @@
     "test:ci": "truffle test"
   },
   "dependencies": {
-    "@layer2/core": "^1.0.0",
+    "@layer2/core": "^0.0.1",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.5",
     "chai": "^4.2.0",
