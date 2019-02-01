@@ -49,7 +49,8 @@ describe('Transaction', () => {
     const encoded = tx.encode()
     const decoded: SplitTransaction = TransactionDecoder.decode(encoded) as SplitTransaction
     assert.equal(encoded, '0xf85102b84ef84c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf831e8480832dc6c00194953b8fb338ef870eda6d74c1dd4769b6c977b8cf9434fdeadc2b69fd24f3043a89f9231f10f1284a4a8327ac40');
-    assert.equal(decoded.getOutput(1).getSegment(0).start.toString(), '2600000');
+    assert.equal(decoded.getOutput(1).getSegment(0).start.toString(), '2600000')
+    assert.equal(decoded.getInput().getSegment(0).start.toString(), '2000000')
   });
 
   it('encode and decode merge transaction', () => {
@@ -58,7 +59,8 @@ describe('Transaction', () => {
     const encoded = tx.encode()
     const decoded: MergeTransaction = TransactionDecoder.decode(encoded) as MergeTransaction
     assert.equal(encoded, '0xf83d03b83af83894953b8fb338ef870eda6d74c1dd4769b6c977b8cf834c4b40835b8d80836acfc032349434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
-    assert.equal(decoded.getOutput().getSegment(0).start.toString(), '5000000');
+    assert.equal(decoded.getOutput().getSegment(0).start.toString(), '5000000')
+    assert.equal(decoded.getInput(0).getSegment(0).start.toString(), '5000000')
   });
 
   it('encode and decode swap transaction', () => {
@@ -68,6 +70,8 @@ describe('Transaction', () => {
     const decoded: SwapTransaction = TransactionDecoder.decode(encoded) as SwapTransaction
     assert.equal(encoded, '0xf84104b83ef83c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf834c4b40835b8d80329434fdeadc2b69fd24f3043a89f9231f10f1284a4a835b8d80836acfc034');
     assert.equal(decoded.hash(), tx.hash());
+    assert.equal(decoded.getOutput(0).getSegment(0).start.toString(), '5000000')
+    assert.equal(decoded.getInput(0).getSegment(0).start.toString(), '5000000')
   });
 
   it('hash of own state', () => {
@@ -87,6 +91,14 @@ describe('Transaction', () => {
       assert.equal(deserialized.hash(), signedTx.hash())
       assert.equal(deserialized.getSignatures(), signedTx.getSignatures())
     });
+
+    it('getSignatures', () => {
+      const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
+      const signedTx = new SignedTransaction(tx)
+      signedTx.sign(AlicePrivateKey)
+      const signature = signedTx.getSignatures()
+      assert.equal(utils.recoverAddress(signedTx.hash(), signature), AliceAddress)
+    })
 
     it('verify transfer transaction', () => {
       const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
