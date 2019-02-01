@@ -32,6 +32,10 @@ export class SignedTransaction {
     return this
   }
 
+  verify(): boolean {
+    return this.tx.verify(this.signatures)
+  }
+
   /**
    * sign
    * @param pkey is hex string of private key
