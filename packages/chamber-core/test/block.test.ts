@@ -62,6 +62,22 @@ describe('Block', () => {
     assert.equal(deserialized.getRoot(), block.getRoot())
   })
 
+  it('getUserTransactions', () => {
+    const block = new Block(2)
+    block.appendTx(tx1)
+    block.appendTx(tx2)
+    const bobTxs = block.getUserTransactions(BobAddress)
+    assert.equal(bobTxs.length, 2)
+  })
+
+  it('getUserTransactionAndProofs', () => {
+    const block = new Block(2)
+    block.appendTx(tx1)
+    block.appendTx(tx2)
+    const bobTxs = block.getUserTransactionAndProofs(BobAddress)
+    assert.equal(bobTxs.length, 2)
+  })
+  
   describe('SignedTransactionWithProof', () => {
 
     it('get merkleHash', () => {
