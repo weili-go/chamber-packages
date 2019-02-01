@@ -81,7 +81,46 @@ describe('Transaction', () => {
       assert.equal(deserialized.hash(), signedTx.hash())
       assert.equal(deserialized.getSignatures(), signedTx.getSignatures())
     });
-  
+
+    it('verify transfer transaction', () => {
+      const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
+      const signedTx = new SignedTransaction(tx)
+      signedTx.sign(AlicePrivateKey)
+      assert.equal(signedTx.verify(), true)
+    });
+
+    it('failed to verify transfer transaction', () => {
+      const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
+      const signedTx = new SignedTransaction(tx)
+      signedTx.sign(BobPrivateKey)
+      assert.equal(signedTx.verify(), false)
+    });
+
+    it('verify split transaction', () => {
+      const tx = new SplitTransaction(
+        AliceAddress, segment, blkNum, AliceAddress, BobAddress, offset)
+      const signedTx = new SignedTransaction(tx)
+      signedTx.sign(AlicePrivateKey)
+      assert.equal(signedTx.verify(), true)
+    });
+
+    it('verify merge transaction', () => {
+      const tx = new MergeTransaction(
+        AliceAddress, segment1, segment2, blkNum1, blkNum2, BobAddress)
+      const signedTx = new SignedTransaction(tx)
+      signedTx.sign(AlicePrivateKey)
+      assert.equal(signedTx.verify(), true)
+    });
+
+    it('verify swap transaction', () => {
+      const tx = new SwapTransaction(
+        AliceAddress, segment1, blkNum1, BobAddress, segment2, blkNum2)
+      const signedTx = new SignedTransaction(tx)
+      signedTx.sign(AlicePrivateKey)
+      signedTx.sign(BobPrivateKey)
+      assert.equal(signedTx.verify(), true)
+    });
+
   })
 
 })

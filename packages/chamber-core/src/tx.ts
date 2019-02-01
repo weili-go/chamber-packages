@@ -11,6 +11,7 @@ import {
   Hash,
 } from './helpers/types';
 import BigNumber = utils.BigNumber
+import { Signature } from 'ethers/utils';
 
 /**
  * BaseTransaction is raw transaction data structure
@@ -54,6 +55,10 @@ export class BaseTransaction {
 
   getSegments(): Segment[] {
     return []
+  }
+
+  verify(signatures: string[]): boolean {
+    return false
   }
   
 }
@@ -151,6 +156,10 @@ export class DepositTransaction extends BaseTransaction {
     return [this.segment]
   }
 
+  verify(signatures: string[]): boolean {
+    return true
+  }
+
 }
 
 export class TransferTransaction extends BaseTransaction {
@@ -189,6 +198,11 @@ export class TransferTransaction extends BaseTransaction {
 
   getSegments(): Segment[] {
     return [this.segment]
+  }
+
+  verify(signatures: string[]): boolean {
+    return utils.recoverAddress(
+      this.hash(), signatures[0]) == this.from
   }
 
 }
@@ -253,6 +267,11 @@ export class SplitTransaction extends BaseTransaction {
     ]
   }
 
+  verify(signatures: string[]): boolean {
+    return utils.recoverAddress(
+      this.hash(), signatures[0]) == this.from
+  }
+
 }
 
 export class MergeTransaction extends BaseTransaction {
@@ -315,6 +334,11 @@ export class MergeTransaction extends BaseTransaction {
     ]
   }
   
+  verify(signatures: string[]): boolean {
+    return utils.recoverAddress(
+      this.hash(), signatures[0]) == this.from
+  }
+
 }
 
 export class SwapTransaction extends BaseTransaction {
@@ -379,6 +403,13 @@ export class SwapTransaction extends BaseTransaction {
       this.segment1,
       this.segment2
     ]
+  }
+
+  verify(signatures: string[]): boolean {
+    return utils.recoverAddress(
+      this.hash(), signatures[0]) == this.from1
+      && utils.recoverAddress(
+        this.hash(), signatures[1]) == this.from2
   }
 
 }
