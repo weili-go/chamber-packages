@@ -53,6 +53,14 @@ export class BaseTransaction {
     return utils.keccak256(this.encode())
   }
 
+  getInput(index: number): TransactionOutput {
+    return new EmptyTransactionOutput()
+  }
+
+  getOutput(index: number): TransactionOutput {
+    return new EmptyTransactionOutput()
+  }
+
   getSegments(): Segment[] {
     return []
   }
@@ -90,9 +98,35 @@ export class TransactionDecoder {
   }
 }
 
-class TransactionOutput {
+export interface TransactionOutput {
+  withBlkNum(blkNum: BigNumber): TransactionOutput
+  getOwners(): Address[]
+  getSegment(index: number): Segment
+  hash(): Hash
+}
+
+export class EmptyTransactionOutput implements TransactionOutput {
+  withBlkNum(blkNum: BigNumber) {
+    return this
+  }
+
+  getOwners(): Address[] {
+    throw new Error('blkNum should not be null to get hash')
+  }
+
+  getSegment(index: number): Segment {
+    throw new Error('blkNum should not be null to get hash')
+  }
+
+  hash(): Hash {
+    throw new Error('blkNum should not be null to get hash')
+  }
+}
+
+export class OwnState implements TransactionOutput {
   segment: Segment
   owner: Address
+  blkNum: BigNumber | null
 
   constructor(
     segment: Segment,
@@ -100,20 +134,38 @@ class TransactionOutput {
   ) {
     this.segment = segment
     this.owner = owner
+    this.blkNum = null
   }
 
-  getSegment() {
+  withBlkNum(blkNum: BigNumber) {
+    this.setBlkNum(blkNum)
+    return this
+  }
+
+  setBlkNum(blkNum: BigNumber) {
+    this.blkNum = blkNum
+  }
+
+  getOwners() {
+    return [this.owner]
+  }
+
+  getSegment(index: number) {
     return this.segment
   }
 
-  hash(blkNum: BigNumber): Hash {
-    return utils.keccak256(join([
-      utils.hexlify(utils.toUtf8Bytes('own')),
-      utils.hexZeroPad(utils.hexlify(this.owner), 32),
-      utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
-      utils.hexZeroPad(utils.hexlify(this.segment.end), 32),
-      utils.hexZeroPad(utils.hexlify(blkNum), 32)
-    ]))
+  hash(): Hash {
+    if(this.blkNum) {
+      return utils.keccak256(join([
+        utils.hexlify(utils.toUtf8Bytes('own')),
+        utils.hexZeroPad(utils.hexlify(this.owner), 32),
+        utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
+        utils.hexZeroPad(utils.hexlify(this.segment.end), 32),
+        utils.hexZeroPad(utils.hexlify(this.blkNum), 32)
+      ]))
+    }else{
+      throw new Error('blkNum should not be null to get hash')
+    }
     function join(a: string[]) {
       return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
     }
@@ -146,7 +198,7 @@ export class DepositTransaction extends BaseTransaction {
   }
 
   getOutput(): TransactionOutput {
-    return new TransactionOutput(
+    return new OwnState(
       this.segment,
       this.depositor
     )
@@ -189,8 +241,15 @@ export class TransferTransaction extends BaseTransaction {
     return TransferTransaction.fromTuple(RLP.decode(bytes))
   }
 
+  getInput(): TransactionOutput {
+    return new OwnState(
+      this.segment,
+      this.from
+    ).withBlkNum(this.blkNum)
+  }
+
   getOutput(): TransactionOutput {
-    return new TransactionOutput(
+    return new OwnState(
       this.segment,
       this.to
     )
@@ -246,14 +305,21 @@ export class SplitTransaction extends BaseTransaction {
     return SplitTransaction.fromTuple(RLP.decode(bytes))
   }
 
-  getOutputWith(index: number): TransactionOutput {
+  getInput(): TransactionOutput {
+    return new OwnState(
+      this.segment,
+      this.from
+    ).withBlkNum(this.blkNum)
+  }
+
+  getOutput(index: number): TransactionOutput {
     if(index == 0) {
-      return new TransactionOutput(
+      return new OwnState(
         new Segment(this.segment.start, this.offset),
         this.to1
       )
     }else {
-      return new TransactionOutput(
+      return new OwnState(
         new Segment(this.offset, this.segment.end),
         this.to2
       )
@@ -321,8 +387,22 @@ export class MergeTransaction extends BaseTransaction {
     return MergeTransaction.fromTuple(RLP.decode(bytes))
   }
 
+  getInput(index: number): TransactionOutput {
+    if(index == 0) {
+      return new OwnState(
+        this.segment1,
+        this.from
+      ).withBlkNum(this.blkNum1)
+    }else{
+      return new OwnState(
+        this.segment2,
+        this.from
+      ).withBlkNum(this.blkNum2)
+    }
+  }
+
   getOutput(): TransactionOutput {
-    return new TransactionOutput(
+    return new OwnState(
       new Segment(this.segment1.start, this.segment2.end),
       this.to
     )
@@ -346,6 +426,8 @@ export class SwapTransaction extends BaseTransaction {
   from2: Address
   segment1: Segment
   segment2: Segment
+  blkNum1: BigNumber
+  blkNum2: BigNumber
 
   constructor(
     from1: Address,
@@ -368,6 +450,8 @@ export class SwapTransaction extends BaseTransaction {
     this.from2 = from2
     this.segment1 = segment1
     this.segment2 = segment2
+    this.blkNum1 = blkNum1
+    this.blkNum2 = blkNum2
   }
 
   static fromTuple(tuple: RLPItem[]): SwapTransaction {
@@ -384,14 +468,28 @@ export class SwapTransaction extends BaseTransaction {
     return SwapTransaction.fromTuple(RLP.decode(bytes))
   }
 
-  getOutputWith(index: number): TransactionOutput {
+  getInput(index: number): TransactionOutput {
     if(index == 0) {
-      return new TransactionOutput(
+      return new OwnState(
+        this.segment1,
+        this.from1
+      ).withBlkNum(this.blkNum1)
+    }else{
+      return new OwnState(
+        this.segment2,
+        this.from2
+      ).withBlkNum(this.blkNum2)
+    }
+  }
+
+  getOutput(index: number): TransactionOutput {
+    if(index == 0) {
+      return new OwnState(
         this.segment1,
         this.from2
       )
     }else {
-      return new TransactionOutput(
+      return new OwnState(
         this.segment2,
         this.from1
       )

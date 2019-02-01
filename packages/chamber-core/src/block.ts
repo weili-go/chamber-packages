@@ -110,7 +110,8 @@ class SegmentNode {
     return this.getProof(hash).map(p => new SignedTransactionWithProof(
         signedTx,
         this.getRoot(),
-        p))
+        p,
+        utils.bigNumberify(this.number)))
   }
 
   checkInclusion(
