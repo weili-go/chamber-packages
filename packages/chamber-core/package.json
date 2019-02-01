@@ -2,6 +2,9 @@
   "name": "@layer2/core",
   "version": "0.0.2",
   "main": "dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "scripts": {
     "build": "tsc --build ./tsconfig.json",
@@ -28,5 +31,5 @@
   "devDependencies": {
     "mocha": "^5.2.0"
   },
-  "gitHead": "5f67728c2891607fde37600cf40293ebede7d763"
+  "gitHead": "4710480312e99fc60bfc746ea095c73b54b437d5"
 }
