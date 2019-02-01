@@ -1,7 +1,8 @@
 import { utils } from "ethers"
 import {
   BaseTransaction,
-  TransactionDecoder
+  TransactionDecoder,
+  TransactionOutput
 } from './tx'
 import {
   HexString,
@@ -84,6 +85,7 @@ export class SignedTransaction {
  */
 export class SignedTransactionWithProof {
   signedTx: SignedTransaction
+  outputIndex: number
   proof: SumMerkleProof
   root: Hash
   blkNum: BigNumber
@@ -91,11 +93,13 @@ export class SignedTransactionWithProof {
 
   constructor(
     tx: SignedTransaction,
+    outputIndex: number,
     root: Hash,
     proof: SumMerkleProof,
     blkNum: BigNumber
   ) {
     this.signedTx = tx
+    this.outputIndex = outputIndex
     this.root = root
     this.proof = proof
     this.blkNum = blkNum
@@ -133,8 +137,8 @@ export class SignedTransactionWithProof {
         this.signedTx.signatures.map(s => utils.arrayify(s)).concat(this.confSigs.map(s => utils.arrayify(s)))))
   }
 
-  getOutput(index: number) {
-    return this.signedTx.tx.getOutput(index).withBlkNum(this.blkNum)
+  getOutput() {
+    return this.signedTx.tx.getOutput(this.outputIndex).withBlkNum(this.blkNum)
   }
 
   merkleHash(): Hash {
@@ -153,6 +157,7 @@ export class SignedTransactionWithProof {
   serialize() {
     return {
       signedTx: this.getSignedTx().serialize(),
+      outputIndex: this.outputIndex,
       root: this.root,
       proof: this.proof.serialize(),
       blkNum: this.blkNum,
@@ -163,6 +168,7 @@ export class SignedTransactionWithProof {
   static deserialize(data: any): SignedTransactionWithProof {
     return new SignedTransactionWithProof(
       SignedTransaction.deserialize(data.signedTx),
+      data.outputIndex,
       data.root,
       SumMerkleProof.deserialize(data.proof),
       data.blkNum

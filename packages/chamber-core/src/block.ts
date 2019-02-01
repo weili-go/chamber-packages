@@ -19,7 +19,8 @@ import {
 } from './helpers/constants'
 import {
   HexString,
-  Hash
+  Hash,
+  Address
 } from './helpers/types'
 
 class SegmentNode {
@@ -107,8 +108,9 @@ class SegmentNode {
 
   getSignedTransactionWithProof(hash: string) {
     const signedTx = this.getSignedTransaction(hash)
-    return this.getProof(hash).map(p => new SignedTransactionWithProof(
+    return this.getProof(hash).map((p, i) => new SignedTransactionWithProof(
         signedTx,
+        i,
         this.getRoot(),
         p,
         utils.bigNumberify(this.number)))
@@ -173,6 +175,24 @@ class SegmentNode {
       n.segment.getAmount()
     ))
     return new SumMerkleTree(leaves)
+  }
+
+  getTransactions() {
+    return this.txs
+  }
+
+  getUserTransactions(owner: Address): SignedTransaction[] {
+    return this.txs.filter(tx => {
+      return tx.tx.getOutputs().filter(output => {
+        return output.getOwners().indexOf(owner) >= 0
+      }).length > 0
+    })
+  }
+
+  getUserTransactionAndProofs(owner: Address): SignedTransactionWithProof[] {
+    return this.getUserTransactions(owner).reduce((acc: SignedTransactionWithProof[], tx) => {
+      return acc.concat(this.getSignedTransactionWithProof(tx.hash()))
+    }, [])
   }
 
 }

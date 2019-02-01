@@ -395,7 +395,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        tx0.getOutput(0).hash(),
+        tx0.getOutput().hash(),
         {
           from: bob
         });

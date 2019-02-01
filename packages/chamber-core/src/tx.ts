@@ -61,6 +61,10 @@ export class BaseTransaction {
     return new EmptyTransactionOutput()
   }
 
+  getOutputs(): TransactionOutput[] {
+    return []
+  }
+
   getSegments(): Segment[] {
     return []
   }
@@ -204,6 +208,10 @@ export class DepositTransaction extends BaseTransaction {
     )
   }
 
+  getOutputs() {
+    return [this.getOutput()]
+  }
+
   getSegments(): Segment[] {
     return [this.segment]
   }
@@ -253,6 +261,10 @@ export class TransferTransaction extends BaseTransaction {
       this.segment,
       this.to
     )
+  }
+
+  getOutputs() {
+    return [this.getOutput()]
   }
 
   getSegments(): Segment[] {
@@ -325,7 +337,11 @@ export class SplitTransaction extends BaseTransaction {
       )
     }
   }
-  
+
+  getOutputs() {
+    return [this.getOutput(0), this.getOutput(1)]
+  }
+
   getSegments(): Segment[] {
     return [
       new Segment(this.segment.start, this.offset),
@@ -406,6 +422,10 @@ export class MergeTransaction extends BaseTransaction {
       new Segment(this.segment1.start, this.segment2.end),
       this.to
     )
+  }
+
+  getOutputs() {
+    return [this.getOutput()]
   }
 
   getSegments(): Segment[] {
@@ -495,7 +515,11 @@ export class SwapTransaction extends BaseTransaction {
       )
     }
   }
-  
+
+  getOutputs() {
+    return [this.getOutput(0), this.getOutput(1)]
+  }
+    
   getSegments(): Segment[] {
     return [
       this.segment1,
