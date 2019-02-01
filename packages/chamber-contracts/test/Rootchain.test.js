@@ -120,7 +120,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        tx.signedTx.tx.getOutput().hash(6),
+        tx.getOutput().hash(),
         {
           from: bob
         });
@@ -141,7 +141,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
       await this.rootChain.challenge(
-        tx.signedTx.tx.getOutput().hash(6),
+        tx.getOutput().hash(),
         tx.getTxBytes(),
         8 * 100 + 10,
         -1,
@@ -171,7 +171,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
 
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
-      const exitHash = tx.signedTx.tx.getOutput().hash(10)
+      const exitHash = tx.getOutput().hash()
       await this.rootChain.challengeBefore(
         exitHash,
         8 * 100,
@@ -213,7 +213,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
 
       const challengeTx = Scenario1.blocks[0].signedTransactions[0]
-      const exitHash = tx.signedTx.tx.getOutput().hash(10)
+      const exitHash = tx.getOutput().hash()
       await this.rootChain.challengeBefore(
         exitHash,
         6 * 100,
@@ -262,7 +262,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
 
       const depositTx = Scenario1.deposits[0]
-      const exitHash = tx.signedTx.tx.getOutput().hash(6)
+      const exitHash = tx.getOutput().hash()
       const challengeId = 1
       await this.rootChain.challengeBefore(
         exitHash,
@@ -313,7 +313,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        tx.signedTx.tx.getOutput().hash(6),
+        tx.getOutput().hash(),
         {
           from: bob
         });
@@ -330,7 +330,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           value: BOND
         });
       await this.rootChain.challengeByWithdrawal(
-        invalidTx.signedTx.tx.getOutput().hash(12),
+        invalidTx.getOutput().hash(),
         Scenario1.segments[0].toBigNumber(),
         {
           from: bob
@@ -395,7 +395,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        tx0.signedTx.tx.getOutputWith(0).hash(6),
+        tx0.getOutput(0).hash(),
         {
           from: bob
         });
@@ -452,7 +452,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: operator,
           value: BOND
         });
-      const exitHash = tx2.signedTx.tx.getOutput().hash(8)
+      const exitHash = tx2.getOutput().hash()
       await this.rootChain.forceIncludeRequest(
         exitHash,
         6 * 100 + 1,
@@ -505,7 +505,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: operator,
           value: BOND
         });
-      const exitHash = tx2.signedTx.tx.getOutput().hash(8)
+      const exitHash = tx2.getOutput().hash()
       const challengeId = 1
       await this.rootChain.forceIncludeRequest(
         exitHash,

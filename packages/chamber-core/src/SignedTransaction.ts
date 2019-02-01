@@ -8,7 +8,7 @@ import {
   Signature,
   Hash
 } from './helpers/types'
-import { keccak256 } from 'ethers/utils'
+import { keccak256, BigNumber } from 'ethers/utils'
 import {
   SumMerkleProof
 } from './merkle'
@@ -86,16 +86,19 @@ export class SignedTransactionWithProof {
   signedTx: SignedTransaction
   proof: SumMerkleProof
   root: Hash
+  blkNum: BigNumber
   confSigs: Signature[]
 
   constructor(
     tx: SignedTransaction,
     root: Hash,
-    proof: SumMerkleProof
+    proof: SumMerkleProof,
+    blkNum: BigNumber
   ) {
     this.signedTx = tx
     this.root = root
     this.proof = proof
+    this.blkNum = blkNum
     this.confSigs = []
   }
 
@@ -130,6 +133,10 @@ export class SignedTransactionWithProof {
         this.signedTx.signatures.map(s => utils.arrayify(s)).concat(this.confSigs.map(s => utils.arrayify(s)))))
   }
 
+  getOutput(index: number) {
+    return this.signedTx.tx.getOutput(index).withBlkNum(this.blkNum)
+  }
+
   merkleHash(): Hash {
     return keccak256(
       utils.hexlify(
@@ -148,6 +155,7 @@ export class SignedTransactionWithProof {
       signedTx: this.getSignedTx().serialize(),
       root: this.root,
       proof: this.proof.serialize(),
+      blkNum: this.blkNum,
       confSigs: this.confSigs
     }
   }
@@ -156,7 +164,8 @@ export class SignedTransactionWithProof {
     return new SignedTransactionWithProof(
       SignedTransaction.deserialize(data.signedTx),
       data.root,
-      SumMerkleProof.deserialize(data.proof)
+      SumMerkleProof.deserialize(data.proof),
+      data.blkNum
     ).withRawConfSigs(data.confSigs)
   }
 
