@@ -36,7 +36,13 @@ module.exports = {
    */
 
   networks: {
-
+    local: {
+      host: "127.0.0.1",
+      port: 8545,
+      network_id: "*",
+      gas: 6700000,
+      gasPrice: 10000000000,
+    }
   },
 
   // Set default mocha options here, use special reporters etc.
