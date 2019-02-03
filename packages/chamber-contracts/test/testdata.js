@@ -62,10 +62,14 @@ function scenario1() {
   const blkNum3 = utils.bigNumberify('6')
   const blkNum4 = utils.bigNumberify('8')
   const blkNum5 = utils.bigNumberify('10')
-  const block3 = new Block(6)
+  const block3 = new Block()
+  block3.setBlockNumber(6)
   const block4 = new Block(8)
+  block4.setBlockNumber(8)
   const block5 = new Block(10)
+  block5.setBlockNumber(10)
   const block6 = new Block(12)
+  block6.setBlockNumber(12)
 
   const depositTx1 = new DepositTransaction(AliceAddress, constants.AddressZero, segment1)
   const depositTx2 = new DepositTransaction(BobAddress, constants.AddressZero, segment2)
@@ -138,9 +142,12 @@ function scenario2() {
   // transactinos
   const blkNum3 = utils.bigNumberify('6')
   const blkNum4 = utils.bigNumberify('8')
-  const block3 = new Block(6)
+  const block3 = new Block()
+  block3.setBlockNumber(6)
   const block4 = new Block(8)
+  block4.setBlockNumber(8)
   const block5 = new Block(10)
+  block5.setBlockNumber(10)
 
   const tx31 = new SignedTransaction(new SwapTransaction(
     AliceAddress, segment4, blkNum1, OperatorAddress, segment5, blkNum2))
@@ -199,9 +206,12 @@ function scenario3() {
   // transactinos
   const blkNum3 = utils.bigNumberify('6')
   const blkNum4 = utils.bigNumberify('8')
-  const block3 = new Block(6)
+  const block3 = new Block()
+  block3.setBlockNumber(6)
   const block4 = new Block(8)
+  block4.setBlockNumber(8)
   const block5 = new Block(10)
+  block5.setBlockNumber(10)
 
   const tx31 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, BobAddress, utils.bigNumberify('500000')))
   tx31.sign(AlicePrivateKey)
@@ -260,7 +270,8 @@ function transactions() {
     
   const blkNum1 = utils.bigNumberify('3')
   const blkNum2 = utils.bigNumberify('5')
-  const block = new Block(6)
+  const block = new Block()
+  block.setBlockNumber(6)
 
   const tx = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
   const invalidTx = createTransfer(OperatorPrivateKey, AliceAddress, segment2, blkNum2, BobAddress)

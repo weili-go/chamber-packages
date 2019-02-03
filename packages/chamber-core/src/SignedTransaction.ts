@@ -33,6 +33,10 @@ export class SignedTransaction {
     return this
   }
 
+  getRawTx() {
+    return this.tx
+  }
+
   verify(): boolean {
     return this.tx.verify(this.signatures)
   }

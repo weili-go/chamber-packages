@@ -22,6 +22,7 @@ import {
   Hash,
   Address
 } from './helpers/types'
+import { DepositTransaction, TransactionDecoder } from './tx';
 
 class SegmentNode {
   segment: Segment
@@ -57,15 +58,25 @@ class SegmentNode {
  */
  export class Block {
   number: number
+  isDepositBlock: boolean
   txs: SignedTransaction[]
+  depositTx?: DepositTransaction
   tree: SumMerkleTree | null
 
-  constructor(
-    number: number
-  ) {
-    this.number = number
+  constructor() {
+    this.number = 0
+    this.isDepositBlock = false
     this.txs = []
     this.tree = null
+  }
+
+  setBlockNumber(number: number) {
+    this.number = number
+  }
+
+  setDepositTx(depositTx: DepositTransaction) {
+    this.depositTx = depositTx
+    this.isDepositBlock = true
   }
 
   appendTx(tx: SignedTransaction) {
@@ -75,17 +86,26 @@ class SegmentNode {
   serialize() {
     return {
       number: this.number,
+      isDepositBlock: this.isDepositBlock,
+      depositTx: this.depositTx?this.depositTx.encode():null,
       txs: this.txs.map(tx => tx.serialize()),
       root: this.getRoot()
     }
   }
 
   static deserialize(data: any): Block {
-    let block = new Block(data.number)
+    let block = new Block()
+    block.setBlockNumber(data.number)
+    if(data.depositTx !== null)
+      block.setDepositTx(DepositTransaction.decode(data.depositTx))
     data.txs.forEach((tx: any) => {
       block.appendTx(SignedTransaction.deserialize(tx))
     })
     return block
+  }
+
+  getBlockNumber() {
+    return this.number
   }
 
   getRoot(): Hash {
@@ -183,9 +203,13 @@ class SegmentNode {
 
   getUserTransactions(owner: Address): SignedTransaction[] {
     return this.txs.filter(tx => {
-      return tx.tx.getOutputs().filter(output => {
+      const hasOutput = tx.tx.getOutputs().filter(output => {
         return output.getOwners().indexOf(owner) >= 0
       }).length > 0
+      const hasInput = tx.tx.getInputs().filter(input => {
+        return input.getOwners().indexOf(owner) >= 0
+      }).length > 0
+      return hasOutput || hasInput
     })
   }
 

@@ -40,7 +40,8 @@ describe('Block', () => {
   tx2.sign(AlicePrivateKey)
 
   it('should create tree', () => {
-    const block = new Block(2)
+    const block = new Block()
+    block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
     assert.equal(block.createTree().getLeaves().length, 8)
@@ -53,7 +54,8 @@ describe('Block', () => {
   })
 
   it('serialize and deserialize', () => {
-    const block = new Block(2)
+    const block = new Block()
+    block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
     const serialized = block.serialize()
@@ -63,7 +65,8 @@ describe('Block', () => {
   })
 
   it('getUserTransactions', () => {
-    const block = new Block(2)
+    const block = new Block()
+    block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
     const bobTxs = block.getUserTransactions(BobAddress)
@@ -71,7 +74,8 @@ describe('Block', () => {
   })
 
   it('getUserTransactionAndProofs', () => {
-    const block = new Block(2)
+    const block = new Block()
+    block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
     const bobTxs = block.getUserTransactionAndProofs(BobAddress)
@@ -81,7 +85,8 @@ describe('Block', () => {
   describe('SignedTransactionWithProof', () => {
 
     it('get merkleHash', () => {
-      const block = new Block(2)
+      const block = new Block()
+      block.setBlockNumber(2)
       block.appendTx(tx1)
       block.appendTx(tx2)
       const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]
@@ -89,7 +94,8 @@ describe('Block', () => {
     });
 
     it('serialize and deserialize', () => {
-      const block = new Block(2)
+      const block = new Block()
+      block.setBlockNumber(2)
       block.appendTx(tx1)
       block.appendTx(tx2)
       const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]

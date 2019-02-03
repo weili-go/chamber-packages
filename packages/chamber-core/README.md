@@ -1,4 +1,4 @@
-chamber-core
+@layer2/core
 =====
 
 
@@ -9,6 +9,3 @@ npm install @layer2/core
 ```
 
 # Development
-
-
-```

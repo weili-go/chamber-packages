@@ -57,6 +57,10 @@ export class BaseTransaction {
     return new EmptyTransactionOutput()
   }
 
+  getInputs(): TransactionOutput[] {
+    return []
+  }
+
   getOutput(index: number): TransactionOutput {
     return new EmptyTransactionOutput()
   }
@@ -96,6 +100,8 @@ export class TransactionDecoder {
       return MergeTransaction.decode(tuple[1])
     }else if(label === 4) {
       return SwapTransaction.decode(tuple[1])
+    }else if(label === 5) {
+      return DepositTransaction.decode(tuple[1])
     }else{
       return TransferTransaction.decode(tuple[1])
     }
@@ -256,6 +262,10 @@ export class TransferTransaction extends BaseTransaction {
     ).withBlkNum(this.blkNum)
   }
 
+  getInputs(): TransactionOutput[] {
+    return [this.getInput()]
+  }
+
   getOutput(): TransactionOutput {
     return new OwnState(
       this.segment,
@@ -322,6 +332,10 @@ export class SplitTransaction extends BaseTransaction {
       this.segment,
       this.from
     ).withBlkNum(this.blkNum)
+  }
+
+  getInputs(): TransactionOutput[] {
+    return [this.getInput()]
   }
 
   getOutput(index: number): TransactionOutput {
@@ -417,6 +431,10 @@ export class MergeTransaction extends BaseTransaction {
     }
   }
 
+  getInputs(): TransactionOutput[] {
+    return [this.getInput(0), this.getInput(1)]
+  }
+
   getOutput(): TransactionOutput {
     return new OwnState(
       new Segment(this.segment1.start, this.segment2.end),
@@ -500,6 +518,10 @@ export class SwapTransaction extends BaseTransaction {
         this.from2
       ).withBlkNum(this.blkNum2)
     }
+  }
+
+  getInputs(): TransactionOutput[] {
+    return [this.getInput(0), this.getInput(1)]
   }
 
   getOutput(index: number): TransactionOutput {
