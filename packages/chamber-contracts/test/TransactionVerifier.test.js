@@ -2,6 +2,7 @@ const { deployRLPdecoder } = require('./helpers/deployRLPdecoder')
 const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
 const MultisigVerifier = artifacts.require("MultisigVerifier")
+const EscrowVerifier = artifacts.require("EscrowVerifier")
 const ethers = require('ethers')
 const BigNumber = ethers.utils.BigNumber
 
@@ -20,9 +21,11 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
     await deployRLPdecoder(admin)
     const standardVerifier = await StandardVerifier.new({ from: operator })
     const multisigVerifier = await MultisigVerifier.new({ from: operator })
+    const escrowVerifier = await EscrowVerifier.new({ from: operator })
     this.transactionVerifier = await TransactionVerifier.new(
       standardVerifier.address,
       multisigVerifier.address,
+      escrowVerifier.address,
       {
         from: operator
       })

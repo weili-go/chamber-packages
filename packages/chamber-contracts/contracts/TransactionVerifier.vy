@@ -84,8 +84,28 @@ contract MultisigVerifier():
     _blkNum: uint256
   ) -> bytes32: constant
 
+contract EscrowVerifier():
+  def verify(
+    _label: uint256,
+    _txHash: bytes32,
+    _merkleHash: bytes32,
+    _txBytes: bytes[1024],
+    _sigs: bytes[260],
+    _outputIndex: uint256,
+    _owner: address,
+    _start: uint256,
+    _end: uint256
+  ) -> bool: constant
+  def getTxoHash(
+    _label: uint256,
+    _txBytes: bytes[1024],
+    _index: uint256,
+    _blkNum: uint256
+  ) -> bytes32: constant
+
 stdverifier: address
 multisigverifier: address
+escrowverifier: address
 
 @private
 @constant
@@ -162,9 +182,10 @@ def getDepositTxoHash(
 
 # @dev Constructor
 @public
-def __init__(_stdverifier: address, _multisig: address):
+def __init__(_stdverifier: address, _multisig: address, _escrow: address):
   self.stdverifier = _stdverifier
   self.multisigverifier = _multisig
+  self.escrowverifier = _escrow
 
 # @dev verify the transaction is signed correctly
 @public
@@ -194,6 +215,8 @@ def verify(
     return self.verifyDepositTx(body, _owner, _start, _end)
   elif label == 10:
     return MultisigVerifier(self.multisigverifier).verifyMultisig2(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
+  elif label >= 20:
+    return EscrowVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, body, _sigs, _outputIndex, _owner, _start, _end)
   return False
 
 @public
@@ -239,4 +262,6 @@ def getTxoHash(
     return self.getDepositTxoHash(body, _blkNum)
   elif label == 10:
     return MultisigVerifier(self.multisigverifier).getTxoHashOfMultisig2(body, _index, _blkNum)
+  elif label >= 20:
+    return EscrowVerifier(self.escrowverifier).getTxoHash(label, body, _index, _blkNum)
   return sha3("txo")
