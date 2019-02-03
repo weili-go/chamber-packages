@@ -136,6 +136,17 @@ class SegmentNode {
         utils.bigNumberify(this.number)))
   }
 
+  getExclusionProof(offset: BigNumber): SumMerkleProof {
+    if(this.tree === null) {
+      this.tree = this.createTree()
+    }
+    const proof = this.tree.getProofByRange(offset)
+    if(proof == null) {
+      throw new Error('exclusion proof not found')
+    }
+    return proof
+  }
+
   checkInclusion(
     tx: SignedTransactionWithProof,
     start: BigNumber,
