@@ -53,6 +53,16 @@ describe('Block', () => {
     assert.equal(block.checkInclusion(sptx2, segment3.start, segment3.end), true)
   })
 
+  it('should getExclusionProof', () => {
+    const block = new Block()
+    block.setBlockNumber(2)
+    block.appendTx(tx1)
+    block.appendTx(tx2)
+    const exclusionProof = block.getExclusionProof(utils.bigNumberify('3000000'))
+    assert.equal(exclusionProof.index, 0)
+    assert.equal(exclusionProof.segment.start.toNumber(), 0)
+  })
+
   it('serialize and deserialize', () => {
     const block = new Block()
     block.setBlockNumber(2)

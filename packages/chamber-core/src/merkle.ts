@@ -180,6 +180,26 @@ export class SumMerkleTree {
     return proofs
   }
 
+  /**
+   * getProofByRange
+   * @param {BigNumber} offset 
+   */
+  getProofByRange(offset: BigNumber): SumMerkleProof | null {
+    let start = new BigNumber(0)
+
+    for(let i = 0; i < this.leaves.length; i++) {
+      const amount = this.leaves[i].getLengthAsBigNumber()
+      if(start.add(amount).gt(offset)) {
+        return new SumMerkleProof(
+          i,
+          new Segment(start, start.add(amount)),
+          utils.hexlify(this._proof(i)))
+      }
+      start = start.add(amount)
+    }
+    return null
+  }
+
   _proof(index: number): Buffer {
     if(index < 0) {
       throw new Error('invalid leaf')
