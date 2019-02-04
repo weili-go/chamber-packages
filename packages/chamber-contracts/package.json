@@ -1,6 +1,6 @@
 {
   "name": "@layer2/contracts",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "main": "index.js",
   "publishConfig": {
     "access": "public"
@@ -14,7 +14,7 @@
     "test:ci": "truffle test"
   },
   "dependencies": {
-    "@layer2/core": "^0.0.5",
+    "@layer2/core": "^0.0.6",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.5",
     "chai": "^4.2.0",
