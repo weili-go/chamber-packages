@@ -44,7 +44,9 @@ export class Chain {
       }
     })
     // write to DB
-    await this.writeWaitingBlock(block.getRoot(), block)
+    const root = block.getRoot()
+    await this.writeWaitingBlock(root, block)
+    return root
   }
   
   async handleSubmit(root: string, blkNumStr: string) {
@@ -54,6 +56,7 @@ export class Chain {
       this.snapshot.applyTx(tx, blkNum)
     })
     block.setBlockNumber(blkNum.toNumber())
+    this.blockHeight = blkNum.toNumber()
     await this.writeToDb(block)
   }
 
@@ -69,6 +72,7 @@ export class Chain {
     const block = new Block()
     block.setBlockNumber(Number(blkNum))
     block.setDepositTx(depositTx)
+    this.blockHeight = Number(blkNum)
     // write to DB
     this.snapshot.db.insertId(depositTx.getOutput().hash())
     await this.writeToDb(block)
