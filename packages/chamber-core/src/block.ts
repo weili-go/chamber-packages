@@ -89,7 +89,7 @@ class SegmentNode {
       isDepositBlock: this.isDepositBlock,
       depositTx: this.depositTx?this.depositTx.encode():null,
       txs: this.txs.map(tx => tx.serialize()),
-      root: this.getRoot()
+      root: this.txs.length>0?this.getRoot():null
     }
   }
 

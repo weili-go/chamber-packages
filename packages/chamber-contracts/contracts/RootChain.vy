@@ -53,8 +53,8 @@ contract TransactionVerifier():
   ) -> bytes32: constant
 
 BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
-Deposited: event({_depositer: address, _start: uint256, _end: uint256, _blkNum: uint256})
-ExitStarted: event({_txHash: bytes32, _exitor: address, exitableAt: uint256, _start: uint256, _end: uint256})
+Deposited: event({_depositer: indexed(address), _start: uint256, _end: uint256, _blkNum: uint256})
+ExitStarted: event({_exitor: indexed(address), _txHash: bytes32, exitableAt: uint256, _start: uint256, _end: uint256})
 ChallengeStarted: event({_eTxHash: bytes32, _cTxHash: uint256})
 Responded: event({_eTxHash: bytes32, _cTxHash: uint256})
 ForceIncluded: event({_cTxHash: uint256})
@@ -244,7 +244,7 @@ def exit(
     segment: _start * TOTAL_DEPOSIT + _end,
     challengeCount: 0
   })
-  log.ExitStarted(exitHash, msg.sender, exitableAt, _start, _end)
+  log.ExitStarted(msg.sender, exitHash, exitableAt, _start, _end)
 
 # @dev sendParentOfExit
 #     send parent transaction of the exiting transaction and update priority of exit

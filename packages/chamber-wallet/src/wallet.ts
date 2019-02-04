@@ -18,10 +18,10 @@ import { BigNumber } from 'ethers/utils';
 
 const abi = [
   'event BlockSubmitted(bytes32 _root, uint256 _timestamp, uint256 _blkNum)',
-  'event Deposited(address _depositer, uint256 _start, uint256 _end, uint256 _blkNum)',
-  'event ExitStarted(bytes32 _txHash, address _exitor, uint256 exitableAt, uint256 _start, uint256 _end)',
-  'function deposit()',
-  'function exit(uint256 _utxoPos, uint256 _start, uint256 _end, bytes _txBytes, bytes _proof, bytes _sig)'
+  'event Deposited(address indexed _depositer, uint256 _start, uint256 _end, uint256 _blkNum)',
+  'event ExitStarted(address indexed _exitor, bytes32 _txHash, uint256 exitableAt, uint256 _start, uint256 _end)',
+  'function deposit() payable',
+  'function exit(uint256 _utxoPos, uint256 _start, uint256 _end, bytes _txBytes, bytes _proof, bytes _sig) payable'
 ]
 
 export class ChamberWallet {
@@ -32,6 +32,7 @@ export class ChamberWallet {
   wallet: ethers.Wallet
   utxos: Map<string, SignedTransactionWithProof>
   storage: IWalletStorage
+  httpProvider: ethers.providers.JsonRpcProvider
 
   constructor(
     client: PlasmaClient,
@@ -43,9 +44,9 @@ export class ChamberWallet {
     this.client = client
     this.latestBlockNumber = 0
     this.loadedBlockNumber = 0
-    const httpProvider = new ethers.providers.JsonRpcProvider(rootChainEndpoint)
-    const contract = new ethers.Contract(contractAddress, abi, httpProvider)
-    this.wallet = new ethers.Wallet(privateKey, httpProvider)
+    this.httpProvider = new ethers.providers.JsonRpcProvider(rootChainEndpoint)
+    const contract = new ethers.Contract(contractAddress, abi, this.httpProvider)
+    this.wallet = new ethers.Wallet(privateKey, this.httpProvider)
     this.rootChainContract = contract.connect(this.wallet)
     this.utxos = new Map<string, SignedTransactionWithProof>()
     this.loadUTXO()
@@ -110,9 +111,10 @@ export class ChamberWallet {
   }
 
   async deposit() {
-    return await this.rootChainContract.deposit({
+    const result = await this.rootChainContract.deposit({
       value: ethers.utils.parseEther('1.0')
     })
+    return await this.httpProvider.getTransactionReceipt(result.hash)
   }
 
   async exit(tx: SignedTransactionWithProof) {
