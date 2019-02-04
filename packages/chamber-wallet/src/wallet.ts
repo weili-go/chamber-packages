@@ -138,7 +138,7 @@ export class ChamberWallet {
     return tx
   }
 
-  sendTransaction(
+  async sendTransaction(
     to: Address,
     amount: number
   ) {
@@ -158,7 +158,7 @@ export class ChamberWallet {
     )
     const signedTx = new SignedTransaction(newTx)
     signedTx.sign(this.wallet.privateKey)
-    this.client.sendTransaction(JSON.stringify(signedTx.serialize()))
+    await this.client.sendTransaction(JSON.stringify(signedTx.serialize()))
   }
 
   // events
