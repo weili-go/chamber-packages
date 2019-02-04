@@ -70,7 +70,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
   describe("exit", () => {
 
     beforeEach(async () => {
-      await this.rootChain.deposit(
+      const result = await this.rootChain.deposit(
         {
           from: alice,
           value: '1000000'

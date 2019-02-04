@@ -56,8 +56,7 @@ export class Chain {
     return root
   }
   
-  async handleSubmit(root: string, blkNumStr: string) {
-    const blkNum = ethers.utils.bigNumberify(blkNumStr)
+  async handleSubmit(root: string, blkNum: BigNumber) {
     const block = await this.readWaitingBlock(root)
     block.txs.forEach(tx => {
       this.snapshot.applyTx(tx, blkNum)
@@ -67,8 +66,7 @@ export class Chain {
     await this.writeToDb(block)
   }
 
-  async handleDeposit(depositor: string, start: string, end: string, blkNumStr: string) {
-    const blkNum = ethers.utils.bigNumberify(blkNumStr)
+  async handleDeposit(depositor: string, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
     const depositTx = new DepositTransaction(
       depositor,
       '0x0000000000000000000000000000000000000000',
