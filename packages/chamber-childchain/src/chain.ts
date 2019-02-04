@@ -36,8 +36,15 @@ export class Chain {
     this.txQueue.push(tx)
   }
 
+  isEmpty() {
+    return this.txQueue.length == 0
+  }
+  
   async generateBlock() {
     const block = new Block()
+    if(this.txQueue.length == 0) {
+      throw new Error('txQueue is empty')
+    }
     this.txQueue.forEach(tx => {
       if(tx.verify() && this.snapshot.checkInput(tx)) {
         block.appendTx(tx)
@@ -60,7 +67,8 @@ export class Chain {
     await this.writeToDb(block)
   }
 
-  async handleDeposit(depositor: string, start: string, end: string, blkNum: string) {
+  async handleDeposit(depositor: string, start: string, end: string, blkNumStr: string) {
+    const blkNum = ethers.utils.bigNumberify(blkNumStr)
     const depositTx = new DepositTransaction(
       depositor,
       '0x0000000000000000000000000000000000000000',
@@ -70,11 +78,11 @@ export class Chain {
       )
     )
     const block = new Block()
-    block.setBlockNumber(Number(blkNum))
+    block.setBlockNumber(blkNum.toNumber())
     block.setDepositTx(depositTx)
-    this.blockHeight = Number(blkNum)
+    this.blockHeight = blkNum.toNumber()
     // write to DB
-    this.snapshot.db.insertId(depositTx.getOutput().hash())
+    this.snapshot.db.insertId(depositTx.getOutput().withBlkNum(blkNum).hash())
     await this.writeToDb(block)
   }
 
