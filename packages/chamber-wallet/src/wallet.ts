@@ -21,7 +21,9 @@ const abi = [
   'event Deposited(address indexed _depositer, uint256 _start, uint256 _end, uint256 _blkNum)',
   'event ExitStarted(address indexed _exitor, bytes32 _txHash, uint256 exitableAt, uint256 _start, uint256 _end)',
   'function deposit() payable',
-  'function exit(uint256 _utxoPos, uint256 _start, uint256 _end, bytes _txBytes, bytes _proof, bytes _sig) payable'
+  'function exit(uint256 _utxoPos, uint256 _start, uint256 _end, bytes _txBytes, bytes _proof, bytes _sig) payable',
+  'function finalizeExit(bytes32 _exitHash)',
+  'function getExit(bytes32 _exitHash) constant returns(address, uint256)',
 ]
 
 export class ChamberWallet {
@@ -51,6 +53,11 @@ export class ChamberWallet {
     this.utxos = new Map<string, SignedTransactionWithProof>()
     this.loadUTXO()
     this.storage = storage
+  }
+
+  async loadBlockNumber() {
+    const blkNum: number = await this.client.getBlockNumber()
+    return blkNum
   }
 
   async loadBlocks() {
@@ -102,6 +109,10 @@ export class ChamberWallet {
     this.storage.add('utxos', JSON.stringify(this.utxos))
   }
 
+  getAddress() {
+    return this.wallet.address
+  }
+
   getBalance() {
     let balance = ethers.utils.bigNumberify(0)
     this.utxos.forEach((tx) => {
@@ -130,6 +141,14 @@ export class ChamberWallet {
     })
   }
 
+  async getExit(exitId: string) {
+    return await this.rootChainContract.getExit(exitId)
+  }
+  
+  async finalizeExit(exitId: string) {
+    return await this.rootChainContract.finalizeExit(exitId)
+  }
+  
   searchUtxo(amount: number): SignedTransactionWithProof | null {
     let tx: SignedTransactionWithProof | null = null
     this.utxos.forEach((_tx) => {
