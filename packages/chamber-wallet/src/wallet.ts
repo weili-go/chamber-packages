@@ -53,14 +53,14 @@ export class ChamberWallet {
     this.utxos = new Map<string, SignedTransactionWithProof>()
     this.loadUTXO()
     this.storage = storage
+    this.loadedBlockNumber = this.getNumberFromStorage('loadedBlockNumber')
   }
 
   async loadBlockNumber() {
-    const blkNum: number = await this.client.getBlockNumber()
-    return blkNum
+    return await this.client.getBlockNumber()
   }
 
-  async loadBlocks() {
+  private async loadBlocks() {
     const blkNum: number = await this.client.getBlockNumber()
     this.latestBlockNumber = blkNum
     let tasks = [];
@@ -89,6 +89,8 @@ export class ChamberWallet {
         this.addUTXO(tx)
       }
     })
+    this.loadedBlockNumber = block.getBlockNumber()
+    this.storage.add('loadedBlockNumber', this.loadedBlockNumber.toString())
   }
 
   addUTXO(tx: SignedTransactionWithProof) {
@@ -107,6 +109,14 @@ export class ChamberWallet {
   deleteUTXO(key: string) {
     this.utxos.delete(key)
     this.storage.add('utxos', JSON.stringify(this.utxos))
+  }
+
+  getNumberFromStorage(key: string): number {
+    try {
+      return Number(this.storage.get(key))
+    } catch(e) {
+      return 0
+    }
   }
 
   getAddress() {
