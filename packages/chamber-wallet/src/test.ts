@@ -17,6 +17,6 @@ const wallet = new ChamberWallet(
   new MockWalletStorage()
 )
 
-wallet.deposit().then((receipt) => {
+wallet.deposit('1.0').then((receipt) => {
   console.log('deposited', receipt.logs)
 })
