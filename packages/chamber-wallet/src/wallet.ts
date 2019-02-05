@@ -121,9 +121,13 @@ export class ChamberWallet {
     return balance
   }
 
-  async deposit() {
+  /**
+   * 
+   * @param ether 1.0
+   */
+  async deposit(ether: string) {
     const result = await this.rootChainContract.deposit({
-      value: ethers.utils.parseEther('1.0')
+      value: ethers.utils.parseEther(ether)
     })
     return await this.httpProvider.getTransactionReceipt(result.hash)
   }
@@ -148,7 +152,7 @@ export class ChamberWallet {
   async finalizeExit(exitId: string) {
     return await this.rootChainContract.finalizeExit(exitId)
   }
-  
+
   searchUtxo(amount: number): SignedTransactionWithProof | null {
     let tx: SignedTransactionWithProof | null = null
     this.utxos.forEach((_tx) => {
