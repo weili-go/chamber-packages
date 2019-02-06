@@ -1,6 +1,6 @@
 {
   "name": "@layer2/childchain",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -16,7 +16,7 @@
     "test:ci": "yarn run pretest:ci && istanbul cover _mocha -- 'dist-ci/test/**/*.js' && remap-istanbul -i coverage/coverage.json -o coverage/lcov.info -t lcovonly && istanbul-coveralls"
   },
   "dependencies": {
-    "@layer2/core": "^0.0.8",
+    "@layer2/core": "^0.0.9",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.5",
     "chai": "^4.2.0",
