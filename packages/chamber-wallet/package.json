@@ -1,6 +1,6 @@
 {
   "name": "@layer2/wallet",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -16,7 +16,7 @@
     "test:ci": "yarn run pretest:ci && istanbul cover _mocha -- 'dist-ci/test/**/*.js' && remap-istanbul -i coverage/coverage.json -o coverage/lcov.info -t lcovonly && istanbul-coveralls"
   },
   "dependencies": {
-    "@layer2/core": "^0.0.7",
+    "@layer2/core": "^0.0.8",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.5",
     "@types/node-fetch": "^2.1.4",
