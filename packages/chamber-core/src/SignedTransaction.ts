@@ -164,7 +164,7 @@ export class SignedTransactionWithProof {
       outputIndex: this.outputIndex,
       root: this.root,
       proof: this.proof.serialize(),
-      blkNum: this.blkNum,
+      blkNum: this.blkNum.toString(),
       confSigs: this.confSigs
     }
   }
@@ -175,7 +175,7 @@ export class SignedTransactionWithProof {
       data.outputIndex,
       data.root,
       SumMerkleProof.deserialize(data.proof),
-      data.blkNum
+      utils.bigNumberify(data.blkNum)
     ).withRawConfSigs(data.confSigs)
   }
 

@@ -302,7 +302,6 @@ export class ChamberWallet {
         map.set(key, obj[key])
       }
     } catch(e) {
-      console.error(e)
     }
     return map
   }
@@ -371,20 +370,21 @@ export class ChamberWallet {
     return await this.rootChainContract.finalizeExit(exitId)
   }
 
-  searchUtxo(amount: number): SignedTransactionWithProof | null {
+  searchUtxo(amount: BigNumber): SignedTransactionWithProof | null {
     let tx: SignedTransactionWithProof | null = null
     this.getUTXOArray().forEach((_tx) => {
-      if(_tx.getOutput().getSegment(0).getAmount().toNumber() > amount) {
+      if(_tx.getOutput().getSegment(0).getAmount().gt(amount)) {
         tx = _tx
       }
     })
     return tx
   }
 
-  async sendTransaction(
+  async transfer(
     to: Address,
-    amount: number
+    amountStr: string
   ) {
+    const amount = ethers.utils.bigNumberify(amountStr)
     const tx = this.searchUtxo(amount)
     if(tx == null) {
       throw new Error('too large amount')
@@ -401,7 +401,7 @@ export class ChamberWallet {
     )
     const signedTx = new SignedTransaction(newTx)
     signedTx.sign(this.wallet.privateKey)
-    await this.client.sendTransaction(JSON.stringify(signedTx.serialize()))
+    await this.client.sendTransaction(signedTx.serialize())
   }
 
   // events
