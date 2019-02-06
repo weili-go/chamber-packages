@@ -1,6 +1,6 @@
 {
   "name": "@layer2/wallet",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -16,7 +16,7 @@
     "test:ci": "yarn run test"
   },
   "dependencies": {
-    "@layer2/core": "^0.0.11",
+    "@layer2/core": "^0.0.12",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.5",
     "@types/node-fetch": "^2.1.4",
