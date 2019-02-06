@@ -81,6 +81,8 @@ describe('ChamberWallet', () => {
         utils.bigNumberify(10000000)
       )
       assert.equal(wallet.getExits().length, 1)
+      wallet.loadExits()
+      assert.equal(wallet.getExits().length, 1)
     })
     
   })
