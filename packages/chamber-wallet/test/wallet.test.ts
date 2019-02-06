@@ -11,6 +11,7 @@ import {
 import { assert } from "chai"
 import { constants, utils } from "ethers"
 import { MockWalletStorage } from "../src/storage/MockWalletStorage";
+import { util } from 'prettier';
 
 class MockNetworkClient implements INetworkClient {
   request(methodName: string, args: any) {
@@ -22,6 +23,7 @@ class MockNetworkClient implements INetworkClient {
 describe('ChamberWallet', () => {
 
   const AlicePrivateKey = '0xe88e7cda6f7fae195d0dcda7ccb8d733b8e6bb9bd0bc4845e1093369b5dc2257'
+  const AliceAddress = utils.computeAddress(AlicePrivateKey)
   const ContractAddress = '0xfb88de099e13c3ed21f80a7a1e49f8caecf10df6'
 
   it('should create wallet', () => {
@@ -36,6 +38,13 @@ describe('ChamberWallet', () => {
       storage
     )
     assert.equal(wallet.getBalance().toNumber(), 0)
+    wallet.handleDeposit(
+      AliceAddress,
+      utils.bigNumberify(0),
+      utils.bigNumberify(10000000),
+      utils.bigNumberify(2)
+    )
+    assert.equal(wallet.getBalance().toNumber(), 10000000)
   })
   
 })
