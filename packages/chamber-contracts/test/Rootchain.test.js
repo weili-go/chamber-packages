@@ -73,12 +73,12 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       const result = await this.rootChain.deposit(
         {
           from: alice,
-          value: '1000000'
+          value: '1000000000000000'
         });
       await this.rootChain.deposit(
         {
           from: bob,
-          value: '1000000'
+          value: '1000000000000000'
         });
       const submit = async (root) => {
         await this.rootChain.submit(
@@ -349,12 +349,12 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await this.rootChain.deposit(
         {
           from: alice,
-          value: '1000000'
+          value: '1000000000000000'
         });
       await this.rootChain.deposit(
         {
           from: bob,
-          value: '1000000'
+          value: '1000000000000000'
         });
       const submit = async (root) => {
         await this.rootChain.submit(
@@ -411,12 +411,12 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await this.rootChain.deposit(
         {
           from: alice,
-          value: '1000000'
+          value: '1000000000000000'
         });
       await this.rootChain.deposit(
         {
           from: operator,
-          value: '1000000'
+          value: '1000000000000000'
         });
       const submit = async (root) => {
         await this.rootChain.submit(
