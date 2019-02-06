@@ -19,6 +19,7 @@ import {
 } from '@layer2/core'
 import { Contract } from 'ethers'
 import { BigNumber } from 'ethers/utils';
+import artifact from './assets/RootChain.json'
 
 const abi = [
   'event BlockSubmitted(bytes32 _root, uint256 _timestamp, uint256 _blkNum)',
@@ -40,6 +41,7 @@ export class ChamberWallet {
   storage: IWalletStorage
   httpProvider: ethers.providers.JsonRpcProvider
   listener: RootChainEventListener
+  rootChainInterface: ethers.utils.Interface
 
   constructor(
     client: PlasmaClient,
@@ -59,20 +61,16 @@ export class ChamberWallet {
     this.loadUTXO()
     this.storage = storage
     this.loadedBlockNumber = this.getNumberFromStorage('loadedBlockNumber')
+    this.rootChainInterface = new ethers.utils.Interface(artifact.abi)
     this.listener = new RootChainEventListener(
       this.httpProvider,
+      this.rootChainInterface,
       contractAddress,
       storage,
       this.loadSeenEvents(),
       1
     )
-    this.listener.addEvent('Deposited', (e) => {
-      this.handleDeposit(
-        e.values._depositer,
-        e.values._start,
-        e.values._end,
-        e.values._blkNum
-      )
+    this.listener.addEvent('ExitStarted', (e) => {
     })
   }
 
@@ -195,7 +193,17 @@ export class ChamberWallet {
     const result = await this.rootChainContract.deposit({
       value: ethers.utils.parseEther(ether)
     })
-    return await this.httpProvider.getTransactionReceipt(result.hash)
+    const receipt = await this.httpProvider.getTransactionReceipt(result.hash)
+    if(receipt.logs && receipt.logs[0]) {
+      const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
+      this.handleDeposit(
+        logDesc.values._depositer,
+        logDesc.values._start,
+        logDesc.values._end,
+        logDesc.values._blkNum
+      )
+    }
+
   }
 
   async exit(tx: SignedTransactionWithProof) {
