@@ -97,7 +97,7 @@ class SegmentNode {
     let block = new Block()
     block.setBlockNumber(data.number)
     if(data.depositTx !== null)
-      block.setDepositTx(DepositTransaction.decode(data.depositTx))
+      block.setDepositTx(TransactionDecoder.decode(data.depositTx) as DepositTransaction)
     data.txs.forEach((tx: any) => {
       block.appendTx(SignedTransaction.deserialize(tx))
     })

@@ -17,8 +17,12 @@ export class PlasmaClient {
     return res.result
   }
 
-  getBlock(blkNum: number) {
-    return this.jsonRpcClient.request('getBlock', [blkNum])
+  async getBlock(blkNum: number) {
+    const res = await this.jsonRpcClient.request('getBlock', [blkNum])
+    if(res.error) {
+      throw new Error(res.error.message)
+    }
+    return res.result
   }
 
   async getUserTransactions(blkNum: number): Promise<SignedTransactionWithProof[]> {

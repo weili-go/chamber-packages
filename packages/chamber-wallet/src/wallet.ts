@@ -1,6 +1,7 @@
 import * as ethers from 'ethers'
 import {
-  PlasmaClient
+  PlasmaClient,
+  RootChainEventListener
 } from './client'
 import {
   IWalletStorage
@@ -12,6 +13,9 @@ import {
   SignedTransaction,
   SignedTransactionWithProof,
   Block,
+  DepositTransaction,
+  Segment,
+  SumMerkleProof,
 } from '@layer2/core'
 import { Contract } from 'ethers'
 import { BigNumber } from 'ethers/utils';
@@ -32,9 +36,10 @@ export class ChamberWallet {
   loadedBlockNumber: number
   rootChainContract: Contract
   wallet: ethers.Wallet
-  utxos: Map<string, SignedTransactionWithProof>
+  utxos: Map<string, string>
   storage: IWalletStorage
   httpProvider: ethers.providers.JsonRpcProvider
+  listener: RootChainEventListener
 
   constructor(
     client: PlasmaClient,
@@ -50,10 +55,25 @@ export class ChamberWallet {
     const contract = new ethers.Contract(contractAddress, abi, this.httpProvider)
     this.wallet = new ethers.Wallet(privateKey, this.httpProvider)
     this.rootChainContract = contract.connect(this.wallet)
-    this.utxos = new Map<string, SignedTransactionWithProof>()
+    this.utxos = new Map<string, string>()
     this.loadUTXO()
     this.storage = storage
     this.loadedBlockNumber = this.getNumberFromStorage('loadedBlockNumber')
+    this.listener = new RootChainEventListener(
+      this.httpProvider,
+      contractAddress,
+      storage,
+      this.loadSeenEvents(),
+      1
+    )
+    this.listener.addEvent('Deposited', (e) => {
+      this.handleDeposit(
+        e.values._depositer,
+        e.values._start,
+        e.values._end,
+        e.values._blkNum
+      )
+    })
   }
 
   async loadBlockNumber() {
@@ -64,19 +84,20 @@ export class ChamberWallet {
     const blkNum: number = await this.client.getBlockNumber()
     this.latestBlockNumber = blkNum
     let tasks = [];
-    for(let i = this.loadedBlockNumber + 1;i <= this.latestBlockNumber;i++) {
+    for(let i = this.loadedBlockNumber + 2 - (this.loadedBlockNumber % 2);i <= this.latestBlockNumber;i+=2) {
       tasks.push(this.client.getBlock(i));
     }
     return Promise.all(tasks)
   }
 
-  async updateBlocks() {
+  async updateBlocks(): Promise<SignedTransactionWithProof[]> {
     const results = await this.loadBlocks()
-    results.map(this.updateBlock)
+    results.map(block => this.updateBlock(block))
+    return this.getUTXOArray()
   }
 
   updateBlock(block: Block) {
-    this.utxos.forEach((tx) => {
+    this.getUTXOArray().forEach((tx) => {
       const exclusionProof = block.getExclusionProof(tx.getOutput().getSegment(0).start)
       const key = tx.getOutput().hash()
       this.storage.addProof(key, block.getBlockNumber(), JSON.stringify(exclusionProof.serialize()))
@@ -93,8 +114,34 @@ export class ChamberWallet {
     this.storage.add('loadedBlockNumber', this.loadedBlockNumber.toString())
   }
 
+  handleDeposit(depositor: string, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
+    const segment = new Segment(
+      ethers.utils.bigNumberify(start),
+      ethers.utils.bigNumberify(end)
+    )
+    const depositTx = new DepositTransaction(
+      depositor,
+      '0x0000000000000000000000000000000000000000',
+      segment
+    )
+    this.addUTXO(new SignedTransactionWithProof(
+      new SignedTransaction(depositTx),
+      0,
+      '',
+      new SumMerkleProof(0, segment, ''),
+      blkNum))
+  }
+
+  getUTXOArray(): SignedTransactionWithProof[] {
+    const arr: SignedTransactionWithProof[] = []
+    this.utxos.forEach(value => {
+      arr.push(SignedTransactionWithProof.deserialize(JSON.parse(value)))
+    })
+    return arr
+  }
+
   addUTXO(tx: SignedTransactionWithProof) {
-    this.utxos.set(tx.getOutput().hash(), tx)
+    this.utxos.set(tx.getOutput().hash(), JSON.stringify(tx.serialize()))
     this.storage.add('utxos', JSON.stringify(this.utxos))
   }
 
@@ -102,13 +149,22 @@ export class ChamberWallet {
     try {
       this.utxos = JSON.parse(this.storage.get('utxos'))
     } catch(e) {
-      this.utxos = new Map<string, SignedTransactionWithProof>()
+      this.utxos = new Map<string, string>()
     }
   }
 
   deleteUTXO(key: string) {
     this.utxos.delete(key)
     this.storage.add('utxos', JSON.stringify(this.utxos))
+  }
+
+  private loadSeenEvents() {
+    try {
+      const seenEvents = JSON.parse(this.storage.get('seenEvents'))
+      return seenEvents
+    } catch(e) {
+      return new Map<string, boolean>()
+    }
   }
 
   getNumberFromStorage(key: string): number {
@@ -125,8 +181,8 @@ export class ChamberWallet {
 
   getBalance() {
     let balance = ethers.utils.bigNumberify(0)
-    this.utxos.forEach((tx) => {
-      balance.add(tx.getOutput().getSegment(0).getAmount())
+    this.getUTXOArray().forEach((tx) => {
+      balance = balance.add(tx.getOutput().getSegment(0).getAmount())
     })
     return balance
   }
@@ -165,7 +221,7 @@ export class ChamberWallet {
 
   searchUtxo(amount: number): SignedTransactionWithProof | null {
     let tx: SignedTransactionWithProof | null = null
-    this.utxos.forEach((_tx) => {
+    this.getUTXOArray().forEach((_tx) => {
       if(_tx.getOutput().getSegment(0).getAmount().toNumber() > amount) {
         tx = _tx
       }

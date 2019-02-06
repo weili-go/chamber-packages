@@ -1,0 +1,696 @@
+{
+  "contractName": "RootChain",
+  "abi": [
+    {
+      "name": "BlockSubmitted",
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_root",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_timestamp",
+          "indexed": false,
+          "unit": "sec"
+        },
+        {
+          "type": "uint256",
+          "name": "_blkNum",
+          "indexed": false
+        }
+      ],
+      "anonymous": false,
+      "type": "event"
+    },
+    {
+      "name": "Deposited",
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_depositer",
+          "indexed": true
+        },
+        {
+          "type": "uint256",
+          "name": "_start",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_end",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_blkNum",
+          "indexed": false
+        }
+      ],
+      "anonymous": false,
+      "type": "event"
+    },
+    {
+      "name": "ExitStarted",
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_exitor",
+          "indexed": true
+        },
+        {
+          "type": "bytes32",
+          "name": "_txHash",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "exitableAt",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_start",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_end",
+          "indexed": false
+        }
+      ],
+      "anonymous": false,
+      "type": "event"
+    },
+    {
+      "name": "ChallengeStarted",
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_eTxHash",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_cTxHash",
+          "indexed": false
+        }
+      ],
+      "anonymous": false,
+      "type": "event"
+    },
+    {
+      "name": "Responded",
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_eTxHash",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_cTxHash",
+          "indexed": false
+        }
+      ],
+      "anonymous": false,
+      "type": "event"
+    },
+    {
+      "name": "ForceIncluded",
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_cTxHash",
+          "indexed": false
+        }
+      ],
+      "anonymous": false,
+      "type": "event"
+    },
+    {
+      "name": "FinalizedExit",
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_eTxHash",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_start",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_end",
+          "indexed": false
+        }
+      ],
+      "anonymous": false,
+      "type": "event"
+    },
+    {
+      "name": "Log",
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_a",
+          "indexed": false
+        }
+      ],
+      "anonymous": false,
+      "type": "event"
+    },
+    {
+      "name": "checkTransaction",
+      "outputs": [
+        {
+          "type": "bool",
+          "name": "out"
+        }
+      ],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "bytes32",
+          "name": "_txHash"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "uint256",
+          "name": "_blkNum"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sigs"
+        },
+        {
+          "type": "uint256",
+          "name": "_outputIndex"
+        }
+      ],
+      "constant": true,
+      "payable": false,
+      "type": "function",
+      "gas": 82742
+    },
+    {
+      "name": "__init__",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_txverifierAddress"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "name": "submit",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_root"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 111155
+    },
+    {
+      "name": "deposit",
+      "outputs": [],
+      "inputs": [],
+      "constant": false,
+      "payable": true,
+      "type": "function",
+      "gas": 147903
+    },
+    {
+      "name": "exit",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_utxoPos"
+        },
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sig"
+        }
+      ],
+      "constant": false,
+      "payable": true,
+      "type": "function",
+      "gas": 286069
+    },
+    {
+      "name": "sendParentOfExit",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_challengeId"
+        },
+        {
+          "type": "bytes32",
+          "name": "_exitHash"
+        },
+        {
+          "type": "bytes",
+          "name": "_exitTxBytes"
+        },
+        {
+          "type": "uint256",
+          "name": "_inputIndex"
+        },
+        {
+          "type": "uint256",
+          "name": "_utxoPos"
+        },
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sig"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 124285
+    },
+    {
+      "name": "challengeByWithdrawal",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_exitHash"
+        },
+        {
+          "type": "uint256",
+          "name": "_segment"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 59341
+    },
+    {
+      "name": "challenge",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_exitHash"
+        },
+        {
+          "type": "bytes",
+          "name": "_exitTxBytes"
+        },
+        {
+          "type": "uint256",
+          "name": "_utxoPos"
+        },
+        {
+          "type": "int128",
+          "name": "_eInputPos"
+        },
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sig"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 72998
+    },
+    {
+      "name": "challengeBefore",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_exitHash"
+        },
+        {
+          "type": "uint256",
+          "name": "_utxoPos"
+        },
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "uint256",
+          "name": "_challengeId"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sig"
+        }
+      ],
+      "constant": false,
+      "payable": true,
+      "type": "function",
+      "gas": 259188
+    },
+    {
+      "name": "respondChallenge",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_challengeId"
+        },
+        {
+          "type": "bytes",
+          "name": "_cTxBytes"
+        },
+        {
+          "type": "uint256",
+          "name": "_utxoPos"
+        },
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sig"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 257784
+    },
+    {
+      "name": "finalizeExit",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_exitHash"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 96805
+    },
+    {
+      "name": "finalizeChallenge",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_challengeId"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 59939
+    },
+    {
+      "name": "forceIncludeRequest",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_exitHash"
+        },
+        {
+          "type": "uint256",
+          "name": "_utxoPos"
+        },
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "uint256",
+          "name": "_challengeId"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sig"
+        },
+        {
+          "type": "uint256",
+          "name": "hasSig"
+        }
+      ],
+      "constant": false,
+      "payable": true,
+      "type": "function",
+      "gas": 371318
+    },
+    {
+      "name": "includeSignature",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_challengeId"
+        },
+        {
+          "type": "uint256",
+          "name": "_utxoPos"
+        },
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sig"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 100516
+    },
+    {
+      "name": "challengeTooOldExit",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_utxoPos"
+        },
+        {
+          "type": "bytes32",
+          "name": "_exitHash"
+        },
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sig"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 30330
+    },
+    {
+      "name": "respondTooOldChallenge",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_utxoPos"
+        },
+        {
+          "type": "uint256",
+          "name": "_challengeId"
+        },
+        {
+          "type": "uint256",
+          "name": "_start"
+        },
+        {
+          "type": "uint256",
+          "name": "_end"
+        },
+        {
+          "type": "bytes",
+          "name": "_txBytes"
+        },
+        {
+          "type": "bytes",
+          "name": "_proof"
+        },
+        {
+          "type": "bytes",
+          "name": "_sig"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 81343
+    },
+    {
+      "name": "getExit",
+      "outputs": [
+        {
+          "type": "address",
+          "name": "out"
+        },
+        {
+          "type": "uint256",
+          "name": "out"
+        }
+      ],
+      "inputs": [
+        {
+          "type": "bytes32",
+          "name": "_exitHash"
+        }
+      ],
+      "constant": true,
+      "payable": false,
+      "type": "function",
+      "gas": 2804
+    }
+  ],
+  "networks": {},
+  "schemaVersion": "3.0.1",
+  "updatedAt": "2019-02-01T03:59:14.528Z"
+}
