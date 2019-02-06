@@ -31,6 +31,34 @@ const abi = [
   'function getExit(bytes32 _exitHash) constant returns(address, uint256)',
 ]
 
+class WaitingBlockWrapper {
+  blkNum: BigNumber
+  root: string
+
+  constructor(
+    blkNum: BigNumber,
+    root: string
+  ) {
+    this.blkNum = blkNum
+    this.root = root
+  }
+
+  serialize() {
+    return JSON.stringify({
+      blkNum: this.blkNum,
+      root: this.root
+    })
+  }
+
+  static deserialize(str: string) {
+    const data = JSON.parse(str)
+    return new WaitingBlockWrapper(
+      ethers.utils.bigNumberify(data.blkNum),
+      data.root
+    )
+  }
+}
+
 class Exit {
   id: string
   exitableAt: BigNumber
@@ -71,8 +99,8 @@ class Exit {
     )
   }
 
-
 }
+
 export class ChamberWallet {
   client: PlasmaClient
   latestBlockNumber: number
@@ -85,6 +113,7 @@ export class ChamberWallet {
   listener: RootChainEventListener
   rootChainInterface: ethers.utils.Interface
   exitList: Map<string, string>
+  waitingBlocks: Map<string, string>
 
   constructor(
     client: PlasmaClient,
@@ -103,6 +132,7 @@ export class ChamberWallet {
     this.storage = storage
     this.utxos = this.loadUTXO()
     this.exitList = this.loadExits()
+    this.waitingBlocks = this.loadMap<string>('waitingBlocks')
     this.loadedBlockNumber = this.getNumberFromStorage('loadedBlockNumber')
     this.rootChainInterface = new ethers.utils.Interface(artifact.abi)
     this.listener = new RootChainEventListener(
@@ -111,8 +141,16 @@ export class ChamberWallet {
       contractAddress,
       storage,
       this.loadSeenEvents(),
-      1
+      2
     )
+    this.listener.addEvent('BlockSubmitted', (e) => {
+      console.log('BlockSubmitted', e)
+      this.addWaitingBlock(new WaitingBlockWrapper(
+        e.values._blkNum,
+        e.values._root
+      ))
+    })
+
     this.listener.addEvent('ExitStarted', (e) => {
       console.log('ExitStarted', e)
     })
@@ -127,18 +165,15 @@ export class ChamberWallet {
   }
 
   private async loadBlocks() {
-    const blkNum: number = await this.client.getBlockNumber()
-    this.latestBlockNumber = blkNum
-    let tasks = [];
-    for(let i = this.loadedBlockNumber + 2 - (this.loadedBlockNumber % 2);i <= this.latestBlockNumber;i+=2) {
-      tasks.push(this.client.getBlock(i));
-    }
+    const tasks = this.getWaitingBlocks().map(block => {
+      return this.client.getBlock(block.blkNum.toNumber())
+    })
     return Promise.all(tasks)
   }
 
   async updateBlocks(): Promise<SignedTransactionWithProof[]> {
     const results = await this.loadBlocks()
-    results.map(block => this.updateBlock(block))
+    results.map(block => this.updateBlock(Block.deserialize(block)))
     return this.getUTXOArray()
   }
 
@@ -210,6 +245,19 @@ export class ChamberWallet {
       arr.push(SignedTransactionWithProof.deserialize(JSON.parse(value)))
     })
     return arr
+  }
+
+  getWaitingBlocks(): WaitingBlockWrapper[] {
+    const arr: WaitingBlockWrapper[] = []
+    this.waitingBlocks.forEach(value => {
+      arr.push(WaitingBlockWrapper.deserialize(value))
+    })
+    return arr
+  }
+
+  addWaitingBlock(tx: WaitingBlockWrapper) {
+    this.waitingBlocks.set(tx.blkNum.toString(), tx.serialize())
+    this.storeMap('waitingBlocks', this.waitingBlocks)
   }
 
   addUTXO(tx: SignedTransactionWithProof) {
