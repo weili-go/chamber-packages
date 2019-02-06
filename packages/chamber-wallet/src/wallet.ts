@@ -100,11 +100,9 @@ export class ChamberWallet {
     const contract = new ethers.Contract(contractAddress, abi, this.httpProvider)
     this.wallet = new ethers.Wallet(privateKey, this.httpProvider)
     this.rootChainContract = contract.connect(this.wallet)
-    this.utxos = new Map<string, string>()
-    this.exitList = new Map<string, string>()
-    this.loadUTXO()
-    this.loadExits()
     this.storage = storage
+    this.utxos = this.loadUTXO()
+    this.exitList = this.loadExits()
     this.loadedBlockNumber = this.getNumberFromStorage('loadedBlockNumber')
     this.rootChainInterface = new ethers.utils.Interface(artifact.abi)
     this.listener = new RootChainEventListener(
@@ -191,7 +189,7 @@ export class ChamberWallet {
       segment
     )
     this.exitList.set(exit.getId(), exit.serialize())
-    this.storage.add('exits', JSON.stringify(this.exitList))
+    this.storeMap('exits', this.exitList)
   }
 
   getExits() {
@@ -203,11 +201,7 @@ export class ChamberWallet {
   }
 
   loadExits() {
-    try {
-      this.exitList = JSON.parse(this.storage.get('exits'))
-    } catch(e) {
-      this.exitList = new Map<string, string>()
-    }
+    return this.loadMap<string>('exits')
   }
 
   getUTXOArray(): SignedTransactionWithProof[] {
@@ -220,29 +214,20 @@ export class ChamberWallet {
 
   addUTXO(tx: SignedTransactionWithProof) {
     this.utxos.set(tx.getOutput().hash(), JSON.stringify(tx.serialize()))
-    this.storage.add('utxos', JSON.stringify(this.utxos))
+    this.storeMap('utxos', this.utxos)
   }
 
   loadUTXO() {
-    try {
-      this.utxos = JSON.parse(this.storage.get('utxos'))
-    } catch(e) {
-      this.utxos = new Map<string, string>()
-    }
+    return this.loadMap<string>('utxos')
   }
 
   deleteUTXO(key: string) {
     this.utxos.delete(key)
-    this.storage.add('utxos', JSON.stringify(this.utxos))
+    this.storeMap('utxos', this.utxos)
   }
 
   private loadSeenEvents() {
-    try {
-      const seenEvents = JSON.parse(this.storage.get('seenEvents'))
-      return seenEvents
-    } catch(e) {
-      return new Map<string, boolean>()
-    }
+    return this.loadMap<boolean>('seenEvents')
   }
 
   getNumberFromStorage(key: string): number {
@@ -251,6 +236,27 @@ export class ChamberWallet {
     } catch(e) {
       return 0
     }
+  }
+
+  private storeMap<T>(key: string, map: Map<string, T>) {
+    let obj: any = {}
+    map.forEach((value, key) => {
+      obj[key] = value
+    })
+    this.storage.add(key, JSON.stringify(obj))
+  }
+
+  private loadMap<T>(key: string) {
+    const map = new Map<string, T>()
+    try {
+      const obj: any = JSON.parse(this.storage.get(key))
+      for(let key in obj) {
+        map.set(key, obj[key])
+      }
+    } catch(e) {
+      console.error(e)
+    }
+    return map
   }
 
   getAddress() {

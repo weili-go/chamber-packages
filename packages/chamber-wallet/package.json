@@ -13,7 +13,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "mocha -r ts-node/register 'test/**/*.ts'",
     "pretest:ci": "tsc --build ./tsconfig-ci.json",
-    "test:ci": "yarn run pretest:ci && istanbul cover _mocha -- 'dist-ci/test/**/*.js' && remap-istanbul -i coverage/coverage.json -o coverage/lcov.info -t lcovonly && istanbul-coveralls"
+    "test:ci": "yarn run test"
   },
   "dependencies": {
     "@layer2/core": "^0.0.9",
