@@ -18,5 +18,5 @@ const wallet = new ChamberWallet(
 )
 
 wallet.deposit('1.0').then((receipt) => {
-  console.log('deposited', receipt.logs)
+  console.log('deposited', receipt)
 })

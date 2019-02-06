@@ -1,15 +1,14 @@
 import * as ethers from 'ethers'
 import JsonRpcProvider = ethers.providers.JsonRpcProvider
-import artifact from '../assets/RootChain.json'
 import {
   IWalletStorage
 } from '../storage'
-const rootChainInterface = new ethers.utils.Interface(artifact.abi)
 
 export type RootChainEventHandler = (e: any) => void
 
 export class RootChainEventListener {
   provider: JsonRpcProvider
+  rootChainInterface: ethers.utils.Interface
   address: string
   storage: IWalletStorage
   seenEvents: Map<string, boolean>
@@ -18,12 +17,14 @@ export class RootChainEventListener {
 
   constructor(
     provider: JsonRpcProvider,
+    rootChainInterface: ethers.utils.Interface,
     address: string,
     storage: IWalletStorage,
     seenEvents: Map<string, boolean>,
     confirmation: number
   ) {
     this.provider = provider
+    this.rootChainInterface = rootChainInterface
     this.address = address
     this.storage = storage
     this.seenEvents = seenEvents || new Map<string, boolean>()
@@ -57,7 +58,7 @@ export class RootChainEventListener {
       else
         return false
     }).forEach((e) => {
-      const logDesc = rootChainInterface.parseLog(e)
+      const logDesc = this.rootChainInterface.parseLog(e)
       const handler = this.checkingEvents.get(logDesc.name)
       if(handler) {
         handler(logDesc)
@@ -67,5 +68,5 @@ export class RootChainEventListener {
     })
 
   }
-
+  
 }
