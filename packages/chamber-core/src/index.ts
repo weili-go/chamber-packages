@@ -17,7 +17,6 @@ export {
   SplitTransaction,
   MergeTransaction,
   SwapTransaction,
-  Multisig2Transaction,
 } from './tx'
 export {
   SignedTransaction,
