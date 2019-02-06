@@ -18,7 +18,7 @@ import {
   SumMerkleProof,
 } from '@layer2/core'
 import { Contract } from 'ethers'
-import { BigNumber } from 'ethers/utils';
+import { BigNumber, id } from 'ethers/utils';
 import artifact from './assets/RootChain.json'
 
 const abi = [
@@ -31,6 +31,48 @@ const abi = [
   'function getExit(bytes32 _exitHash) constant returns(address, uint256)',
 ]
 
+class Exit {
+  id: string
+  exitableAt: BigNumber
+  segment: Segment
+
+  constructor(
+    id: string,
+    exitableAt: BigNumber,
+    segment: Segment
+  ) {
+    this.id = id
+    this.exitableAt = exitableAt
+    this.segment = segment
+  }
+
+  getId() {
+    return this.id
+  }
+
+  getAmount() {
+    this.segment.getAmount()
+  }
+
+  serialize() {
+    return JSON.stringify({
+      id: this.id,
+      exitableAt: this.exitableAt.toString(),
+      segment: this.segment.serialize()
+    })
+  }
+
+  static deserialize(str: string) {
+    const data = JSON.parse(str)
+    return new Exit(
+      data.id,
+      ethers.utils.bigNumberify(data.exitableAt),
+      Segment.deserialize(data.segment)
+    )
+  }
+
+
+}
 export class ChamberWallet {
   client: PlasmaClient
   latestBlockNumber: number
@@ -42,6 +84,7 @@ export class ChamberWallet {
   httpProvider: ethers.providers.JsonRpcProvider
   listener: RootChainEventListener
   rootChainInterface: ethers.utils.Interface
+  exitList: Map<string, string>
 
   constructor(
     client: PlasmaClient,
@@ -58,7 +101,9 @@ export class ChamberWallet {
     this.wallet = new ethers.Wallet(privateKey, this.httpProvider)
     this.rootChainContract = contract.connect(this.wallet)
     this.utxos = new Map<string, string>()
+    this.exitList = new Map<string, string>()
     this.loadUTXO()
+    this.loadExits()
     this.storage = storage
     this.loadedBlockNumber = this.getNumberFromStorage('loadedBlockNumber')
     this.rootChainInterface = new ethers.utils.Interface(artifact.abi)
@@ -71,7 +116,12 @@ export class ChamberWallet {
       1
     )
     this.listener.addEvent('ExitStarted', (e) => {
+      console.log('ExitStarted', e)
     })
+  }
+
+  async init() {
+    await this.listener.initPolling()
   }
 
   async loadBlockNumber() {
@@ -128,6 +178,36 @@ export class ChamberWallet {
       '',
       new SumMerkleProof(0, segment, ''),
       blkNum))
+  }
+
+  handleExit(exitId: string, exitableAt: BigNumber, start: BigNumber, end: BigNumber) {
+    const segment = new Segment(
+      ethers.utils.bigNumberify(start),
+      ethers.utils.bigNumberify(end)
+    )
+    const exit = new Exit(
+      exitId,
+      exitableAt,
+      segment
+    )
+    this.exitList.set(exit.getId(), exit.serialize())
+    this.storage.add('exits', JSON.stringify(this.exitList))
+  }
+
+  getExits() {
+    const arr: Exit[] = []
+    this.exitList.forEach(value => {
+      arr.push(Exit.deserialize(value))
+    })
+    return arr
+  }
+
+  loadExits() {
+    try {
+      this.exitList = JSON.parse(this.storage.get('exits'))
+    } catch(e) {
+      this.exitList = new Map<string, string>()
+    }
   }
 
   getUTXOArray(): SignedTransactionWithProof[] {
@@ -207,7 +287,7 @@ export class ChamberWallet {
   }
 
   async exit(tx: SignedTransactionWithProof) {
-    return await this.rootChainContract.exit(
+    const result = await this.rootChainContract.exit(
       tx.blkNum.mul(100),
       tx.getOutput().getSegment(0).start,
       tx.getOutput().getSegment(0).end,
@@ -217,6 +297,16 @@ export class ChamberWallet {
       {
       value: constants.EXIT_BOND
     })
+    const receipt = await this.httpProvider.getTransactionReceipt(result.hash)
+    if(receipt.logs && receipt.logs[0]) {
+      const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
+      this.handleExit(
+        logDesc.values._txHash,
+        logDesc.values.exitableAt,
+        logDesc.values._start,
+        logDesc.values._end
+      )
+    }
   }
 
   async getExit(exitId: string) {
