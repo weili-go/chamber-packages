@@ -18,7 +18,7 @@ import { Signature } from 'ethers/utils';
  * @title BaseTransaction
  * @descriotion abstract class of Transaction
  */
-export class BaseTransaction {
+export abstract class BaseTransaction {
 
   label: number
   items: RLPTx
@@ -41,41 +41,21 @@ export class BaseTransaction {
     return RLP.encode(this.toTuple())
   }
 
-  static fromTuple(tuple: RLPItem[]): BaseTransaction {
-    return new BaseTransaction(tuple[0], RLP.decode(tuple[1]))
-  }
-
-  static decode(bytes: string): BaseTransaction {
-    return BaseTransaction.fromTuple(RLP.decode(bytes))
-  }
-
   hash(): string {
     return utils.keccak256(this.encode())
   }
 
-  getInput(index: number): TransactionOutput {
-    return new EmptyTransactionOutput()
-  }
+  abstract getInput(index: number): TransactionOutput
 
-  getInputs(): TransactionOutput[] {
-    return []
-  }
+  abstract getInputs(): TransactionOutput[]
 
-  getOutput(index: number): TransactionOutput {
-    return new EmptyTransactionOutput()
-  }
+  abstract getOutput(index: number): TransactionOutput
 
-  getOutputs(): TransactionOutput[] {
-    return []
-  }
+  abstract getOutputs(): TransactionOutput[]
 
-  getSegments(): Segment[] {
-    return []
-  }
+  abstract getSegments(): Segment[]
 
-  verify(signatures: string[]): boolean {
-    return false
-  }
+  abstract verify(signatures: string[]): boolean
   
 }
 
@@ -200,11 +180,19 @@ export class DepositTransaction extends BaseTransaction {
   }
 
   static fromTuple(tuple: RLPItem[]): DepositTransaction {
-    return new DepositTransaction(tuple[0], tuple[1], Segment.fromTuple(tuple.slice(2, 4)))
+    return new DepositTransaction(utils.getAddress(tuple[0]), tuple[1], Segment.fromTuple(tuple.slice(2, 4)))
   }
 
   static decode(bytes: string): DepositTransaction {
     return DepositTransaction.fromTuple(RLP.decode(bytes))
+  }
+
+  getInput(): TransactionOutput {
+    throw new Error('no input')
+  }
+
+  getInputs(): TransactionOutput[] {
+    return []
   }
 
   getOutput(): TransactionOutput {
@@ -248,7 +236,11 @@ export class TransferTransaction extends BaseTransaction {
   }
 
   static fromTuple(tuple: RLPItem[]): TransferTransaction {
-    return new TransferTransaction(tuple[0], Segment.fromTuple(tuple.slice(1, 3)), tuple[3], tuple[4])
+    return new TransferTransaction(
+      utils.getAddress(tuple[0]),
+      Segment.fromTuple(tuple.slice(1, 3)),
+      utils.bigNumberify(tuple[3]),
+      utils.getAddress(tuple[4]))
   }
 
   static decode(bytes: string): TransferTransaction {
@@ -315,11 +307,11 @@ export class SplitTransaction extends BaseTransaction {
 
   static fromTuple(tuple: RLPItem[]): SplitTransaction {
     return new SplitTransaction(
-      tuple[0],
+      utils.getAddress(tuple[0]),
       Segment.fromTuple(tuple.slice(1, 3)),
-      tuple[3],
-      tuple[4],
-      tuple[5],
+      utils.bigNumberify(tuple[3]),
+      utils.getAddress(tuple[4]),
+      utils.getAddress(tuple[5]),
       utils.bigNumberify(tuple[6]))
   }
 
@@ -405,12 +397,12 @@ export class MergeTransaction extends BaseTransaction {
 
   static fromTuple(tuple: RLPItem[]): MergeTransaction {
     return new MergeTransaction(
-      tuple[0],
+      utils.getAddress(tuple[0]),
       Segment.fromTuple(tuple.slice(1, 3)),
       Segment.fromTuple(tuple.slice(2, 4)),
-      tuple[4],
-      tuple[5],
-      tuple[6])
+      utils.bigNumberify(tuple[4]),
+      utils.bigNumberify(tuple[5]),
+      utils.getAddress(tuple[6]))
   }
 
   static decode(bytes: string): MergeTransaction {
@@ -494,12 +486,12 @@ export class SwapTransaction extends BaseTransaction {
 
   static fromTuple(tuple: RLPItem[]): SwapTransaction {
     return new SwapTransaction(
-      tuple[0],
+      utils.getAddress(tuple[0]),
       Segment.fromTuple(tuple.slice(1, 3)),
-      tuple[3],
-      tuple[4],
+      utils.bigNumberify(tuple[3]),
+      utils.getAddress(tuple[4]),
       Segment.fromTuple(tuple.slice(5, 7)),
-      tuple[7])
+      utils.bigNumberify(tuple[7]))
   }
 
   static decode(bytes: string): SwapTransaction {
@@ -558,6 +550,7 @@ export class SwapTransaction extends BaseTransaction {
 
 }
 
+/*
 export class Multisig2Transaction extends BaseTransaction {
 
   constructor(
@@ -594,5 +587,6 @@ export class Multisig2Transaction extends BaseTransaction {
       Segment.fromTuple(tuple.slice(7, 9)),
       tuple[9])
   }
-
+  
 }
+*/

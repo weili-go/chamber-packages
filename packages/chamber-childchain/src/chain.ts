@@ -45,11 +45,13 @@ export class Chain {
     if(this.txQueue.length == 0) {
       throw new Error('txQueue is empty')
     }
-    this.txQueue.forEach(tx => {
-      if(tx.verify() && this.snapshot.checkInput(tx)) {
+    const tasks = this.txQueue.map(async tx => {
+      const inputChecked = await this.snapshot.checkInput(tx)
+      if(tx.verify() && inputChecked) {
         block.appendTx(tx)
       }
     })
+    await Promise.all(tasks)
     // write to DB
     const root = block.getRoot()
     await this.writeWaitingBlock(root, block)

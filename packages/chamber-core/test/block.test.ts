@@ -53,6 +53,17 @@ describe('Block', () => {
     assert.equal(block.checkInclusion(sptx2, segment3.start, segment3.end), true)
   })
 
+  it('should create tree for a tx', () => {
+    const block = new Block()
+    block.setBlockNumber(2)
+    block.appendTx(tx1)
+    assert.equal(block.createTree().getLeaves().length, 4)
+    assert.equal(utils.hexlify(block.createTree().getLeaves()[2].getHash()), '0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563')
+    const sptx1 = block.getSignedTransactionWithProof(tx1.hash())[0]
+
+    assert.equal(block.checkInclusion(sptx1, segment1.start, segment1.end), true)
+  })
+
   it('should getExclusionProof', () => {
     const block = new Block()
     block.setBlockNumber(2)

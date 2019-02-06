@@ -51,6 +51,8 @@ describe('Transaction', () => {
     assert.equal(encoded, '0xf85102b84ef84c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf831e8480832dc6c00194953b8fb338ef870eda6d74c1dd4769b6c977b8cf9434fdeadc2b69fd24f3043a89f9231f10f1284a4a8327ac40');
     assert.equal(decoded.getOutput(1).getSegment(0).start.toString(), '2600000')
     assert.equal(decoded.getInput().getSegment(0).start.toString(), '2000000')
+    assert.equal(tx.hash(), decoded.hash())
+
   });
 
   it('encode and decode merge transaction', () => {
@@ -120,6 +122,7 @@ describe('Transaction', () => {
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(AlicePrivateKey)
       assert.equal(signedTx.verify(), true)
+      assert.equal(SignedTransaction.deserialize(signedTx.serialize()).verify(), true)
     });
 
     it('verify merge transaction', () => {
