@@ -27,7 +27,11 @@ describe('ChamberWallet', () => {
   const ContractAddress = '0xfb88de099e13c3ed21f80a7a1e49f8caecf10df6'
   const mockClient = new MockNetworkClient()
   const client = new PlasmaClient(mockClient)
-  const storage = new MockWalletStorage()
+  let storage = new MockWalletStorage()
+
+  beforeEach(() => {
+    storage = new MockWalletStorage()
+  })
 
   it('should create wallet', () => {
     const wallet = new ChamberWallet(
@@ -86,5 +90,31 @@ describe('ChamberWallet', () => {
     })
     
   })
+  
+  describe('transfer', () => {
+
+    const wallet = new ChamberWallet(
+      client,
+      AlicePrivateKey,
+      'http://127.0.0.1:8545',
+      ContractAddress,
+      storage
+    )
+
+    it('should transfer', async () => {
+      wallet.handleDeposit(
+        AliceAddress,
+        utils.bigNumberify(0),
+        utils.bigNumberify(10000000),
+        utils.bigNumberify(2)
+      )
+      await wallet.transfer(
+        AliceAddress,
+        '2000000'
+      )
+    })
+    
+  })
+  
 
 })

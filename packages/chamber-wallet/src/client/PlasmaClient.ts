@@ -30,7 +30,7 @@ export class PlasmaClient {
     return res.result.map((r: string) => SignedTransactionWithProof.deserialize(r))
   }
 
-  sendTransaction(data: string) {
+  sendTransaction(data: any) {
     return this.jsonRpcClient.request('sendTransaction', [data])
   }
   
