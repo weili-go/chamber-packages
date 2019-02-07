@@ -185,7 +185,9 @@ def deposit():
   # 3 + 2 = 5
   self.currentChildBlock += (1 + (self.currentChildBlock % 2))
   start: uint256 = self.totalDeposit
-  self.totalDeposit += as_unitless_number(msg.value)
+  # 1 in Plasma is 1 gwei
+  assert (msg.value % as_wei_value(1, "gwei") == 0)
+  self.totalDeposit += as_unitless_number(msg.value / as_wei_value(1, "gwei"))
   root: bytes32 = sha3(
                     concat(
                       convert(msg.sender, bytes32),
