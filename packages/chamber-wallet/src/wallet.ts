@@ -211,6 +211,7 @@ export class ChamberWallet {
       '',
       new SumMerkleProof(0, segment, ''),
       blkNum))
+    return depositTx
   }
 
   handleExit(exitId: string, exitableAt: BigNumber, start: BigNumber, end: BigNumber) {
@@ -225,6 +226,7 @@ export class ChamberWallet {
     )
     this.exitList.set(exit.getId(), exit.serialize())
     this.storeMap('exits', this.exitList)
+    return exit
   }
 
   getExits() {
@@ -322,24 +324,25 @@ export class ChamberWallet {
    * 
    * @param ether 1.0
    */
-  async deposit(ether: string) {
+  async deposit(ether: string): Promise<DepositTransaction> {
     const result = await this.rootChainContract.deposit({
       value: ethers.utils.parseEther(ether)
     })
     const receipt = await this.httpProvider.getTransactionReceipt(result.hash)
     if(receipt.logs && receipt.logs[0]) {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
-      this.handleDeposit(
+      return this.handleDeposit(
         logDesc.values._depositer,
         logDesc.values._start,
         logDesc.values._end,
         logDesc.values._blkNum
       )
+    } else {
+      throw new Error('invalid receipt')
     }
-
   }
 
-  async exit(tx: SignedTransactionWithProof) {
+  async exit(tx: SignedTransactionWithProof): Promise<Exit> {
     const result = await this.rootChainContract.exit(
       tx.blkNum.mul(100),
       tx.getOutput().getSegment(0).start,
@@ -353,12 +356,14 @@ export class ChamberWallet {
     const receipt = await this.httpProvider.getTransactionReceipt(result.hash)
     if(receipt.logs && receipt.logs[0]) {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
-      this.handleExit(
+      return this.handleExit(
         logDesc.values._txHash,
         logDesc.values.exitableAt,
         logDesc.values._start,
         logDesc.values._end
       )
+    } else {
+      throw new Error('invalid receipt')
     }
   }
 
