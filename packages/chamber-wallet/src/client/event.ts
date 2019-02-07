@@ -38,19 +38,20 @@ export class RootChainEventListener {
 
   async initPolling() {
     const block = await this.provider.getBlock('latest')
-    await this.polling(block.number)
-    await this.storage.add('seenEvents', JSON.stringify(this.seenEvents))
+    const loaded = Number(this.storage.get('loaded') || (block.number - 2))
+    await this.polling(loaded, block.number)
+    this.storage.add('seenEvents', JSON.stringify(this.seenEvents))
     setTimeout(async ()=>{
       await this.initPolling();
     }, 10000);
 
   }
 
-  async polling(blockNumber: number) {
+  async polling(fromBlockNumber: number, blockNumber: number) {
     const events = await this.provider.getLogs({
       address: this.address,
-      fromBlock: blockNumber - (this.confirmation * 2 + 1),
-      toBlock: blockNumber + 1 - this.confirmation
+      fromBlock: fromBlockNumber,
+      toBlock: blockNumber
     })
     events.filter(e => {
       if(e.transactionHash)
@@ -66,7 +67,7 @@ export class RootChainEventListener {
       if(e.transactionHash)
         this.seenEvents.set(e.transactionHash, true)
     })
-
+    this.storage.add('loaded', blockNumber.toString())
   }
   
 }
