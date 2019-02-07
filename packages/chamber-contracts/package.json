@@ -11,7 +11,8 @@
     "build": "yarn clean && truffle compile",
     "build:ci": "truffle compile",
     "test": "yarn build && truffle test",
-    "test:ci": "truffle test"
+    "test:ci": "truffle test",
+    "deploy": "node scripts/deploy"
   },
   "dependencies": {
     "@layer2/core": "^0.0.12",
