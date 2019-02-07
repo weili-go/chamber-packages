@@ -395,8 +395,8 @@ export class ChamberWallet {
       this.wallet.address,
       segment,
       tx.blkNum,
-      this.wallet.address,
       to,
+      this.wallet.address,
       segment.start.add(amount)
     )
     const signedTx = new SignedTransaction(newTx)
