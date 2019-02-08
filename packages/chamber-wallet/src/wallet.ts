@@ -328,6 +328,7 @@ export class ChamberWallet {
     const result = await this.rootChainContract.deposit({
       value: ethers.utils.parseEther(ether)
     })
+    await result.wait()
     const receipt = await this.httpProvider.getTransactionReceipt(result.hash)
     if(receipt.logs && receipt.logs[0]) {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
@@ -353,6 +354,7 @@ export class ChamberWallet {
       {
       value: constants.EXIT_BOND
     })
+    await result.wait()
     const receipt = await this.httpProvider.getTransactionReceipt(result.hash)
     if(receipt.logs && receipt.logs[0]) {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
