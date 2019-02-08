@@ -156,8 +156,10 @@ export class ChamberWallet {
     })
   }
 
-  async init() {
-    await this.listener.initPolling()
+  async init(handler: (wallet: ChamberWallet) => void) {
+    await this.listener.initPolling(() => {
+      handler(this)
+    })
   }
 
   async loadBlockNumber() {
@@ -171,13 +173,13 @@ export class ChamberWallet {
     return Promise.all(tasks)
   }
 
-  async updateBlocks(): Promise<SignedTransactionWithProof[]> {
+  async syncChildChain(): Promise<SignedTransactionWithProof[]> {
     const results = await this.loadBlocks()
     results.map(block => this.updateBlock(Block.deserialize(block)))
     return this.getUTXOArray()
   }
 
-  updateBlock(block: Block) {
+  private updateBlock(block: Block) {
     this.getUTXOArray().forEach((tx) => {
       const exclusionProof = block.getExclusionProof(tx.getOutput().getSegment(0).start)
       const key = tx.getOutput().hash()

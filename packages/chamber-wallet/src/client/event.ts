@@ -5,6 +5,7 @@ import {
 } from '../storage'
 
 export type RootChainEventHandler = (e: any) => void
+export type CompletedHandler = () => void
 
 export class RootChainEventListener {
   provider: JsonRpcProvider
@@ -36,29 +37,29 @@ export class RootChainEventListener {
     this.checkingEvents.set(event, handler)
   }
 
-  async initPolling() {
+  async initPolling(handler: CompletedHandler) {
     const block = await this.provider.getBlock('latest')
     const loaded = Number(this.storage.get('loaded') || (block.number - 2))
-    await this.polling(loaded, block.number)
+    await this.polling(loaded, block.number, handler)
     this.storage.add('seenEvents', JSON.stringify(this.seenEvents))
     setTimeout(async ()=>{
-      await this.initPolling();
+      await this.initPolling(handler);
     }, 10000);
 
   }
 
-  async polling(fromBlockNumber: number, blockNumber: number) {
+  async polling(fromBlockNumber: number, blockNumber: number, completedHandler: CompletedHandler) {
     const events = await this.provider.getLogs({
       address: this.address,
       fromBlock: fromBlockNumber,
       toBlock: blockNumber
     })
-    events.filter(e => {
+    const filtered = events.filter(e => {
       if(e.transactionHash)
         return !this.seenEvents.get(e.transactionHash)
       else
         return false
-    }).forEach((e) => {
+    }).map((e) => {
       const logDesc = this.rootChainInterface.parseLog(e)
       const handler = this.checkingEvents.get(logDesc.name)
       if(handler) {
@@ -66,8 +67,10 @@ export class RootChainEventListener {
       }
       if(e.transactionHash)
         this.seenEvents.set(e.transactionHash, true)
+      return true
     })
     this.storage.add('loaded', blockNumber.toString())
+    if(filtered.length > 0) completedHandler()
   }
   
 }
