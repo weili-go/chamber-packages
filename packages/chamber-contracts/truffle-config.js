@@ -18,7 +18,7 @@
  *
  */
 
-// const HDWalletProvider = require('truffle-hdwallet-provider');
+const HDWalletProvider = require('truffle-hdwallet-provider');
 // const infuraKey = "fj4jll3k.....";
 //
 // const fs = require('fs');
@@ -42,6 +42,22 @@ module.exports = {
       network_id: "*",
       gas: 6700000,
       gasPrice: 10000000000,
+    },
+    testnet: {
+      provider: function() {
+        return new HDWalletProvider(
+          process.env.PRIVATE_KEY,
+          "http://54.238.213.235:8540")
+      },
+      network_id: "*"
+    },
+    kovan: {
+      provider: function() {
+        return new HDWalletProvider(
+          process.env.PRIVATE_KEY,
+          "https://kovan.infura.io/v3/b4c8518704574fe3992f9a479de0c004")
+      },
+      network_id: 42
     }
   },
 
