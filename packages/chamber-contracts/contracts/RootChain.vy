@@ -5,6 +5,7 @@ struct ChildChainBlock:
 struct Exit:
   owner: address
   exitableAt: uint256
+  challengableUntil: uint256
   utxoPos: uint256
   priority: uint256
   segment: uint256
@@ -241,6 +242,7 @@ def exit(
   self.exits[exitHash] = Exit({
     owner: msg.sender,
     exitableAt: exitableAt,
+    challengableUntil: exitableAt,
     utxoPos: _utxoPos,
     priority: blkNum,
     segment: _start * TOTAL_DEPOSIT + _end,
@@ -404,6 +406,7 @@ def challengeBefore(
   )
   assert blkNum < exit.priority
   assert exitSegmentStart >= _start and _end <= exitSegmentEnd
+  assert exit.challengableUntil > as_unitless_number(block.timestamp)
   if self.challenges[_challengeId].status == 0:
     self.challenges[_challengeId] = Challenge({
       owner: msg.sender,
@@ -482,7 +485,8 @@ def respondChallenge(
   else:
     assert False
   self.exits[challenge.exitHash].challengeCount -= 1
-  self.exits[challenge.exitHash].exitableAt = as_unitless_number(block.timestamp + 1 * 7 * 24 * 60 * 60)
+  if as_unitless_number(block.timestamp) > self.exits[challenge.exitHash].exitableAt - 1 * 7 * 24 * 60 * 60:
+    self.exits[challenge.exitHash].exitableAt = as_unitless_number(block.timestamp + 1 * 7 * 24 * 60 * 60)
   log.Responded(challenge.exitHash, _challengeId)
 
 # @dev finalizeExit
@@ -558,6 +562,7 @@ def forceIncludeRequest(
     hasSig)
   assert blkNum < (exit.utxoPos / 100)
   assert exitSegmentStart >= _start and _end <= exitSegmentEnd
+  assert exit.challengableUntil > as_unitless_number(block.timestamp)
   assert self.challenges[_challengeId].status == 0
   self.challenges[_challengeId] = Challenge({
     owner: msg.sender,
