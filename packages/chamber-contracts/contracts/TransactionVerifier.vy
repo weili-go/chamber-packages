@@ -29,6 +29,7 @@ contract StandardVerifier():
   ) -> bytes32: constant
   def verifyMerge(
     _txHash: bytes32,
+    _merkleHash: bytes32,
     _txBytes: bytes[1024],
     _sigs: bytes[260],
     _outputIndex: uint256,
@@ -195,6 +196,7 @@ def verify(
   _merkleHash: bytes32,
   _txBytes: bytes[1024],
   _sigs: bytes[260],
+  _hasSig: uint256,
   _outputIndex: uint256,
   _owner: address,
   _start: uint256,
@@ -203,40 +205,25 @@ def verify(
   label: uint256
   body: bytes[1024]
   (label, body) = self.decodeBaseTx(_txBytes)
-  if label == 1:
-    return StandardVerifier(self.stdverifier).verifyTransfer(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
-  elif label == 2:
-    return StandardVerifier(self.stdverifier).verifySplit(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
-  elif label == 3:
-    return StandardVerifier(self.stdverifier).verifyMerge(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
-  elif label == 4:
-    return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, body, _sigs, _outputIndex, _owner, _start, _end)
-  elif label == 5:
-    return self.verifyDepositTx(body, _owner, _start, _end)
-  elif label == 10:
-    return MultisigVerifier(self.multisigverifier).verifyMultisig2(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
-  elif label >= 20:
-    return EscrowVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, body, _sigs, _outputIndex, _owner, _start, _end)
-  return False
-
-@public
-@constant
-def verifyForceInclude(
-  _txHash: bytes32,
-  _merkleHash: bytes32,
-  _txBytes: bytes[1024],
-  _sigs: bytes[260],
-  _outputIndex: uint256,
-  _start: uint256,
-  _end: uint256,
-  _hasSig: uint256
-) -> bool:
-  label: uint256
-  body: bytes[1024]
-  (label, body) = self.decodeBaseTx(_txBytes)
-  if label == 4:
-    return MultisigVerifier(self.multisigverifier).verifySwapForceInclude(
-      _txHash, _merkleHash, body, _sigs, _outputIndex, _start, _end, _hasSig)
+  if _hasSig > 0:
+    if label == 4:
+      return MultisigVerifier(self.multisigverifier).verifySwapForceInclude(
+        _txHash, _merkleHash, body, _sigs, _outputIndex, _start, _end, _hasSig)
+  else:
+    if label == 1:
+      return StandardVerifier(self.stdverifier).verifyTransfer(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
+    elif label == 2:
+      return StandardVerifier(self.stdverifier).verifySplit(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
+    elif label == 3:
+      return StandardVerifier(self.stdverifier).verifyMerge(_txHash, _merkleHash, body, _sigs, _outputIndex, _owner, _start, _end)
+    elif label == 4:
+      return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, body, _sigs, _outputIndex, _owner, _start, _end)
+    elif label == 5:
+      return self.verifyDepositTx(body, _owner, _start, _end)
+    elif label == 10:
+      return MultisigVerifier(self.multisigverifier).verifyMultisig2(_txHash, body, _sigs, _outputIndex, _owner, _start, _end)
+    elif label >= 20:
+      return EscrowVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, body, _sigs, _outputIndex, _owner, _start, _end)
   return False
 
 # @dev get hash of input state of the transaction
@@ -265,3 +252,27 @@ def getTxoHash(
   elif label >= 20:
     return EscrowVerifier(self.escrowverifier).getTxoHash(label, body, _index, _blkNum)
   return sha3("txo")
+
+@public
+@constant
+def doesRequireConfsig(
+  _txBytes: bytes[1024]
+) -> bool:
+  label: uint256
+  body: bytes[1024]
+  (label, body) = self.decodeBaseTx(_txBytes)
+  if label == 1:
+    return False
+  elif label == 2:
+    return False
+  elif label == 3:
+    return True
+  elif label == 4:
+    return True
+  elif label == 5:
+    return False
+  elif label == 10:
+    return True
+  elif label >= 20:
+    return True
+  return False
