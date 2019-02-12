@@ -16,7 +16,7 @@ struct Exit:
   priority: uint256
   segment: uint256
   exitableEnd: uint256
-  parentExit: uint256
+  lowerExit: uint256
   hasSig: uint256
   challengeCount: uint256
 
@@ -223,19 +223,22 @@ def processDeposit(
 ):
   self.currentChildBlock += (1 + (self.currentChildBlock % 2))
   self.totalDeposited[tokenId] += amount
+  end: uint256 = self.totalDeposited[tokenId]
   root: bytes32 = sha3(
                     concat(
                       convert(depositer, bytes32),
                       convert(self.listings[tokenId].tokenAddress, bytes32),
                       convert(start, bytes32),
-                      convert(self.totalDeposited[tokenId], bytes32)
+                      convert(end, bytes32)
                     )
                   )
+  self.exitable[tokenId][end].start = start
+  self.exitable[tokenId][end].isAvailable = True
   self.childChain[self.currentChildBlock] = ChildChainBlock({
       root: root,
       blockTimestamp: block.timestamp
   })
-  log.Deposited(depositer, start, self.totalDeposited[tokenId], self.currentChildBlock)
+  log.Deposited(depositer, start, end, self.currentChildBlock)
   
 # @dev Constructor
 @public
@@ -243,19 +246,8 @@ def __init__(_txverifierAddress: address):
   self.operator = msg.sender
   self.currentChildBlock = 1
   self.txverifier = _txverifierAddress
-
-# @dev submit plasma block
-@public
-def submit(_root: bytes32):
-  assert msg.sender == self.operator
-  self.currentChildBlock += (2 - (self.currentChildBlock % 2))
-  # 2 + 2 = 4
-  # 3 + 1 = 4
-  self.childChain[self.currentChildBlock] = ChildChainBlock({
-      root: _root,
-      blockTimestamp: block.timestamp
-  })
-  log.BlockSubmitted(_root, block.timestamp, self.currentChildBlock)
+  self.listingNonce = 0
+  self.exitNonce = 1
 
 @public
 def listToken(
@@ -270,6 +262,23 @@ def listToken(
   # init the new token exitable ranges
   self.exitable[tokenId][0].isAvailable = True
   log.ListingEvent(tokenId, tokenAddress)
+
+@public
+def setup():
+  self.listToken(ZERO_ADDRESS, as_unitless_number(as_wei_value(1, "gwei")))
+
+# @dev submit plasma block
+@public
+def submit(_root: bytes32):
+  assert msg.sender == self.operator
+  self.currentChildBlock += (2 - (self.currentChildBlock % 2))
+  # 2 + 2 = 4
+  # 3 + 1 = 4
+  self.childChain[self.currentChildBlock] = ChildChainBlock({
+      root: _root,
+      blockTimestamp: block.timestamp
+  })
+  log.BlockSubmitted(_root, block.timestamp, self.currentChildBlock)
 
 # @dev deposit
 @public
@@ -322,14 +331,19 @@ def exit(
   start: uint256 = _segment / TOTAL_DEPOSIT
   end: uint256 = _segment - start * TOTAL_DEPOSIT
   root: bytes32 = self.childChain[blkNum].root
-  assert self.checkMembership(
-    start,
-    end,
-    txHash,
-    TOTAL_DEPOSIT,
-    root,
-    _proof
-  )
+  if blkNum % 2 == 0:
+    assert self.checkMembership(
+      start,
+      end,
+      txHash,
+      TOTAL_DEPOSIT,
+      root,
+      _proof
+    )
+  else:
+    # deposit transaction
+    depositHash: bytes32 = TransactionVerifier(self.txverifier).getDepositHash(_txBytes)
+    assert depositHash == root
   # verify signature, owner and segment
   assert TransactionVerifier(self.txverifier).verify(
     txHash,
@@ -351,7 +365,7 @@ def exit(
     priority: priority,
     segment: _segment,
     exitableEnd: _exitableEnd,
-    parentExit: 0,
+    lowerExit: 0,
     challengeCount: 0,
     hasSig: _hasSig
   })
@@ -407,10 +421,10 @@ def challenge(
       exitIndex,
       exitBlkNum)
     assert blkNum > exitBlkNum
-    if self.exits[exit.parentExit].owner != ZERO_ADDRESS:
-      self.exits[exit.parentExit].challengeCount -= 1
-      if as_unitless_number(block.timestamp) > self.exits[exit.parentExit].exitableAt - 1 * 7 * 24 * 60 * 60:
-        self.exits[exit.parentExit].extendedExitableAt = as_unitless_number(block.timestamp + 1 * 7 * 24 * 60 * 60)
+    if self.exits[exit.lowerExit].owner != ZERO_ADDRESS:
+      self.exits[exit.lowerExit].challengeCount -= 1
+      if as_unitless_number(block.timestamp) > self.exits[exit.lowerExit].exitableAt - 1 * 7 * 24 * 60 * 60:
+        self.exits[exit.lowerExit].extendedExitableAt = as_unitless_number(block.timestamp + 1 * 7 * 24 * 60 * 60)
     if not TransactionVerifier(self.txverifier).doesRequireConfsig(_txBytes):
       self.challenges[txHash] = Challenge({
         blkNum: exitBlkNum,
@@ -436,19 +450,19 @@ def challenge(
 # @dev requestHigherPriorityExit
 @public
 def requestHigherPriorityExit(
-  _exitId: uint256,
-  _parentExitId: uint256
+  _parentExitId: uint256,
+  _exitId: uint256
 ):
-  exit: Exit = self.exits[_exitId]
   parent: Exit = self.exits[_parentExitId]
-  assert exit.priority < parent.priority
-  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
-  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  exit: Exit = self.exits[_exitId]
+  assert parent.priority < exit.priority
   parentSegmentStart: uint256 = parent.segment / TOTAL_DEPOSIT
   parentSegmentEnd: uint256 = parent.segment - parentSegmentStart * TOTAL_DEPOSIT
+  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
+  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
   assert exitSegmentEnd > parentSegmentStart and exitSegmentStart < parentSegmentEnd
-  self.exits[_exitId].parentExit = _parentExitId
-  self.exits[_parentExitId].challengeCount += 1
+  self.exits[_parentExitId].lowerExit = _exitId
+  self.exits[_exitId].challengeCount += 1
 
 @public
 def includeSignature(

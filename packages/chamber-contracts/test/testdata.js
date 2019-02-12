@@ -285,7 +285,8 @@ function transactions() {
   const includedTx = block.getSignedTransactionWithProof(tx.hash())[0]
   const includedInvalidTx = block.getSignedTransactionWithProof(invalidTx.hash())[0]
   const includedMergeTx = block.getSignedTransactionWithProof(mergeTx.hash())[0]
-
+  includedMergeTx.confirmMerkleProofs(AlicePrivateKey)
+  
   return {
     segments: [segment1, segment2, segment3, segment4, segment5],
     segment45: segment45,
