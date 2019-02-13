@@ -9,6 +9,7 @@ import {
 import {
   Address,
   constants,
+  ExitableRangeManager,
   SplitTransaction,
   SignedTransaction,
   SignedTransactionWithProof,
@@ -18,17 +19,18 @@ import {
   SumMerkleProof,
 } from '@layer2/core'
 import { Contract } from 'ethers'
-import { BigNumber, id } from 'ethers/utils';
+import { BigNumber } from 'ethers/utils';
 import artifact from './assets/RootChain.json'
 
 const abi = [
   'event BlockSubmitted(bytes32 _root, uint256 _timestamp, uint256 _blkNum)',
   'event Deposited(address indexed _depositer, uint256 _start, uint256 _end, uint256 _blkNum)',
-  'event ExitStarted(address indexed _exitor, bytes32 _txHash, uint256 exitableAt, uint256 _start, uint256 _end)',
+  'event ExitStarted(address indexed _exitor, uint256 _exitId, uint256 exitableAt, uint256 _start, uint256 _end)',
+  'event FinalizedExit(uint256 _exitId, uint256 _start, uint256 _end)',
   'function deposit() payable',
-  'function exit(uint256 _utxoPos, uint256 _start, uint256 _end, bytes _txBytes, bytes _proof, bytes _sig) payable',
-  'function finalizeExit(bytes32 _exitHash)',
-  'function getExit(bytes32 _exitHash) constant returns(address, uint256)',
+  'function exit(uint256 _utxoPos, uint256 _start, uint256 _end, bytes _txBytes, bytes _proof, bytes _sig, uint256 _hasSig) payable',
+  'function finalizeExit(uint256 _tokenType, uint256 _exitableEnd, uint256 _exitId)',
+  'function getExit(uint256 _exitId) constant returns(address, uint256)',
 ]
 
 class WaitingBlockWrapper {
@@ -114,6 +116,7 @@ export class ChamberWallet {
   rootChainInterface: ethers.utils.Interface
   exitList: Map<string, string>
   waitingBlocks: Map<string, string>
+  exitableRangeManager: ExitableRangeManager
 
   constructor(
     client: PlasmaClient,
@@ -150,10 +153,33 @@ export class ChamberWallet {
         e.values._root
       ))
     })
-
     this.listener.addEvent('ExitStarted', (e) => {
       console.log('ExitStarted', e)
     })
+    this.listener.addEvent('FinalizedExit', (e) => {
+      console.log('FinalizedExit', e)
+      this.exitableRangeManager.remove(
+        e.values._start,
+        e.values._end
+      )
+    })
+    this.listener.addEvent('Deposited', (e) => {
+      console.log('Deposited', e)
+      this.exitableRangeManager.extendRight(
+        e.values._end
+      )
+    })
+
+    this.exitableRangeManager = this.loadExitableRangeManager()
+  }
+
+  loadExitableRangeManager() {
+    try {
+      const loaded = this.storage.get('exitable')
+      return ExitableRangeManager.deserialize(loaded)
+    }catch(e) {
+      return new ExitableRangeManager()
+    }
   }
 
   async init(handler: (wallet: ChamberWallet) => void) {
@@ -237,6 +263,13 @@ export class ChamberWallet {
       arr.push(Exit.deserialize(value))
     })
     return arr
+  }
+
+  getExitFromLocal(exitId: string) {
+    const serialized = this.exitList.get(exitId)
+    if(serialized)
+      return Exit.deserialize(serialized)
+    return null
   }
 
   loadExits() {
@@ -361,7 +394,7 @@ export class ChamberWallet {
     if(receipt.logs && receipt.logs[0]) {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
       return this.handleExit(
-        logDesc.values._txHash,
+        logDesc.values._exitId,
         logDesc.values.exitableAt,
         logDesc.values._start,
         logDesc.values._end
@@ -376,7 +409,15 @@ export class ChamberWallet {
   }
   
   async finalizeExit(exitId: string) {
-    return await this.rootChainContract.finalizeExit(exitId)
+    const exit = this.getExitFromLocal(exitId)
+    if(exit == null) {
+      throw new Error('exit not found')
+    }
+    return await this.rootChainContract.finalizeExit(
+      // tokenId
+      0,
+      this.exitableRangeManager.getExitableEnd(exit.segment.start, exit.segment.end),
+      exitId)
   }
 
   searchUtxo(amount: BigNumber): SignedTransactionWithProof | null {

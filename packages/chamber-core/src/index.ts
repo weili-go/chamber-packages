@@ -31,3 +31,7 @@ export {
   SumMerkleProof,
   SumMerkleTree
 } from './merkle'
+
+export {
+  ExitableRangeManager
+} from './utils/exitable'

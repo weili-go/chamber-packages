@@ -79,7 +79,7 @@ describe('ChamberWallet', () => {
 
     it('should getExit', () => {
       wallet.handleExit(
-        'exitid',
+        utils.bigNumberify(1),
         utils.bigNumberify(1520700),
         utils.bigNumberify(0),
         utils.bigNumberify(10000000)

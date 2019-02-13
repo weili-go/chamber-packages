@@ -66,7 +66,7 @@ ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uin
 Challenged: event({_exitId: uint256})
 ForceIncluded: event({_exitId: uint256})
 FinalizedExit: event({_exitId: uint256, _start: uint256, _end: uint256})
-Log: event({_a: bytes32})
+ExitableMerged: event({_start: uint256, _end: uint256})
 
 # management
 operator: address
@@ -198,15 +198,17 @@ def removeExitable(
   if _newStart > oldStart:
     self.exitable[_tokenId][_newStart].start = oldStart
     self.exitable[_tokenId][_newStart].isAvailable = True
-  # new end < old start
+  # new end < old end
   if _newEnd < _oldEnd:
     self.exitable[_tokenId][_oldEnd].start = _newEnd
     self.exitable[_tokenId][_oldEnd].isAvailable = True
+    self.exitable[_tokenId][_newEnd].start = _newStart
+    self.exitable[_tokenId][_newEnd].isAvailable = False
   # new end >= old start
   else:
     # _newEnd is right most
     if _newEnd != self.totalDeposited[_tokenId]:
-      clear(self.exitable[_tokenId][_newEnd])
+      self.exitable[_tokenId][_newEnd].isAvailable = False
     # _newEnd isn't right most
     else:
       self.exitable[_tokenId][_newEnd].start = _newEnd 
@@ -239,7 +241,36 @@ def processDeposit(
       blockTimestamp: block.timestamp
   })
   log.Deposited(depositer, start, end, self.currentChildBlock)
-  
+
+# @dev processDepositFragment
+@private
+def processDepositFragment(
+  depositer: address,
+  tokenId: uint256,
+  start: uint256,
+  end: uint256,
+  exitableEnd: uint256
+):
+  self.currentChildBlock += (1 + (self.currentChildBlock % 2))
+  assert self.exitable[tokenId][exitableEnd].start == start
+  assert self.exitable[tokenId][exitableEnd].isAvailable == False
+  self.exitable[tokenId][exitableEnd].start = end
+  self.exitable[tokenId][end].start = start
+  self.exitable[tokenId][end].isAvailable = True
+  root: bytes32 = sha3(
+                    concat(
+                      convert(depositer, bytes32),
+                      convert(self.listings[tokenId].tokenAddress, bytes32),
+                      convert(start, bytes32),
+                      convert(end, bytes32)
+                    )
+                  )
+  self.childChain[self.currentChildBlock] = ChildChainBlock({
+      root: root,
+      blockTimestamp: block.timestamp
+  })
+  log.Deposited(depositer, start, end, self.currentChildBlock)
+
 # @dev Constructor
 @public
 def __init__(_txverifierAddress: address):
@@ -291,6 +322,24 @@ def deposit():
     msg.sender,
     0,
     as_unitless_number(msg.value / decimalOffset))
+
+# @dev depositFragment
+@public
+@payable
+def depositFragment(
+  start: uint256,
+  end: uint256,
+  exitableEnd: uint256
+):
+  decimalOffset: wei_value = as_wei_value(1, "gwei")
+  assert (msg.value % decimalOffset == 0)
+  assert start + as_unitless_number(msg.value / decimalOffset) == end
+  self.processDepositFragment(
+    msg.sender,
+    0,
+    start,
+    end,
+    exitableEnd)
 
 @public
 def depositERC20(
@@ -493,21 +542,24 @@ def includeSignature(
 # @dev finalizeExit
 @public
 def finalizeExit(
-  _tokenType: uint256,
+  _tokenId: uint256,
   _exitableEnd: uint256,
   _exitId: uint256
 ):
   exit: Exit = self.exits[_exitId]
   exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  # check _tokenId is correct
+  assert exitSegmentStart >= _tokenId * TOTAL_DEPOSIT
+  assert exitSegmentEnd <= (_tokenId + 1) * TOTAL_DEPOSIT
   self.checkExitable(
-    _tokenType,
+    _tokenId,
     exitSegmentStart,
     exitSegmentEnd,
     _exitableEnd,
   )
   self.removeExitable(
-    _tokenType,
+    _tokenId,
     exitSegmentStart,
     exitSegmentEnd,
     _exitableEnd
@@ -515,10 +567,10 @@ def finalizeExit(
   assert exit.exitableAt < as_unitless_number(block.timestamp) and exit.extendedExitableAt < as_unitless_number(block.timestamp)
   assert exit.challengeCount == 0
   if exit.hasSig == 0:
-    if _tokenType == 0:
+    if _tokenId == 0:
       send(exit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei") + EXIT_BOND)
     else:
-      ERC20(self.listings[_tokenType].tokenAddress).transfer(exit.owner, exitSegmentEnd - exitSegmentStart)
+      ERC20(self.listings[_tokenId].tokenAddress).transfer(exit.owner, exitSegmentEnd - exitSegmentStart)
       send(exit.owner, EXIT_BOND)
   else:
     send(exit.owner, FORCE_INCLUDE_BOND)
@@ -557,6 +609,25 @@ def challengeTooOldExit(
   )
   # break exit
   clear(self.exits[_exitId])
+
+# @dev mergeExitable
+@public
+def mergeExitable(
+  _tokenId: uint256,
+  _segment1: uint256,
+  _segment2: uint256
+):
+  start1: uint256 = _segment1 / TOTAL_DEPOSIT
+  end1: uint256 = _segment1 - start1 * TOTAL_DEPOSIT
+  start2: uint256 = _segment2 / TOTAL_DEPOSIT
+  end2: uint256 = _segment2 - start2 * TOTAL_DEPOSIT
+  assert end1 == start2
+  assert self.exitable[_tokenId][end1].start == start1
+  assert self.exitable[_tokenId][end2].start == start2
+  assert self.exitable[_tokenId][end1].isAvailable == self.exitable[_tokenId][end2].isAvailable
+  self.exitable[_tokenId][end2].start = start1
+  clear(self.exitable[_tokenId][end1])
+  log.ExitableMerged(start1, end2)
 
 # @dev getExit
 @public
