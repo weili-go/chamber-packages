@@ -91,9 +91,9 @@ def verifySwapForceInclude(
     assert _start >= tList[1] and _end <= tList[2]
   elif _outputIndex == 1:
     assert _start >= tList[5] and _end <= tList[6]
-  if _hasSig == 0:
+  if _hasSig == 1:
     assert self.ecrecoverSig(_merkleHash, slice(_sigs, start=130, len=65)) == tList[0]
-  elif _hasSig == 1:
+  elif _hasSig == 2:
     assert self.ecrecoverSig(_merkleHash, slice(_sigs, start=130, len=65)) == tList[4]
   return check1 and check2
 

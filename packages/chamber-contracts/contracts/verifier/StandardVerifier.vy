@@ -140,6 +140,7 @@ def getTxoHashOfSplit(
 @constant
 def verifyMerge(
   _txHash: bytes32,
+  _merkleHash: bytes32,
   _tBytes: bytes[1024],
   _sigs: bytes[260],
   _outputIndex: uint256,
@@ -152,6 +153,7 @@ def verifyMerge(
     address, uint256, uint256, uint256, uint256, uint256, address])
   if _owner != ZERO_ADDRESS:
     assert(_owner == tList[6]) and (_start >= tList[1]) and (_end <= tList[3])
+  assert self.ecrecoverSig(_merkleHash, slice(_sigs, start=65, len=65)) == tList[0]
   return (self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == tList[0])
 
 @public

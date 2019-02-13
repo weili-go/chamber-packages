@@ -60,12 +60,12 @@ class WaitingBlockWrapper {
 }
 
 class Exit {
-  id: string
+  id: BigNumber
   exitableAt: BigNumber
   segment: Segment
 
   constructor(
-    id: string,
+    id: BigNumber,
     exitableAt: BigNumber,
     segment: Segment
   ) {
@@ -74,8 +74,8 @@ class Exit {
     this.segment = segment
   }
 
-  getId() {
-    return this.id
+  getId(): string {
+    return this.id.toString()
   }
 
   getAmount() {
@@ -216,7 +216,7 @@ export class ChamberWallet {
     return depositTx
   }
 
-  handleExit(exitId: string, exitableAt: BigNumber, start: BigNumber, end: BigNumber) {
+  handleExit(exitId: BigNumber, exitableAt: BigNumber, start: BigNumber, end: BigNumber) {
     const segment = new Segment(
       ethers.utils.bigNumberify(start),
       ethers.utils.bigNumberify(end)
@@ -348,11 +348,11 @@ export class ChamberWallet {
   async exit(tx: SignedTransactionWithProof): Promise<Exit> {
     const result = await this.rootChainContract.exit(
       tx.blkNum.mul(100),
-      tx.getOutput().getSegment(0).start,
-      tx.getOutput().getSegment(0).end,
+      tx.getOutput().getSegment(0).toBigNumber(),
       tx.getTxBytes(),
       tx.getProofAsHex(),
       tx.getSignatures(),
+      0,
       {
       value: constants.EXIT_BOND
     })
@@ -413,10 +413,7 @@ export class ChamberWallet {
     await this.client.sendTransaction(signedTx.serialize())
   }
 
-  // events
-  // handleDeposit
-  // handleSubmit(confirm transaction)
-  // handleExit invalid exit
+  private getExitableEnd(tokenId: number, end: BigNumber) {
 
-
+  }
 }

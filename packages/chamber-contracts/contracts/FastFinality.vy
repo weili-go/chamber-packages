@@ -22,6 +22,7 @@ contract TransactionVerifier():
     _merkleHash: bytes32,
     _txBytes: bytes[1024],
     _sigs: bytes[260],
+    _hasSig: uint256,
     _outputIndex: uint256,
     _owner: address,
     _start: uint256,
@@ -116,6 +117,7 @@ def dispute(
     txHash, # dummy
     _txBytes,
     _sigs,
+    0,
     _index,
     msg.sender,
     _start,
