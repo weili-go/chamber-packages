@@ -15,7 +15,6 @@ struct Exit:
   utxoPos: uint256
   priority: uint256
   segment: uint256
-  exitableEnd: uint256
   lowerExit: uint256
   hasSig: uint256
   challengeCount: uint256
@@ -177,51 +176,50 @@ def checkTransaction(
 @private
 @constant
 def checkExitable(
-  _tokenType: uint256,
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256,
   _exitableEnd: uint256
 ):
   assert _end <= TOTAL_DEPOSIT
   assert _end <= _exitableEnd
-  assert _start >= self.exitable[_tokenType][_exitableEnd].start
-  assert self.exitable[_tokenType][_exitableEnd].isAvailable
+  assert _start >= self.exitable[_tokenId][_exitableEnd].start
+  assert self.exitable[_tokenId][_exitableEnd].isAvailable
 
 @private
 def removeExitable(
-  _tokenType: uint256,
+  _tokenId: uint256,
   _newStart: uint256,
   _newEnd: uint256,
   _oldEnd: uint256
 ):
-  oldStart: uint256 = self.exitable[_tokenType][_oldEnd].start
+  oldStart: uint256 = self.exitable[_tokenId][_oldEnd].start
   # old start < new start
   if _newStart > oldStart:
-    self.exitable[_tokenType][_newStart].start = oldStart
-    self.exitable[_tokenType][_newStart].isAvailable = True
+    self.exitable[_tokenId][_newStart].start = oldStart
+    self.exitable[_tokenId][_newStart].isAvailable = True
   # new end < old start
   if _newEnd < _oldEnd:
-    self.exitable[_tokenType][_oldEnd].start = _newEnd
-    self.exitable[_tokenType][_oldEnd].isAvailable = True
+    self.exitable[_tokenId][_oldEnd].start = _newEnd
+    self.exitable[_tokenId][_oldEnd].isAvailable = True
   # new end >= old start
   else:
     # _newEnd is right most
-    if _newEnd != self.totalDeposited[_tokenType]:
-      # clear(self.exitable[_tokenType][_newEnd])
-      self.exitable[_tokenType][_newEnd].isAvailable = False
+    if _newEnd != self.totalDeposited[_tokenId]:
+      clear(self.exitable[_tokenId][_newEnd])
     # _newEnd isn't right most
     else:
-      self.exitable[_tokenType][_newEnd].start = _newEnd 
+      self.exitable[_tokenId][_newEnd].start = _newEnd 
 
 # @dev processDeposit
 @private
 def processDeposit(
   depositer: address,
   tokenId: uint256,
-  start: uint256,
   amount: uint256
 ):
   self.currentChildBlock += (1 + (self.currentChildBlock % 2))
+  start: uint256 = self.totalDeposited[tokenId]
   self.totalDeposited[tokenId] += amount
   end: uint256 = self.totalDeposited[tokenId]
   root: bytes32 = sha3(
@@ -232,7 +230,9 @@ def processDeposit(
                       convert(end, bytes32)
                     )
                   )
-  self.exitable[tokenId][end].start = start
+  oldStart: uint256 = self.exitable[tokenId][start].start
+  clear(self.exitable[tokenId][start])
+  self.exitable[tokenId][end].start = oldStart
   self.exitable[tokenId][end].isAvailable = True
   self.childChain[self.currentChildBlock] = ChildChainBlock({
       root: root,
@@ -290,7 +290,6 @@ def deposit():
   self.processDeposit(
     msg.sender,
     0,
-    self.totalDeposited[0],
     as_unitless_number(msg.value / decimalOffset))
 
 @public
@@ -305,14 +304,12 @@ def depositERC20(
   self.processDeposit(
     depositer,
     tokenId,
-    self.totalDeposited[tokenId],
     amount)
 
 # @dev exit
 @public
 @payable
 def exit(
-  _exitableEnd: uint256,
   _utxoPos: uint256,
   _segment: uint256,
   _txBytes: bytes[1024],
@@ -322,12 +319,12 @@ def exit(
 ):
   assert msg.value == EXIT_BOND
   exitableAt: uint256 = as_unitless_number(block.timestamp + 4 * 7 * 24 * 60 * 60)
-  priority: uint256 = _utxoPos / 100
+  blkNum: uint256 = _utxoPos / 100
+  priority: uint256 = blkNum
+  outputIndex: uint256 = _utxoPos - blkNum * 100
   txHash: bytes32 = sha3(_txBytes)
   if self.challenges[txHash].isAvailable and priority < (_utxoPos / 100):
     priority = self.challenges[txHash].blkNum
-  blkNum: uint256 = _utxoPos / 100
-  outputIndex: uint256 = _utxoPos - blkNum * 100
   start: uint256 = _segment / TOTAL_DEPOSIT
   end: uint256 = _segment - start * TOTAL_DEPOSIT
   root: bytes32 = self.childChain[blkNum].root
@@ -364,7 +361,6 @@ def exit(
     utxoPos: _utxoPos,
     priority: priority,
     segment: _segment,
-    exitableEnd: _exitableEnd,
     lowerExit: 0,
     challengeCount: 0,
     hasSig: _hasSig
@@ -498,6 +494,7 @@ def includeSignature(
 @public
 def finalizeExit(
   _tokenType: uint256,
+  _exitableEnd: uint256,
   _exitId: uint256
 ):
   exit: Exit = self.exits[_exitId]
@@ -507,13 +504,13 @@ def finalizeExit(
     _tokenType,
     exitSegmentStart,
     exitSegmentEnd,
-    exit.exitableEnd
+    _exitableEnd,
   )
   self.removeExitable(
     _tokenType,
     exitSegmentStart,
     exitSegmentEnd,
-    exit.exitableEnd
+    _exitableEnd
   )
   assert exit.exitableAt < as_unitless_number(block.timestamp) and exit.extendedExitableAt < as_unitless_number(block.timestamp)
   assert exit.challengeCount == 0

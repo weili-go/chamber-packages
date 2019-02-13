@@ -71,6 +71,9 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   describe("exit", () => {
 
+    const tokenId = 0
+    const exitableEnd = Scenario1.segments[1].end
+
     beforeEach(async () => {
       const result = await this.rootChain.deposit(
         {
@@ -98,8 +101,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     it("should success to exit and finalizeExit", async () => {
       const tx = Scenario1.blocks[0].signedTransactions[0]
       const gasCost = await this.rootChain.exit.estimateGas(
-        // exitableEnd
-        Scenario1.segments[0].end,
         6 * 100,
         Scenario1.segments[0].toBigNumber(),
         tx.getTxBytes(),
@@ -113,8 +114,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // gas cost of exit is 116480
       console.log('gasCost', gasCost)
       const result = await this.rootChain.exit(
-        // exitableEnd
-        Scenario1.segments[0].end,
         6 * 100,
         Scenario1.segments[0].toBigNumber(),
         tx.getTxBytes(),
@@ -130,7 +129,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        0,
+        tokenId,
+        exitableEnd,
         exitId,
         {
           from: bob
@@ -140,7 +140,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     it("should success to challenge", async () => {
       const tx = Scenario1.blocks[0].signedTransactions[0]
       const result = await this.rootChain.exit(
-        Scenario1.segments[0].end,
         6 * 100,
         Scenario1.segments[0].toBigNumber(),
         tx.getTxBytes(),
@@ -172,7 +171,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     it("should success to challengeBefore", async () => {
       const tx = Scenario1.blocks[2].signedTransactions[0]
       const result = await this.rootChain.exit(
-        Scenario1.segments[0].end,
         10 * 100,
         Scenario1.segments[0].toBigNumber(),
         tx.getTxBytes(),
@@ -187,7 +185,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       const challengeTx = Scenario1.blocks[1].signedTransactions[0]
       const exitId = result.receipt.logs[0].args._exitId
       const result2 = await this.rootChain.exit(
-        Scenario1.segments[0].end,
         8 * 100,
         Scenario1.segments[0].toBigNumber(),
         challengeTx.getTxBytes(),
@@ -212,6 +209,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await increaseTime(duration.weeks(6))
       await assertRevert(this.rootChain.finalizeExit(
         0,
+        exitableEnd,
         exitId,
         {
           from: operator
@@ -221,7 +219,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     it("should success to respondChallenge", async () => {
       const tx = Scenario1.blocks[2].signedTransactions[0]
       const result1 = await this.rootChain.exit(
-        Scenario1.segments[0].end,
         10 * 100,
         Scenario1.segments[0].toBigNumber(),
         tx.getTxBytes(),
@@ -235,7 +232,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const challengeTx = Scenario1.blocks[0].signedTransactions[0]
       const result2 = await this.rootChain.exit(
-        Scenario1.segments[0].end,
         6 * 100,
         Scenario1.segments[0].toBigNumber(),
         challengeTx.getTxBytes(),
@@ -278,7 +274,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     it("should success to challengeBefore by deposit transaction", async () => {
       const tx = Scenario1.blocks[0].signedTransactions[0]
       const result1 = await this.rootChain.exit(
-        Scenario1.segments[0].end,
         6 * 100,
         Scenario1.segments[0].toBigNumber(),
         tx.getTxBytes(),
@@ -292,7 +287,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
       const depositTx = Scenario1.deposits[0]
       const result2 = await this.rootChain.exit(
-        Scenario1.segments[0].end,
         3 * 100,
         Scenario1.segments[0].toBigNumber(),
         depositTx.encode(),
@@ -336,7 +330,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     it("should failed to finalizeExit", async () => {
       const tx = Scenario1.blocks[0].signedTransactions[0]
       const result1 = await this.rootChain.exit(
-        Scenario1.segments[0].end,
         6 * 100,
         Scenario1.segments[0].toBigNumber(),
         tx.getTxBytes(),
@@ -352,6 +345,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
         0,
+        exitableEnd,
         exitId1,
         {
           from: bob
@@ -359,7 +353,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       const invalidTx = Scenario1.blocks[3].signedTransactions[0]
       const exitId2 = 2
       await this.rootChain.exit(
-        Scenario1.segments[0].end,
         12 * 100,
         Scenario1.segments[2].toBigNumber(),
         invalidTx.getTxBytes(),
@@ -373,7 +366,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await assertRevert(this.rootChain.finalizeExit(
-        0,
+        tokenId,
+        exitableEnd,
         exitId2,
         {
           from: bob
@@ -384,16 +378,18 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   describe("SplitTransaction", () => {
 
+    const exitableEnd = ethers.utils.bigNumberify('4000000')
+
     beforeEach(async () => {
       await this.rootChain.deposit(
         {
           from: alice,
-          value: '1000000000000000'
+          value: '2000000000000000'
         });
       await this.rootChain.deposit(
         {
           from: bob,
-          value: '1000000000000000'
+          value: '2000000000000000'
         });
       const submit = async (root) => {
         await this.rootChain.submit(
@@ -410,8 +406,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       const tx0 = Scenario3.blocks[0].signedTransactions[0][0]
       const tx1 = Scenario3.blocks[0].signedTransactions[0][1]
       const exitId = 1
+      console.log(1)
       const result1 = await this.rootChain.exit(
-        ethers.utils.bigNumberify('1000000'),
         6 * 100,
         new Segment(ethers.utils.bigNumberify('0'), ethers.utils.bigNumberify('500000')).toBigNumber(),
         tx0.getTxBytes(),
@@ -422,8 +418,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: alice,
           value: BOND
         });
+      console.log(2)
       const result2 = await this.rootChain.exit(
-        ethers.utils.bigNumberify('1000000'),
         6 * 100 + 1,
         new Segment(ethers.utils.bigNumberify('500000'), ethers.utils.bigNumberify('1000000')).toBigNumber(),
         tx1.getTxBytes(),
@@ -441,6 +437,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
         0,
+        exitableEnd,
         exitId,
         {
           from: bob
@@ -449,6 +446,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
   })
 
   describe("forceIncludeRequest", () => {
+
+    const exitableEnd = ethers.utils.bigNumberify('2000000')
 
     beforeEach(async () => {
       await this.rootChain.deposit(
@@ -477,7 +476,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       const tx2 = Scenario2.blocks[1].signedTransactions[1]
       const forceIncludeTx = Scenario2.blocks[0].testTxs[0]
       await this.rootChain.exit(
-        Scenario2.segments[3].end,
         8 * 100,
         Scenario2.segments[3].toBigNumber(),
         tx1.getTxBytes(),
@@ -489,7 +487,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           value: BOND
         });
       const result2 = await this.rootChain.exit(
-        Scenario2.segments[4].end,
         8 * 100,
         Scenario2.segments[4].toBigNumber(),
         tx2.getTxBytes(),
@@ -501,7 +498,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           value: BOND
         });
       const result3 = await this.rootChain.exit(
-        Scenario2.segments[4].end,
         6 * 100 + 1,
         Scenario2.segments[4].toBigNumber(),
         forceIncludeTx.getTxBytes(),
@@ -527,6 +523,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // operator can't exit tx2
       await assertRevert(this.rootChain.finalizeExit(
         0,
+        exitableEnd,
         exitId2,
         {
           from: operator
@@ -539,7 +536,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       const forceIncludeTx = Scenario2.blocks[0].testTxs[0]
       const fullForceIncludeTx = Scenario2.blocks[0].signedTransactions[0]
       await this.rootChain.exit(
-        Scenario2.segments[3].end,
         8 * 100,
         Scenario2.segments[3].toBigNumber(),
         tx1.getTxBytes(),
@@ -551,7 +547,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           value: BOND
         });
       await this.rootChain.exit(
-        Scenario2.segments[4].end,
         8 * 100,
         Scenario2.segments[4].toBigNumber(),
         tx2.getTxBytes(),
@@ -564,7 +559,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
       const exitId = 2
       await this.rootChain.exit(
-        Scenario2.segments[4].end,
         6 * 100 + 1,
         Scenario2.segments[4].toBigNumber(),
         forceIncludeTx.getTxBytes(),
@@ -593,6 +587,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // operator can't exit tx2
       await assertRevert(this.rootChain.finalizeExit(
         0,
+        exitableEnd,
         exitId,
         {
           from: operator
