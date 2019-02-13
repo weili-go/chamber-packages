@@ -52,13 +52,13 @@ export class ExitableRangeManager {
 
   private removeItem(start: BigNumber, end: BigNumber) {
     this.ranges = this.ranges.filter(r => {
-      return !(r.start <= start && r.end > end)
+      return !(r.start.lte(start) && r.end.gte(end))
     })
   }
 
   getExitableRange(start: BigNumber, end: BigNumber) {
     const ranges = this.ranges.filter(r => {
-      return r.start <= start && r.end > end
+      return r.start.lte(start) && r.end.gte(end)
     })
     if(ranges.length != 1) {
       throw new Error('exitable ranges not found')

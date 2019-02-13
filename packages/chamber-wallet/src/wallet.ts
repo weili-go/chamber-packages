@@ -162,24 +162,30 @@ export class ChamberWallet {
         e.values._start,
         e.values._end
       )
+      this.saveExitableRangeManager()
     })
     this.listener.addEvent('Deposited', (e) => {
       console.log('Deposited', e)
       this.exitableRangeManager.extendRight(
         e.values._end
       )
+      this.saveExitableRangeManager()
     })
 
     this.exitableRangeManager = this.loadExitableRangeManager()
   }
 
-  loadExitableRangeManager() {
+  private loadExitableRangeManager() {
     try {
       const loaded = this.storage.get('exitable')
       return ExitableRangeManager.deserialize(loaded)
     }catch(e) {
       return new ExitableRangeManager()
     }
+  }
+
+  private saveExitableRangeManager() {
+    this.storage.add('exitable', this.exitableRangeManager.serialize())
   }
 
   async init(handler: (wallet: ChamberWallet) => void) {
