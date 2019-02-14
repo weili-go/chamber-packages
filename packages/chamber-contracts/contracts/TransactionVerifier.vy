@@ -5,6 +5,7 @@ contract StandardVerifier():
     _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256
   ) -> bool: constant
@@ -19,6 +20,7 @@ contract StandardVerifier():
     _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256
   ) -> bool: constant
@@ -34,6 +36,7 @@ contract StandardVerifier():
     _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256
   ) -> bool: constant
@@ -52,6 +55,7 @@ contract MultisigVerifier():
     _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256
   ) -> bool: constant
@@ -61,6 +65,7 @@ contract MultisigVerifier():
     _txBytes: bytes[496],
     _sigs: bytes[260],
     _outputIndex: uint256,
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256,
     _hasSig: uint256
@@ -76,6 +81,7 @@ contract MultisigVerifier():
     _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256
   ) -> bool: constant
@@ -94,6 +100,7 @@ contract EscrowVerifier():
     _sigs: bytes[260],
     _outputIndex: uint256,
     _owner: address,
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256
   ) -> bool: constant
@@ -122,6 +129,7 @@ def decodeBaseTx(_txBytes: bytes[496]) -> (uint256, uint256):
 @constant
 def getOwnState(
   owner: address,
+  tokenId: uint256,
   start: uint256,
   end: uint256,
   blkNum: uint256
@@ -129,6 +137,7 @@ def getOwnState(
   return sha3(
       concat("own",
         convert(owner, bytes32),
+        convert(tokenId, bytes32),
         convert(start, bytes32),
         convert(end, bytes32),
         convert(blkNum, bytes32)
@@ -179,6 +188,7 @@ def getDepositHash(
 def verifyDepositTx(
   _txBytes: bytes[496],
   _owner: address,
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256
 ) -> (bool):
@@ -187,7 +197,7 @@ def verifyDepositTx(
   start: uint256
   end: uint256
   (depositor, token, start, end) = self.decodeDeposit(_txBytes)
-  assert _start >= start and _end <= end
+  assert _tokenId == token and _start >= start and _end <= end
   if _owner != ZERO_ADDRESS:
     assert _owner == depositor
   return True
@@ -203,7 +213,7 @@ def getDepositTxoHash(
   start: uint256
   end: uint256
   (depositor, token, start, end) = self.decodeDeposit(_txBytes)
-  return self.getOwnState(depositor, start, end, _blkNum)
+  return self.getOwnState(depositor, token, start, end, _blkNum)
 
 # @dev Constructor
 @public
@@ -223,6 +233,7 @@ def verify(
   _hasSig: uint256,
   _outputIndex: uint256,
   _owner: address,
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256
 ) -> bool:
@@ -232,22 +243,22 @@ def verify(
   if _hasSig > 0:
     if label == 5:
       return MultisigVerifier(self.multisigverifier).verifySwapForceInclude(
-        _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _start, _end, _hasSig)
+        _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _tokenId, _start, _end, _hasSig)
   else:
     if label == 1:
-      return StandardVerifier(self.stdverifier).verifyTransfer(_txHash, _txBytes, _sigs, _outputIndex, _owner, _start, _end)
+      return StandardVerifier(self.stdverifier).verifyTransfer(_txHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
     elif label == 2:
-      return StandardVerifier(self.stdverifier).verifySplit(_txHash, _txBytes, _sigs, _outputIndex, _owner, _start, _end)
+      return StandardVerifier(self.stdverifier).verifySplit(_txHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
     elif label == 3:
-      return StandardVerifier(self.stdverifier).verifyMerge(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _start, _end)
+      return StandardVerifier(self.stdverifier).verifyMerge(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
     elif label == 4:
-      return self.verifyDepositTx(_txBytes, _owner, _start, _end)
+      return self.verifyDepositTx(_txBytes, _owner, _tokenId, _start, _end)
     elif label == 5:
-      return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _start, _end)
+      return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
     elif label == 10:
-      return MultisigVerifier(self.multisigverifier).verifyMultisig2(_txHash, _txBytes, _sigs, _outputIndex, _owner, _start, _end)
+      return MultisigVerifier(self.multisigverifier).verifyMultisig2(_txHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
     elif label >= 20:
-      return EscrowVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _start, _end)
+      return EscrowVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
   return False
 
 # @dev get hash of input state of the transaction

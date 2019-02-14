@@ -69,7 +69,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   describe("exit", () => {
 
-    const tokenId = 0
     const exitableEnd = Scenario1.segments[1].end
 
     beforeEach(async () => {
@@ -127,7 +126,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        tokenId,
         exitableEnd,
         exitId,
         {
@@ -155,8 +153,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         tx.getTxBytes(),
         8 * 100 + 10,
         -1,
-        Scenario1.segments[0].start,
-        Scenario1.segments[0].end,
+        Scenario1.segments[0].toBigNumber(),
         challengeTx.getTxBytes(),
         challengeTx.getProofAsHex(),
         challengeTx.getSignatures(),
@@ -206,7 +203,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       assert.equal(exitResult[1].toNumber(), 1)
       await increaseTime(duration.weeks(6))
       await assertRevert(this.rootChain.finalizeExit(
-        0,
         exitableEnd,
         exitId,
         {
@@ -255,8 +251,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         challengeTx.getTxBytes(),
         8 * 100 + 10,
         -1,
-        Scenario1.segments[0].start,
-        Scenario1.segments[0].end,
+        Scenario1.segments[0].toBigNumber(),
         respondTx.getTxBytes(),
         respondTx.getProofAsHex(),
         respondTx.getSignatures(),
@@ -311,8 +306,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         depositTx.encode(),
         6 * 100 + 10,
         -1,
-        Scenario1.segments[0].start,
-        Scenario1.segments[0].end,
+        Scenario1.segments[0].toBigNumber(),
         respondTx.getTxBytes(),
         respondTx.getProofAsHex(),
         respondTx.getSignatures(),
@@ -342,7 +336,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        0,
         exitableEnd,
         exitId1,
         {
@@ -364,7 +357,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await assertRevert(this.rootChain.finalizeExit(
-        tokenId,
         exitableEnd,
         exitId2,
         {
@@ -432,7 +424,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
-        0,
         exitableEnd,
         exitId,
         {
@@ -518,7 +509,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await increaseTime(duration.weeks(6));
       // operator can't exit tx2
       await assertRevert(this.rootChain.finalizeExit(
-        0,
         exitableEnd,
         exitId2,
         {
@@ -569,8 +559,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await this.rootChain.includeSignature(
         exitId3,
         6 * 100 + 1,
-        Scenario2.segments[4].start,
-        Scenario2.segments[4].end,
+        Scenario2.segments[4].toBigNumber(),
         fullForceIncludeTx.getTxBytes(),
         fullForceIncludeTx.getProofAsHex(),
         fullForceIncludeTx.getSignatures(),
@@ -582,7 +571,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await increaseTime(duration.weeks(6));
       // operator can't exit tx2
       await assertRevert(this.rootChain.finalizeExit(
-        0,
         exitableEnd,
         exitId,
         {

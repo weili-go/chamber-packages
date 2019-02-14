@@ -6,6 +6,7 @@ struct Dispute:
 
 contract RootChain():
   def checkTransaction(
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256,
     _txHash: bytes32,
@@ -25,6 +26,7 @@ contract TransactionVerifier():
     _hasSig: uint256,
     _outputIndex: uint256,
     _owner: address,
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256
   ) -> bool: constant
@@ -104,6 +106,7 @@ def dispute(
   _sigs: bytes[260],
   _operatorSigs: bytes[65],
   _index: uint256,
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256
 ):
@@ -120,6 +123,7 @@ def dispute(
     0,
     _index,
     msg.sender,
+    _tokenId,
     _start,
     _end)
   self.disputes[txHash] = Dispute({
@@ -136,6 +140,7 @@ def challenge(
   _proof: bytes[512],
   _sigs: bytes[260],
   _pos: uint256,
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256
 ):
@@ -144,6 +149,7 @@ def challenge(
   index: uint256 = _pos - blkNum * 100
   assert self.disputes[txHash].status == STATE_FIRST_DISPUTED
   RootChain(self.rootchain).checkTransaction(
+    _tokenId,
     _start,
     _end,
     txHash,
@@ -162,6 +168,7 @@ def secondDispute(
   _proof: bytes[512],
   _sigs: bytes[260],
   _pos: uint256,
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256
 ):
@@ -169,6 +176,7 @@ def secondDispute(
   blkNum: uint256 = _pos / 100
   index: uint256 = _pos - blkNum * 100
   assert RootChain(self.rootchain).checkTransaction(
+    _tokenId,
     _start,
     _end,
     txHash,

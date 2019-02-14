@@ -10,6 +10,7 @@ import {
  * total amount is 2^48
  */
 export const TOTAL_AMOUNT = new BigNumber(2).pow(48)
+export const MASK8BYTES = new BigNumber(2).pow(64)
 export const ZERO_HASH: Hash = utils.keccak256(HashZero)
 export const EXIT_BOND: BigNumber = utils.parseEther('0.001')
 export const CHALLENGE_BOND: BigNumber = utils.parseEther('0.001')

@@ -5,6 +5,7 @@ import {
   RLPItem
 } from './helpers/types'
 import {
+  MASK8BYTES,
   TOTAL_AMOUNT
 } from './helpers/constants'
 import BigNumber = utils.BigNumber
@@ -35,12 +36,12 @@ export class Segment {
   }
 
   toBigNumber(): BigNumber {
-    return this.start.mul(TOTAL_AMOUNT).add(this.end)
+    return this.start.mul(MASK8BYTES).add(this.end)
   }
 
   static fromBigNumber(bn: BigNumber): Segment {
-    const start = bn.div(TOTAL_AMOUNT)
-    const end = bn.sub(start.mul(TOTAL_AMOUNT))
+    const start = bn.div(MASK8BYTES)
+    const end = bn.sub(start.mul(MASK8BYTES))
     return new Segment(start, end)
   }
 

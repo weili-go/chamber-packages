@@ -4,6 +4,7 @@
 
 # total deposit amount per token type
 TOTAL_DEPOSIT: constant(uint256) = 2**48
+MASK8BYTES: constant(uint256) = 2**64 - 1
 
 # @dev from https://github.com/LayerXcom/plasma-mvp-vyper
 @private
@@ -26,10 +27,21 @@ def ecrecoverSig(_txHash: bytes32, _sig: bytes[260], index: int128) -> address:
     return ecrecover(_txHash, convert(v, uint256), r, s)
   return ZERO_ADDRESS
 
+@public
+@constant
+def parseSegment(
+  segment: uint256
+) -> (uint256, uint256, uint256):
+  tokenId: uint256 = bitwise_and(shift(segment, - 16 * 8), MASK8BYTES)
+  start: uint256 = bitwise_and(shift(segment, - 8 * 8), MASK8BYTES)
+  end: uint256 = bitwise_and(segment, MASK8BYTES)
+  return (tokenId, start, end)
+
 @private
 @constant
 def getOwnState(
   owner: address,
+  tokenId: uint256,
   start: uint256,
   end: uint256,
   blkNum: uint256
@@ -37,6 +49,7 @@ def getOwnState(
   return sha3(
       concat("own",
         convert(owner, bytes32),
+        convert(tokenId, bytes32),
         convert(start, bytes32),
         convert(end, bytes32),
         convert(blkNum, bytes32)
@@ -74,6 +87,7 @@ def verifyTransfer(
   _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256
 ) -> (bool):
@@ -83,11 +97,13 @@ def verifyTransfer(
   blkNum: uint256
   to: address
   (_from, segment, blkNum, to) = self.decodeTransfer(_txBytes)
-  start: uint256 = segment / TOTAL_DEPOSIT
-  end: uint256 = segment - start * TOTAL_DEPOSIT
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.parseSegment(segment)
   if _owner != ZERO_ADDRESS:
     assert(_owner == to and _outputIndex == 0)
-  return (self.ecrecoverSig(_txHash, _sigs, 0) == _from) and (start <= _start) and (_end <= end)
+  return (self.ecrecoverSig(_txHash, _sigs, 0) == _from) and tokenId == _tokenId and (start <= _start) and (_end <= end)
 
 @public
 @constant
@@ -102,12 +118,14 @@ def getTxoHashOfTransfer(
   blkNum: uint256
   to: address
   (_from, segment, blkNum, to) = self.decodeTransfer(_txBytes)
-  start: uint256 = segment / TOTAL_DEPOSIT
-  end: uint256 = segment - start * TOTAL_DEPOSIT
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.parseSegment(segment)
   if _index >= 10:
-    return self.getOwnState(_from, start, end, blkNum)
+    return self.getOwnState(_from, tokenId, start, end, blkNum)
   else:
-    return self.getOwnState(to, start, end, _blkNum)
+    return self.getOwnState(to, tokenId, start, end, _blkNum)
 
 # split
 @public
@@ -118,6 +136,7 @@ def verifySplit(
   _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256
 ) -> (bool):
@@ -127,8 +146,10 @@ def verifySplit(
   blkNum: uint256
   to1: address
   (_from, segment, blkNum, to1) = self.decodeTransfer(_txBytes)
-  start: uint256 = segment / TOTAL_DEPOSIT
-  end: uint256 = segment - start * TOTAL_DEPOSIT
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.parseSegment(segment)
   to2: address = self.decodeAddress(_txBytes, 128 + 16)
   offset: uint256 = extract32(_txBytes, 160 + 16, type=uint256)
   if _owner != ZERO_ADDRESS:
@@ -136,6 +157,7 @@ def verifySplit(
       assert(_owner == to1)
     else:
       assert(_owner == to2)
+  assert _tokenId == tokenId
   if _outputIndex == 0:
     assert (_start >= start) and (_end <= offset)
   else:
@@ -155,16 +177,18 @@ def getTxoHashOfSplit(
   blkNum: uint256
   to1: address
   (_from, segment, blkNum, to1) = self.decodeTransfer(_txBytes)
-  start: uint256 = segment / TOTAL_DEPOSIT
-  end: uint256 = segment - start * TOTAL_DEPOSIT
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.parseSegment(segment)
   offset: uint256 = extract32(_txBytes, 160 + 16, type=uint256)
   if _index >= 10:
-    return self.getOwnState(_from, start, end, blkNum)
+    return self.getOwnState(_from, tokenId, start, end, blkNum)
   elif _index == 0:
-    return self.getOwnState(to1, start, offset, _blkNum)
+    return self.getOwnState(to1, tokenId, start, offset, _blkNum)
   else:
     to2: address = self.decodeAddress(_txBytes, 128 + 16)
-    return self.getOwnState(to2, offset, end, _blkNum)
+    return self.getOwnState(to2, tokenId, offset, end, _blkNum)
 
 # merge
 @public
@@ -176,6 +200,7 @@ def verifyMerge(
   _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256
 ) -> (bool):
@@ -185,10 +210,13 @@ def verifyMerge(
   offset: uint256
   to: address
   (_from, segment, offset, to) = self.decodeTransfer(_txBytes)
-  start: uint256 = segment / TOTAL_DEPOSIT
-  end: uint256 = segment - start * TOTAL_DEPOSIT
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.parseSegment(segment)
   if _owner != ZERO_ADDRESS:
-    assert(_owner == to) and (_start >= start) and (_end <= end)
+    assert(_owner == to)
+  assert _tokenId == tokenId and (_start >= start) and (_end <= end)
   assert self.ecrecoverSig(_merkleHash, _sigs, 1) == _from
   return (self.ecrecoverSig(_txHash, _sigs, 0) == _from)
 
@@ -205,13 +233,15 @@ def getTxoHashOfMerge(
   offset: uint256
   to: address
   (_from, segment, offset, to) = self.decodeTransfer(_txBytes)
-  start: uint256 = segment / TOTAL_DEPOSIT
-  end: uint256 = segment - start * TOTAL_DEPOSIT
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.parseSegment(segment)
   blkNum1: uint256 = extract32(_txBytes, 128 + 16, type=uint256)
   blkNum2: uint256 = extract32(_txBytes, 160 + 16, type=uint256)
   if _index == 10:
-    return self.getOwnState(_from, start, offset, blkNum1)
+    return self.getOwnState(_from, tokenId, start, offset, blkNum1)
   elif _index == 11:
-    return self.getOwnState(_from, offset, end, blkNum2)
+    return self.getOwnState(_from, tokenId, offset, end, blkNum2)
   else:
-    return self.getOwnState(to, start, end, _blkNum)
+    return self.getOwnState(to, tokenId, start, end, _blkNum)
