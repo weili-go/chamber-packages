@@ -1,6 +1,5 @@
 // const { injectInTruffle } = require('sol-trace');
 // injectInTruffle(web3, artifacts);
-const { deployRLPdecoder } = require('./helpers/deployRLPdecoder')
 const {
   duration,
   increaseTime,

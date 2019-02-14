@@ -1,4 +1,3 @@
-const { deployRLPdecoder } = require('./helpers/deployRLPdecoder')
 const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
 const MultisigVerifier = artifacts.require("MultisigVerifier")
