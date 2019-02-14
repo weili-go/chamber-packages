@@ -236,7 +236,7 @@ export class ChamberWallet {
     )
     const depositTx = new DepositTransaction(
       depositor,
-      '0x0000000000000000000000000000000000000000',
+      ethers.constants.Zero,
       segment
     )
     this.addUTXO(new SignedTransactionWithProof(

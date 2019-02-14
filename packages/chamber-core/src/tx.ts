@@ -11,8 +11,17 @@ import {
   Hash,
 } from './helpers/types';
 import BigNumber = utils.BigNumber
-import { Signature } from 'ethers/utils';
 
+class DecoderUtility {
+  static decode(bytes: string) {
+    const len = Math.floor(utils.hexDataLength(bytes) / 32)
+    let arr = []
+    for(let i = 0;i < len;i++) {
+      arr.push(utils.hexStripZeros(utils.hexDataSlice(bytes, i * 32, i * 32 + 32)))
+    }
+    return arr
+  }
+}
 /**
  * BaseTransaction is raw transaction data structure
  * @title BaseTransaction
@@ -20,7 +29,8 @@ import { Signature } from 'ethers/utils';
  */
 export abstract class BaseTransaction {
 
-  label: number
+  label: BigNumber
+  maxBlock: BigNumber
   items: RLPTx
 
   /**
@@ -29,16 +39,23 @@ export abstract class BaseTransaction {
    * @param items is transaction body
    */
   constructor(label: number, items: RLPTx) {
-    this.label = label
+    this.label = utils.bigNumberify(label)
+    this.maxBlock = utils.bigNumberify(0)
     this.items = items
   }
 
-  toTuple(): RLPItem[] {
-    return [utils.bigNumberify(this.label), RLP.encode(this.items)]
+  withMaxBlkNum(maxBlock: number) {
+    this.maxBlock = utils.bigNumberify(maxBlock)
+    return this
   }
 
   encode(): string {
-    return RLP.encode(this.toTuple())
+    const label = utils.padZeros(utils.arrayify(this.label), 8)
+    const maxBlock = utils.padZeros(utils.arrayify(this.maxBlock), 8)
+    const arr = this.items.map((i: RLPItem) => {
+      return utils.padZeros(utils.arrayify(i), 32)
+    })
+    return utils.hexlify(utils.concat([label, maxBlock].concat(arr)))
   }
 
   hash(): string {
@@ -70,20 +87,21 @@ export class TransactionDecoder {
    * @param bytes is hex string
    */
   static decode(bytes: string): BaseTransaction {
-    const tuple: RLPItem[] = RLP.decode(bytes)
-    const label = utils.bigNumberify(tuple[0]).toNumber()
+    const label = utils.bigNumberify(utils.hexDataSlice(bytes, 0, 8)).toNumber()
+    const maxBlkNum = utils.bigNumberify(utils.hexDataSlice(bytes, 8, 16)).toNumber()
+    const body = DecoderUtility.decode(utils.hexDataSlice(bytes, 16, 496))
     if(label === 1) {
-      return TransferTransaction.decode(tuple[1])
+      return TransferTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else if(label === 2) {
-      return SplitTransaction.decode(tuple[1])
+      return SplitTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else if(label === 3) {
-      return MergeTransaction.decode(tuple[1])
+      return MergeTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else if(label === 4) {
-      return SwapTransaction.decode(tuple[1])
+      return DepositTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else if(label === 5) {
-      return DepositTransaction.decode(tuple[1])
+      return SwapTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else{
-      return TransferTransaction.decode(tuple[1])
+      return TransferTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }
   }
 }
@@ -165,26 +183,29 @@ export class OwnState implements TransactionOutput {
 
 export class DepositTransaction extends BaseTransaction {
   depositor: Address
-  token: Address
+  token: BigNumber
   segment: Segment
 
   constructor(
     depositor: Address,
-    token: Address,
+    token: BigNumber,
     segment: Segment
   ) {
-    super(5, [depositor, token, segment.start, segment.end])
+    super(4, [depositor, token, segment.toBigNumber()])
     this.depositor = depositor
     this.token = token
     this.segment = segment
   }
 
   static fromTuple(tuple: RLPItem[]): DepositTransaction {
-    return new DepositTransaction(utils.getAddress(tuple[0]), tuple[1], Segment.fromTuple(tuple.slice(2, 4)))
+    return new DepositTransaction(
+      utils.getAddress(tuple[0]),
+      utils.bigNumberify(tuple[1]),
+      Segment.fromBigNumber(utils.bigNumberify(tuple[2])))
   }
 
   static decode(bytes: string): DepositTransaction {
-    return DepositTransaction.fromTuple(RLP.decode(bytes))
+    return DepositTransaction.fromTuple(DecoderUtility.decode(bytes))
   }
 
   getInput(): TransactionOutput {
@@ -228,7 +249,7 @@ export class TransferTransaction extends BaseTransaction {
     blkNum: BigNumber,
     to: Address
   ) {
-    super(1, [from, segment.start, segment.end, blkNum, to])
+    super(1, [from, segment.toBigNumber(), blkNum, to])
     this.from = from
     this.segment = segment
     this.blkNum = blkNum
@@ -238,13 +259,13 @@ export class TransferTransaction extends BaseTransaction {
   static fromTuple(tuple: RLPItem[]): TransferTransaction {
     return new TransferTransaction(
       utils.getAddress(tuple[0]),
-      Segment.fromTuple(tuple.slice(1, 3)),
-      utils.bigNumberify(tuple[3]),
-      utils.getAddress(tuple[4]))
+      Segment.fromBigNumber(utils.bigNumberify(tuple[1])),
+      utils.bigNumberify(tuple[2]),
+      utils.getAddress(tuple[3]))
   }
 
   static decode(bytes: string): TransferTransaction {
-    return TransferTransaction.fromTuple(RLP.decode(bytes))
+    return TransferTransaction.fromTuple(DecoderUtility.decode(bytes))
   }
 
   getInput(): TransactionOutput {
@@ -296,7 +317,7 @@ export class SplitTransaction extends BaseTransaction {
     to2: Address,
     offset: BigNumber,
   ) {
-    super(2, [from, segment.start, segment.end, blkNum, to1, to2, offset])
+    super(2, [from, segment.toBigNumber(), blkNum, to1, to2, offset])
     this.from = from
     this.segment = segment
     this.blkNum = blkNum
@@ -308,15 +329,15 @@ export class SplitTransaction extends BaseTransaction {
   static fromTuple(tuple: RLPItem[]): SplitTransaction {
     return new SplitTransaction(
       utils.getAddress(tuple[0]),
-      Segment.fromTuple(tuple.slice(1, 3)),
-      utils.bigNumberify(tuple[3]),
+      Segment.fromBigNumber(utils.bigNumberify(tuple[1])),
+      utils.bigNumberify(tuple[2]),
+      utils.getAddress(tuple[3]),
       utils.getAddress(tuple[4]),
-      utils.getAddress(tuple[5]),
-      utils.bigNumberify(tuple[6]))
+      utils.bigNumberify(tuple[5]))
   }
 
   static decode(bytes: string): SplitTransaction {
-    return SplitTransaction.fromTuple(RLP.decode(bytes))
+    return SplitTransaction.fromTuple(DecoderUtility.decode(bytes))
   }
 
   getInput(): TransactionOutput {
@@ -374,18 +395,17 @@ export class MergeTransaction extends BaseTransaction {
     from: Address,
     segment1: Segment,
     segment2: Segment,
+    to: Address,
     blkNum1: BigNumber,
-    blkNum2: BigNumber,
-    to: Address
+    blkNum2: BigNumber
   ) {
     super(3, 
       [from,
-        segment1.start,
+        new Segment(segment1.start, segment2.end).toBigNumber(),
         segment1.end,
-        segment2.end,
+        to,
         blkNum1,
-        blkNum2,
-        to])
+        blkNum2])
     this.from = from
     this.segment1 = segment1
     this.segment2 = segment2
@@ -396,17 +416,19 @@ export class MergeTransaction extends BaseTransaction {
   }
 
   static fromTuple(tuple: RLPItem[]): MergeTransaction {
+    const segment = Segment.fromBigNumber(utils.bigNumberify(tuple[1]))
+    const offset = utils.bigNumberify(tuple[2])
     return new MergeTransaction(
       utils.getAddress(tuple[0]),
-      Segment.fromTuple(tuple.slice(1, 3)),
-      Segment.fromTuple(tuple.slice(2, 4)),
+      new Segment(segment.start, offset),
+      new Segment(offset, segment.end),
+      utils.getAddress(tuple[3]),
       utils.bigNumberify(tuple[4]),
-      utils.bigNumberify(tuple[5]),
-      utils.getAddress(tuple[6]))
+      utils.bigNumberify(tuple[5]))
   }
 
   static decode(bytes: string): MergeTransaction {
-    return MergeTransaction.fromTuple(RLP.decode(bytes))
+    return MergeTransaction.fromTuple(DecoderUtility.decode(bytes))
   }
 
   getInput(index: number): TransactionOutput {
@@ -467,14 +489,12 @@ export class SwapTransaction extends BaseTransaction {
     segment2: Segment,
     blkNum2: BigNumber
   ) {
-    super(4,
+    super(5,
       [from1,
-        segment1.start,
-        segment1.end,
+        segment1.toBigNumber(),
         blkNum1,
         from2,
-        segment2.start,
-        segment2.end,
+        segment2.toBigNumber(),
         blkNum2])
     this.from1 = from1
     this.from2 = from2
@@ -487,15 +507,15 @@ export class SwapTransaction extends BaseTransaction {
   static fromTuple(tuple: RLPItem[]): SwapTransaction {
     return new SwapTransaction(
       utils.getAddress(tuple[0]),
-      Segment.fromTuple(tuple.slice(1, 3)),
-      utils.bigNumberify(tuple[3]),
-      utils.getAddress(tuple[4]),
-      Segment.fromTuple(tuple.slice(5, 7)),
-      utils.bigNumberify(tuple[7]))
+      Segment.fromBigNumber(utils.bigNumberify(tuple[1])),
+      utils.bigNumberify(tuple[2]),
+      utils.getAddress(tuple[3]),
+      Segment.fromBigNumber(utils.bigNumberify(tuple[4])),
+      utils.bigNumberify(tuple[5]))
   }
 
   static decode(bytes: string): SwapTransaction {
-    return SwapTransaction.fromTuple(RLP.decode(bytes))
+    return SwapTransaction.fromTuple(DecoderUtility.decode(bytes))
   }
 
   getInput(index: number): TransactionOutput {

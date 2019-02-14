@@ -11,6 +11,7 @@ struct ChildChainBlock:
 struct Exit:
   owner: address
   exitableAt: uint256
+  txHash: bytes32
   extendedExitableAt: uint256
   utxoPos: uint256
   priority: uint256
@@ -35,7 +36,7 @@ contract TransactionVerifier():
   def verify(
     _txHash: bytes32,
     _merkleHash: bytes32,
-    _txBytes: bytes[1024],
+    _txBytes: bytes[496],
     _sigs: bytes[260],
     _hasSig: uint256,
     _outputIndex: uint256,
@@ -44,19 +45,15 @@ contract TransactionVerifier():
     _end: uint256
   ) -> bool: constant
   def getTxoHash(
-    _txBytes: bytes[1024],
+    _txBytes: bytes[496],
     _index: uint256,
     _blkNum: uint256
   ) -> bytes32: constant
   def doesRequireConfsig(
-    _txBytes: bytes[1024]
+    _txBytes: bytes[496]
   ) -> bool: constant
-  def decodeDepositTx(
-    _tBytes: bytes[1024],
-    _blkNum: uint256
-  ) -> bytes32: constant
   def getDepositHash(
-    _tBytes: bytes[1024]
+    _txBytes: bytes[496]
   ) -> bytes32: constant
 
 ListingEvent: event({_tokenId: uint256, _tokenAddress: address})
@@ -142,7 +139,7 @@ def checkTransaction(
   _start: uint256,
   _end: uint256,
   _txHash: bytes32,
-  _txBytes: bytes[1024],
+  _txBytes: bytes[496],
   _blkNum: uint256,
   _proof: bytes[512],
   _sigs: bytes[260],
@@ -227,7 +224,7 @@ def processDeposit(
   root: bytes32 = sha3(
                     concat(
                       convert(depositer, bytes32),
-                      convert(self.listings[tokenId].tokenAddress, bytes32),
+                      convert(tokenId, bytes32),
                       convert(start, bytes32),
                       convert(end, bytes32)
                     )
@@ -260,7 +257,7 @@ def processDepositFragment(
   root: bytes32 = sha3(
                     concat(
                       convert(depositer, bytes32),
-                      convert(self.listings[tokenId].tokenAddress, bytes32),
+                      convert(tokenId, bytes32),
                       convert(start, bytes32),
                       convert(end, bytes32)
                     )
@@ -361,7 +358,7 @@ def depositERC20(
 def exit(
   _utxoPos: uint256,
   _segment: uint256,
-  _txBytes: bytes[1024],
+  _txBytes: bytes[496],
   _proof: bytes[512],
   _sig: bytes[260],
   _hasSig: uint256
@@ -369,10 +366,10 @@ def exit(
   assert msg.value == EXIT_BOND
   exitableAt: uint256 = as_unitless_number(block.timestamp + 4 * 7 * 24 * 60 * 60)
   blkNum: uint256 = _utxoPos / 100
-  priority: uint256 = blkNum
   outputIndex: uint256 = _utxoPos - blkNum * 100
+  priority: uint256 = blkNum
   txHash: bytes32 = sha3(_txBytes)
-  if self.challenges[txHash].isAvailable and priority < (_utxoPos / 100):
+  if self.challenges[txHash].isAvailable and self.challenges[txHash].blkNum < priority:
     priority = self.challenges[txHash].blkNum
   start: uint256 = _segment / TOTAL_DEPOSIT
   end: uint256 = _segment - start * TOTAL_DEPOSIT
@@ -406,6 +403,7 @@ def exit(
   self.exits[exitId] = Exit({
     owner: msg.sender,
     exitableAt: exitableAt,
+    txHash: txHash,
     extendedExitableAt: 0,
     utxoPos: _utxoPos,
     priority: priority,
@@ -425,12 +423,12 @@ def exit(
 @public
 def challenge(
   _exitId: uint256,
-  _exitTxBytes: bytes[1024],
+  _exitTxBytes: bytes[496],
   _utxoPos: uint256,
   _eInputPos: int128,
   _start: uint256,
   _end: uint256,
-  _txBytes: bytes[1024],
+  _txBytes: bytes[496],
   _proof: bytes[512],
   _sig: bytes[260]
 ):
@@ -443,6 +441,7 @@ def challenge(
   exitIndex: uint256 = exit.utxoPos - exitBlkNum * 100
   exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
   exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  assert exit.txHash == sha3(_exitTxBytes)
   assert exitSegmentStart >= _start and _end <= exitSegmentEnd
   assert exit.exitableAt > as_unitless_number(block.timestamp)
   txHash: bytes32 = sha3(_txBytes)
@@ -515,7 +514,7 @@ def includeSignature(
   _utxoPos: uint256,
   _start: uint256,
   _end: uint256,
-  _txBytes: bytes[1024],
+  _txBytes: bytes[496],
   _proof: bytes[512],
   _sig: bytes[260]
 ):
@@ -583,7 +582,7 @@ def challengeTooOldExit(
   _exitId: uint256,
   _start: uint256,
   _end: uint256,
-  _txBytes: bytes[1024],
+  _txBytes: bytes[496],
   _proof: bytes[512],
   _sig: bytes[260]
 ):

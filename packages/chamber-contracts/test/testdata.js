@@ -71,8 +71,8 @@ function scenario1() {
   const block6 = new Block(12)
   block6.setBlockNumber(12)
 
-  const depositTx1 = new DepositTransaction(AliceAddress, constants.AddressZero, segment1)
-  const depositTx2 = new DepositTransaction(BobAddress, constants.AddressZero, segment2)
+  const depositTx1 = new DepositTransaction(AliceAddress, constants.Zero, segment1)
+  const depositTx2 = new DepositTransaction(BobAddress, constants.Zero, segment2)
   const tx31 = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
   const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
   const tx41 = createTransfer(BobPrivateKey, BobAddress, segment1, blkNum3, AliceAddress)
@@ -275,7 +275,7 @@ function transactions() {
 
   const tx = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
   const invalidTx = createTransfer(OperatorPrivateKey, AliceAddress, segment2, blkNum2, BobAddress)
-  const mergeTx = new SignedTransaction(new MergeTransaction(AliceAddress, segment4, segment5, blkNum1, blkNum2, BobAddress))
+  const mergeTx = new SignedTransaction(new MergeTransaction(AliceAddress, segment4, segment5, BobAddress, blkNum1, blkNum2))
   mergeTx.sign(AlicePrivateKey)
   
   block.appendTx(tx)

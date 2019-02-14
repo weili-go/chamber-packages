@@ -38,6 +38,12 @@ export class Segment {
     return this.start.mul(TOTAL_AMOUNT).add(this.end)
   }
 
+  static fromBigNumber(bn: BigNumber): Segment {
+    const start = bn.div(TOTAL_AMOUNT)
+    const end = bn.sub(start.mul(TOTAL_AMOUNT))
+    return new Segment(start, end)
+  }
+
   toTuple(): BigNumber[] {
     return [
       this.start,
