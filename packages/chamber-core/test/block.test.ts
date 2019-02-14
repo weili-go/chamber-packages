@@ -111,7 +111,7 @@ describe('Block', () => {
       block.appendTx(tx1)
       block.appendTx(tx2)
       const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]
-      assert.equal(sinedTx.merkleHash(), '0xf6610ee09cafa15f998f19b9754864a671d56b8f353a98ac29893eb55db99989')
+      assert.equal(sinedTx.merkleHash(), '0x2b5b36c65312b8cae51d05e26257bc43f89bc84f6ae511e01f5bc41c27d9630a')
     });
 
     it('serialize and deserialize', () => {

@@ -38,7 +38,6 @@ const BOND = constants.EXIT_BOND
 contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   beforeEach(async () => {
-    await deployRLPdecoder(alice)
     this.standardVerifier = await StandardVerifier.new({ from: operator })
     this.multisigVerifier = await MultisigVerifier.new({ from: operator })
     this.escrowVerifier = await EscrowVerifier.new({ from: operator })
@@ -295,7 +294,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         0,
         {
           from: alice,
-          gas: '700000',
+          gas: '1000000',
           value: BOND
         });
       const exitId1 = result1.receipt.logs[0].args._exitId
@@ -406,7 +405,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       const tx0 = Scenario3.blocks[0].signedTransactions[0][0]
       const tx1 = Scenario3.blocks[0].signedTransactions[0][1]
       const exitId = 1
-      console.log(1)
       const result1 = await this.rootChain.exit(
         6 * 100,
         new Segment(ethers.utils.bigNumberify('0'), ethers.utils.bigNumberify('500000')).toBigNumber(),
@@ -418,7 +416,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: alice,
           value: BOND
         });
-      console.log(2)
       const result2 = await this.rootChain.exit(
         6 * 100 + 1,
         new Segment(ethers.utils.bigNumberify('500000'), ethers.utils.bigNumberify('1000000')).toBigNumber(),

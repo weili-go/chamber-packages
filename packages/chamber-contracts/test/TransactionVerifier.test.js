@@ -18,7 +18,6 @@ require('chai')
 contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) => {
 
   beforeEach(async () => {
-    await deployRLPdecoder(admin)
     const standardVerifier = await StandardVerifier.new({ from: operator })
     const multisigVerifier = await MultisigVerifier.new({ from: operator })
     const escrowVerifier = await EscrowVerifier.new({ from: operator })

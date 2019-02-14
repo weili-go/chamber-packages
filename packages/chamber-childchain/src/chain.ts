@@ -71,7 +71,7 @@ export class Chain {
   async handleDeposit(depositor: string, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
     const depositTx = new DepositTransaction(
       depositor,
-      '0x0000000000000000000000000000000000000000',
+      ethers.constants.Zero,
       new Segment(
         ethers.utils.bigNumberify(start),
         ethers.utils.bigNumberify(end)

@@ -1,17 +1,20 @@
 # multisig
 
+# total deposit amount per token type
+TOTAL_DEPOSIT: constant(uint256) = 2**48
+
 # @dev from https://github.com/LayerXcom/plasma-mvp-vyper
 @private
 @constant
-def ecrecoverSig(_txHash: bytes32, _sig: bytes[65]) -> address:
-  if len(_sig) != 65:
+def ecrecoverSig(_txHash: bytes32, _sig: bytes[260], index: int128) -> address:
+  if len(_sig) % 65 != 0:
     return ZERO_ADDRESS
   # ref. https://gist.github.com/axic/5b33912c6f61ae6fd96d6c4a47afde6d
   # The signature format is a compact form of:
   # {bytes32 r}{bytes32 s}{uint8 v}
-  r: uint256 = extract32(_sig, 0, type=uint256)
-  s: uint256 = extract32(_sig, 32, type=uint256)
-  v: int128 = convert(slice(_sig, start=64, len=1), int128)
+  r: uint256 = extract32(_sig, 0 + 65 * index, type=uint256)
+  s: uint256 = extract32(_sig, 32 + 65 * index, type=uint256)
+  v: int128 = convert(slice(_sig, start=64 + 65 * index, len=1), int128)
   # Version of signature should be 27 or 28, but 0 and 1 are also possible versions.
   # geth uses [0, 1] and some clients have followed. This might change, see:
   # https://github.com/ethereum/go-ethereum/issues/2053
@@ -38,35 +41,63 @@ def getOwnState(
       )
     )
 
+@private
+@constant
+def decodeSwap(
+  _txBytes: bytes[496],
+) -> (address, uint256, uint256, uint256, address, uint256, uint256, uint256):
+  #  from1, segment1, blkNum1, from2, segment2, blkNum2
+  segment1: uint256 = extract32(_txBytes, 32 + 16, type=uint256)
+  segment2: uint256 = extract32(_txBytes, 128 + 16, type=uint256)
+  start1: uint256 = segment1 / TOTAL_DEPOSIT
+  end1: uint256 = segment1 - start1 * TOTAL_DEPOSIT
+  start2: uint256 = segment2 / TOTAL_DEPOSIT
+  end2: uint256 = segment2 - start2 * TOTAL_DEPOSIT
+  return (
+    extract32(_txBytes, 0 + 16, type=address),
+    start1,
+    end1,
+    extract32(_txBytes, 64 + 16, type=uint256),
+    extract32(_txBytes, 96 + 16, type=address),
+    start2,
+    end2,
+    extract32(_txBytes, 160 + 16, type=uint256))
+
 # atomic swap
 @public
 @constant
 def verifySwap(
   _txHash: bytes32,
   _merkleHash: bytes32,
-  _tBytes: bytes[1024],
+  _txBytes: bytes[496],
   _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
   _start: uint256,
   _end: uint256
 ) -> (bool):
-  #  from1, start1, end1, blkNum1, from2, start2, end2, blkNum2
-  tList = RLPList(_tBytes, [
-    address, uint256, uint256, uint256, address, uint256, uint256, uint256])
-  check1: bool = self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == tList[0]
-  check2: bool = self.ecrecoverSig(_txHash, slice(_sigs, start=65, len=65)) == tList[4]
-  check3: bool = self.ecrecoverSig(_merkleHash, slice(_sigs, start=130, len=65)) == tList[0]
-  check4: bool = self.ecrecoverSig(_merkleHash, slice(_sigs, start=195, len=65)) == tList[4]
+  from1: address
+  start1: uint256
+  end1: uint256
+  blkNum1: uint256
+  from2: address
+  start2: uint256
+  end2: uint256
+  blkNum2: uint256
+  (from1, start1, end1, blkNum1, from2, start2, end2, blkNum2) = self.decodeSwap(_txBytes)
+  check1: bool = self.ecrecoverSig(_txHash, _sigs, 0) == from1
+  check2: bool = self.ecrecoverSig(_txHash, _sigs, 1) == from2
+  check3: bool = self.ecrecoverSig(_merkleHash, _sigs, 2) == from1
+  check4: bool = self.ecrecoverSig(_merkleHash, _sigs, 3) == from2
   if _owner != ZERO_ADDRESS:
     if _outputIndex == 0:
-      assert _owner == tList[4]
+      assert _owner == from2
     elif _outputIndex == 1:
-      assert _owner == tList[0]
+      assert _owner == from1
   if _outputIndex == 0:
-    assert _start >= tList[1] and _end <= tList[2]
+    assert _start >= start1 and _end <= end1
   elif _outputIndex == 1:
-    assert _start >= tList[5] and _end <= tList[6]
+    assert _start >= start2 and _end <= end2
   return check1 and check2
 
 # not enough signature
@@ -75,45 +106,58 @@ def verifySwap(
 def verifySwapForceInclude(
   _txHash: bytes32,
   _merkleHash: bytes32,
-  _tBytes: bytes[1024],
+  _txBytes: bytes[496],
   _sigs: bytes[260],
   _outputIndex: uint256,
   _start: uint256,
   _end: uint256,
   _hasSig: uint256
 ) -> (bool):
-  #  from1, start1, end1, blkNum1, from2, start2, end2, blkNum2
-  tList = RLPList(_tBytes, [
-    address, uint256, uint256, uint256, address, uint256, uint256, uint256])
-  check1: bool = self.ecrecoverSig(_txHash, slice(_sigs, start=0, len=65)) == tList[0]
-  check2: bool = self.ecrecoverSig(_txHash, slice(_sigs, start=65, len=65)) == tList[4]
+  from1: address
+  start1: uint256
+  end1: uint256
+  blkNum1: uint256
+  from2: address
+  start2: uint256
+  end2: uint256
+  blkNum2: uint256
+  (from1, start1, end1, blkNum1, from2, start2, end2, blkNum2) = self.decodeSwap(_txBytes)
+  check1: bool = self.ecrecoverSig(_txHash, _sigs, 0) == from1
+  check2: bool = self.ecrecoverSig(_txHash, _sigs, 1) == from2
   if _outputIndex == 0:
-    assert _start >= tList[1] and _end <= tList[2]
+    assert _start >= start1 and _end <= end1
   elif _outputIndex == 1:
-    assert _start >= tList[5] and _end <= tList[6]
+    assert _start >= start2 and _end <= end2
   if _hasSig == 1:
-    assert self.ecrecoverSig(_merkleHash, slice(_sigs, start=130, len=65)) == tList[0]
+    assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from1
   elif _hasSig == 2:
-    assert self.ecrecoverSig(_merkleHash, slice(_sigs, start=130, len=65)) == tList[4]
+    assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from2
   return check1 and check2
 
 @public
 @constant
 def getTxoHashOfSwap(
-  _tBytes: bytes[1024],
+  _txBytes: bytes[496],
   _index: uint256,
   _blkNum: uint256
 ) -> (bytes32):
-  tList = RLPList(_tBytes, [
-    address, uint256, uint256, uint256, address, uint256, uint256, uint256])
+  from1: address
+  start1: uint256
+  end1: uint256
+  blkNum1: uint256
+  from2: address
+  start2: uint256
+  end2: uint256
+  blkNum2: uint256
+  (from1, start1, end1, blkNum1, from2, start2, end2, blkNum2) = self.decodeSwap(_txBytes)
   if _index == 10:
-    return self.getOwnState(tList[0], tList[1], tList[2], tList[3])
+    return self.getOwnState(from1, start1, end1, blkNum1)
   elif _index == 11:
-    return self.getOwnState(tList[4], tList[5], tList[6], tList[7])
+    return self.getOwnState(from2, start2, end2, blkNum2)
   elif _index == 0:
-    return self.getOwnState(tList[4], tList[1], tList[2], tList[3])
+    return self.getOwnState(from2, start1, end1, blkNum1)
   else:
-    return self.getOwnState(tList[0], tList[5], tList[6], tList[7])
+    return self.getOwnState(from1, start2, end2, blkNum2)
 
   return sha3("swap")
 
@@ -122,7 +166,7 @@ def getTxoHashOfSwap(
 @constant
 def verifyMultisig2(
   _txHash: bytes32,
-  _tBytes: bytes[1024],
+  _tBytes: bytes[496],
   _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
@@ -137,7 +181,7 @@ def verifyMultisig2(
 @public
 @constant
 def getTxoHashOfMultisig2(
-  _tBytes: bytes[1024],
+  _tBytes: bytes[496],
   _index: uint256,
   _blkNum: uint256
 ) -> (bytes32):

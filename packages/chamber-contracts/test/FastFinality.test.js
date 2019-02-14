@@ -36,7 +36,6 @@ const BOND = constants.EXIT_BOND
 contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
   beforeEach(async () => {
-    await deployRLPdecoder(alice)
     this.standardVerifier = await StandardVerifier.new({ from: operator })
     this.multisigVerifier = await MultisigVerifier.new({ from: operator })
     this.escrowVerifier = await EscrowVerifier.new({ from: operator })

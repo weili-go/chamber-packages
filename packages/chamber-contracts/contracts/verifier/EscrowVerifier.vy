@@ -67,7 +67,7 @@ def verify(
   _label: uint256,
   _txHash: bytes32,
   _merkleHash: bytes32,
-  _tBytes: bytes[1024],
+  _tBytes: bytes[480],
   _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
@@ -98,7 +98,7 @@ def verify(
 @constant
 def getTxoHashOfLockEscrow(
   _label: uint256,
-  _tBytes: bytes[1024],
+  _tBytes: bytes[480],
   _index: uint256,
   _blkNum: uint256
 ) -> (bytes32):
