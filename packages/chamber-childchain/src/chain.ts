@@ -68,13 +68,14 @@ export class Chain {
     await this.writeToDb(block)
   }
 
-  async handleDeposit(depositor: string, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
+  async handleDeposit(depositor: string, tokenId: BigNumber, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
     const depositTx = new DepositTransaction(
       depositor,
       ethers.constants.Zero,
       new Segment(
-        ethers.utils.bigNumberify(start),
-        ethers.utils.bigNumberify(end)
+        tokenId,
+        start,
+        end
       )
     )
     const block = new Block()

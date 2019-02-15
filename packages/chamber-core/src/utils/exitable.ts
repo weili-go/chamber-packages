@@ -7,7 +7,10 @@ export class ExitableRangeManager {
 
   constructor() {
     this.ranges = []
-    this.ranges.push(new Segment(utils.bigNumberify(0), utils.bigNumberify(0)))
+    this.ranges.push(new Segment(
+      utils.bigNumberify(0),
+      utils.bigNumberify(0),
+      utils.bigNumberify(0)))
   }
 
   withRanges(ranges: Segment[]) {
@@ -24,12 +27,16 @@ export class ExitableRangeManager {
     return JSON.stringify(this.ranges.map(range => range.serialize()))
   }
 
-  insert(start: BigNumber, end: BigNumber) {
-    this.ranges.push(new Segment(start, end))
+  insert(tokenId: BigNumber, start: BigNumber, end: BigNumber) {
+    this.ranges.push(new Segment(tokenId, start, end))
     this.ranges.sort((a, b) => {
-      if(a.start.gt(b.start)) return 1
-      else if(a.start.lt(b.start)) return -1
-      else return 0
+      if(a.tokenId.gt(b.tokenId)) return 1
+      else if(a.tokenId.lt(b.tokenId)) return -1
+      else {
+        if(a.start.gt(b.start)) return 1
+        else if(a.start.lt(b.start)) return -1
+        else return 0
+      }
     })
   }
 
@@ -38,10 +45,10 @@ export class ExitableRangeManager {
     leftMostRange.end = newEnd
   }
 
-  remove(start: BigNumber, end: BigNumber) {
+  remove(tokenId: BigNumber, start: BigNumber, end: BigNumber) {
     const exitableRange = this.getExitableRange(start, end)
     if(exitableRange.start.lt(start)) {
-      this.insert(exitableRange.start, start)
+      this.insert(tokenId, exitableRange.start, start)
     }
     if(exitableRange.end.gt(end)) {
       exitableRange.start = end

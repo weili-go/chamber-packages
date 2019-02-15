@@ -29,19 +29,19 @@ const OperatorAddress = utils.computeAddress(OperatorPrivateKey)
 const User4Address = utils.computeAddress(User4PrivateKey)
 const User5Address = utils.computeAddress(User5PrivateKey)
 
-const segment1 = new Segment(
+const segment1 = Segment.ETH(
   utils.bigNumberify('0'),
   utils.bigNumberify('1000000'))
-const segment2 = new Segment(
+const segment2 = Segment.ETH(
   utils.bigNumberify('1000000'),
   utils.bigNumberify('2000000'))
-const segment3 = new Segment(
+const segment3 = Segment.ETH(
   utils.bigNumberify('500000'),
   utils.bigNumberify('1000000'))
-const segment4 = new Segment(
+const segment4 = Segment.ETH(
   utils.bigNumberify('3000000'),
   utils.bigNumberify('3100000'))
-const segment5 = new Segment(
+const segment5 = Segment.ETH(
   utils.bigNumberify('3100000'),
   utils.bigNumberify('3200000'))
     
@@ -257,13 +257,13 @@ function scenario3() {
  * transactions
  */
 function transactions() {
-  const segment4 = new Segment(
+  const segment4 = Segment.ETH(
     utils.bigNumberify('3000000'),
     utils.bigNumberify('3100000'))
-  const segment5 = new Segment(
+  const segment5 = Segment.ETH(
     utils.bigNumberify('3100000'),
     utils.bigNumberify('3200000'))
-  const segment45 = new Segment(
+  const segment45 = Segment.ETH(
     utils.bigNumberify('3000000'),
     utils.bigNumberify('3200000'))
   
@@ -296,9 +296,55 @@ function transactions() {
   }
 }
 
+
+function scenario4() {
+  const segment1 = new Segment(
+    utils.bigNumberify('1'),
+    utils.bigNumberify('0'),
+    utils.bigNumberify('100'))
+  const segment2 = new Segment(
+    utils.bigNumberify('1'),
+    utils.bigNumberify('100'),
+    utils.bigNumberify('200'))
+  
+  // deposits
+  const blkNum1 = utils.bigNumberify('3')
+  const blkNum2 = utils.bigNumberify('5')
+  // transactinos
+  const blkNum3 = utils.bigNumberify('6')
+  const block3 = new Block()
+  block3.setBlockNumber(6)
+
+  const depositTx1 = new DepositTransaction(AliceAddress, constants.Zero, segment1)
+  const depositTx2 = new DepositTransaction(BobAddress, constants.Zero, segment2)
+  const tx31 = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
+  const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
+  
+  block3.appendTx(tx31)
+  block3.appendTx(tx32)
+
+  const tree3 = block3.createTree()
+
+  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())[0]
+  const signedTx32 = block3.getSignedTransactionWithProof(tx32.hash())[0]
+
+  return {
+    segments: [segment1, segment2, segment3],
+    deposits: [depositTx1, depositTx2],
+    blocks: [
+      {
+        block: block3,
+        tree: tree3,
+        transactions: [tx31, tx32],
+        signedTransactions: [signedTx31, signedTx32]
+      }
+    ]
+  }
+}
 module.exports = {
   Scenario1: scenario1(),
   Scenario2: scenario2(),
   Scenario3: scenario3(),
+  Scenario4: scenario4(),
   transactions: transactions()
 }

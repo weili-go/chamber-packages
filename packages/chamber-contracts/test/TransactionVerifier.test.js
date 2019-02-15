@@ -18,6 +18,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
 
   beforeEach(async () => {
     const standardVerifier = await StandardVerifier.new({ from: operator })
+    this.standardVerifier = standardVerifier
     const multisigVerifier = await MultisigVerifier.new({ from: operator })
     const escrowVerifier = await EscrowVerifier.new({ from: operator })
     this.transactionVerifier = await TransactionVerifier.new(
@@ -41,6 +42,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         0,
         0,
         ethers.constants.AddressZero,
+        ethers.constants.Zero,
         transactions.segments[0].start,
         transactions.segments[0].end,
         {
@@ -59,6 +61,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         0,
         0,
         ethers.constants.AddressZero,
+        ethers.constants.Zero,
         transactions.segments[0].start,
         transactions.segments[0].end,
         {
@@ -77,6 +80,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         0,
         0,
         ethers.constants.AddressZero,
+        ethers.constants.Zero,
         transactions.segments[1].start,
         transactions.segments[1].end,
         {
@@ -99,12 +103,29 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         0,
         0,
         ethers.constants.AddressZero,
+        ethers.constants.Zero,
         transactions.segment45.start,
         transactions.segment45.end,
         {
           from: alice
         });
       assert.equal(result, true)
+    })
+
+  })
+
+  describe("parseSegment", () => {
+
+    it("should be parsed", async () => {
+      const result = await this.standardVerifier.parseSegment(
+        transactions.segment45.toBigNumber(),
+        {
+          from: alice
+        });
+      assert.equal(result[0].toNumber(), 0)
+      assert.equal(result[1].toNumber(), transactions.segment45.start.toNumber())
+      assert.equal(result[2].toNumber(), transactions.segment45.end.toNumber())
+
     })
 
   })

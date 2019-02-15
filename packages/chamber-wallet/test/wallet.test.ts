@@ -59,6 +59,7 @@ describe('ChamberWallet', () => {
       wallet.handleDeposit(
         AliceAddress,
         utils.bigNumberify(0),
+        utils.bigNumberify(0),
         utils.bigNumberify(10000000),
         utils.bigNumberify(2)
       )
@@ -82,6 +83,7 @@ describe('ChamberWallet', () => {
         utils.bigNumberify(1),
         utils.bigNumberify(1520700),
         utils.bigNumberify(0),
+        utils.bigNumberify(0),
         utils.bigNumberify(10000000)
       )
       assert.equal(wallet.getExits().length, 1)
@@ -104,6 +106,7 @@ describe('ChamberWallet', () => {
     it('should transfer', async () => {
       wallet.handleDeposit(
         AliceAddress,
+        utils.bigNumberify(0),
         utils.bigNumberify(0),
         utils.bigNumberify(10000000),
         utils.bigNumberify(2)

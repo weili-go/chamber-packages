@@ -20,16 +20,16 @@ describe('Transaction', () => {
 
   const AliceAddress = utils.computeAddress(AlicePrivateKey)
   const BobAddress = utils.computeAddress(BobPrivateKey)
-  const segment = new Segment(
+  const segment = Segment.ETH(
     utils.bigNumberify('2000000'),
     utils.bigNumberify('3000000'))
   const blkNum = utils.bigNumberify('1')
   const offset = utils.bigNumberify('2600000')
 
-  const segment1 = new Segment(
+  const segment1 = Segment.ETH(
     utils.bigNumberify('5000000'),
     utils.bigNumberify('6000000'))
-  const segment2 = new Segment(
+  const segment2 = Segment.ETH(
     utils.bigNumberify('6000000'),
     utils.bigNumberify('7000000'))
   const blkNum1 = utils.bigNumberify('50')

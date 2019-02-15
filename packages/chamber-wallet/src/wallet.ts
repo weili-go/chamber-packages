@@ -24,12 +24,12 @@ import artifact from './assets/RootChain.json'
 
 const abi = [
   'event BlockSubmitted(bytes32 _root, uint256 _timestamp, uint256 _blkNum)',
-  'event Deposited(address indexed _depositer, uint256 _start, uint256 _end, uint256 _blkNum)',
-  'event ExitStarted(address indexed _exitor, uint256 _exitId, uint256 exitableAt, uint256 _start, uint256 _end)',
-  'event FinalizedExit(uint256 _exitId, uint256 _start, uint256 _end)',
+  'event Deposited(address indexed _depositer, uint256 _tokenId, uint256 _start, uint256 _end, uint256 _blkNum)',
+  'event ExitStarted(address indexed _exitor, uint256 _exitId, uint256 exitableAt, uint256 _tokenId, uint256 _start, uint256 _end)',
+  'event FinalizedExit(uint256 _exitId, uint256 _tokenId, uint256 _start, uint256 _end)',
   'function deposit() payable',
   'function exit(uint256 _utxoPos, uint256 _start, uint256 _end, bytes _txBytes, bytes _proof, bytes _sig, uint256 _hasSig) payable',
-  'function finalizeExit(uint256 _tokenType, uint256 _exitableEnd, uint256 _exitId)',
+  'function finalizeExit(uint256 _exitableEnd, uint256 _exitId)',
   'function getExit(uint256 _exitId) constant returns(address, uint256)',
 ]
 
@@ -159,6 +159,7 @@ export class ChamberWallet {
     this.listener.addEvent('FinalizedExit', (e) => {
       console.log('FinalizedExit', e)
       this.exitableRangeManager.remove(
+        e.values._tokenId,
         e.values._start,
         e.values._end
       )
@@ -213,7 +214,7 @@ export class ChamberWallet {
 
   private updateBlock(block: Block) {
     this.getUTXOArray().forEach((tx) => {
-      const exclusionProof = block.getExclusionProof(tx.getOutput().getSegment(0).start)
+      const exclusionProof = block.getExclusionProof(tx.getOutput().getSegment(0))
       const key = tx.getOutput().hash()
       this.storage.addProof(key, block.getBlockNumber(), JSON.stringify(exclusionProof.serialize()))
     })
@@ -229,11 +230,8 @@ export class ChamberWallet {
     this.storage.add('loadedBlockNumber', this.loadedBlockNumber.toString())
   }
 
-  handleDeposit(depositor: string, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
-    const segment = new Segment(
-      ethers.utils.bigNumberify(start),
-      ethers.utils.bigNumberify(end)
-    )
+  handleDeposit(depositor: string, tokenId: BigNumber, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
+    const segment = new Segment(tokenId, start, end)
     const depositTx = new DepositTransaction(
       depositor,
       ethers.constants.Zero,
@@ -243,16 +241,13 @@ export class ChamberWallet {
       new SignedTransaction(depositTx),
       0,
       '',
-      new SumMerkleProof(0, segment, ''),
+      new SumMerkleProof(1, 0, segment, ''),
       blkNum))
     return depositTx
   }
 
-  handleExit(exitId: BigNumber, exitableAt: BigNumber, start: BigNumber, end: BigNumber) {
-    const segment = new Segment(
-      ethers.utils.bigNumberify(start),
-      ethers.utils.bigNumberify(end)
-    )
+  handleExit(exitId: BigNumber, exitableAt: BigNumber, tokenId: BigNumber, start: BigNumber, end: BigNumber) {
+    const segment = new Segment(tokenId, start, end)
     const exit = new Exit(
       exitId,
       exitableAt,
@@ -375,6 +370,7 @@ export class ChamberWallet {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
       return this.handleDeposit(
         logDesc.values._depositer,
+        logDesc.values._tokenId,
         logDesc.values._start,
         logDesc.values._end,
         logDesc.values._blkNum
@@ -402,6 +398,7 @@ export class ChamberWallet {
       return this.handleExit(
         logDesc.values._exitId,
         logDesc.values.exitableAt,
+        logDesc.values._tokenId,
         logDesc.values._start,
         logDesc.values._end
       )
@@ -420,8 +417,6 @@ export class ChamberWallet {
       throw new Error('exit not found')
     }
     return await this.rootChainContract.finalizeExit(
-      // tokenId
-      0,
       this.exitableRangeManager.getExitableEnd(exit.segment.start, exit.segment.end),
       exitId)
   }

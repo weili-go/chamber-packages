@@ -34,6 +34,8 @@ const BOND = constants.EXIT_BOND
 
 contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
+  const tokenId = 0
+
   beforeEach(async () => {
     this.standardVerifier = await StandardVerifier.new({ from: operator })
     this.multisigVerifier = await MultisigVerifier.new({ from: operator })
@@ -104,6 +106,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         tx.getSignatures(),
         operatorSig,
         1,
+        tokenId,
         Scenario3.segments[2].start,
         Scenario3.segments[2].end,
         {
@@ -130,6 +133,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         tx.getSignatures(),
         operatorSig,
         1,
+        tokenId,
         Scenario3.segments[2].start,
         Scenario3.segments[2].end,
         {
@@ -172,6 +176,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         tx.getSignatures(),
         operatorSig,
         1,
+        tokenId,
         Scenario3.segments[2].start,
         Scenario3.segments[2].end,
         {
@@ -187,6 +192,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         tx.getProofAsHex(),
         tx.getSignatures(),
         2 * 100 + 1,
+        tokenId,
         Scenario3.segments[2].start,
         Scenario3.segments[2].end,
         {
@@ -203,6 +209,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         invalidTx.getProofAsHex(),
         invalidTx.getSignatures(),
         2 * 100 + 1,
+        tokenId,
         Scenario3.segments[2].start,
         Scenario3.segments[2].end,
         {
@@ -219,6 +226,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         tx.getProofAsHex(),
         tx.getSignatures(),
         2 * 100 + 1,
+        tokenId,
         Scenario3.segments[2].start,
         Scenario3.segments[2].end,
         {
@@ -230,6 +238,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         secondDisputeTx.getProofAsHex(),
         secondDisputeTx.getSignatures(),
         4 * 100 + 1,
+        tokenId,
         Scenario3.segments[2].start,
         Scenario3.segments[2].end,
         {

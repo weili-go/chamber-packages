@@ -41,6 +41,7 @@ contract TransactionVerifier():
     _hasSig: uint256,
     _outputIndex: uint256,
     _owner: address,
+    _tokenId: uint256,
     _start: uint256,
     _end: uint256
   ) -> bool: constant
@@ -58,12 +59,12 @@ contract TransactionVerifier():
 
 ListingEvent: event({_tokenId: uint256, _tokenAddress: address})
 BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
-Deposited: event({_depositer: indexed(address), _start: uint256, _end: uint256, _blkNum: uint256})
-ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _start: uint256, _end: uint256})
+Deposited: event({_depositer: indexed(address), _tokenId: uint256, _start: uint256, _end: uint256, _blkNum: uint256})
+ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
 Challenged: event({_exitId: uint256})
 ForceIncluded: event({_exitId: uint256})
-FinalizedExit: event({_exitId: uint256, _start: uint256, _end: uint256})
-ExitableMerged: event({_start: uint256, _end: uint256})
+FinalizedExit: event({_exitId: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
+ExitableMerged: event({_tokenId: uint256, _start: uint256, _end: uint256})
 
 # management
 operator: address
@@ -93,6 +94,7 @@ withdrawals: map(uint256, uint256)
 
 # total deposit amount per token type
 TOTAL_DEPOSIT: constant(uint256) = 2**48
+MASK8BYTES: constant(uint256) = 2**64 - 1
 
 EXIT_BOND: constant(wei_value) = as_wei_value(1, "finney")
 CHALLENGE_BOND: constant(wei_value) = as_wei_value(1, "finney")
@@ -105,10 +107,10 @@ def checkMembership(
   _start: uint256,
   _end: uint256,
   _leaf: bytes32,
-  _totalAmount: uint256,
   _rootHash: bytes32,
   _proof: bytes[512]
 ) -> bool:
+  _totalAmount: uint256 = TOTAL_DEPOSIT * convert(slice(_proof, start=0, len=2), uint256)
   currentAmount: uint256 = _end - _start
   currentLeft: uint256 = 0
   currentRight: uint256 = _totalAmount
@@ -116,11 +118,11 @@ def checkMembership(
   proofElement: bytes32
 
   for i in range(16):
-    if (i * 41) >= len(_proof):
+    if (2 + i * 41) >= len(_proof):
       break
-    leftOrRight: uint256 = convert(slice(_proof, start=i * 41, len=1), uint256)
-    amount: uint256 = convert(slice(_proof, start=i * 41 + 1, len=8), uint256)
-    proofElement = extract32(_proof, i * 41 + 9, type=bytes32)
+    leftOrRight: uint256 = convert(slice(_proof, start=2 + i * 41, len=1), uint256)
+    amount: uint256 = convert(slice(_proof, start=2 + i * 41 + 1, len=8), uint256)
+    proofElement = extract32(_proof, 2 + i * 41 + 9, type=bytes32)
     if leftOrRight == 0:
       currentRight -= amount
       computedHash = sha3(concat(
@@ -136,6 +138,7 @@ def checkMembership(
 @public
 @constant
 def checkTransaction(
+  _tokenId: uint256,
   _start: uint256,
   _end: uint256,
   _txHash: bytes32,
@@ -148,10 +151,9 @@ def checkTransaction(
   root: bytes32 = self.childChain[_blkNum].root
   if _blkNum % 2 == 0:
     assert self.checkMembership(
-      _start,
-      _end,
+      _start + _tokenId * TOTAL_DEPOSIT,
+      _end + _tokenId * TOTAL_DEPOSIT,
       _txHash,
-      TOTAL_DEPOSIT,
       root,
       _proof
     )
@@ -167,6 +169,7 @@ def checkTransaction(
     0,
     _outputIndex,
     ZERO_ADDRESS,
+    _tokenId,
     _start,
     _end)
 
@@ -237,7 +240,7 @@ def processDeposit(
       root: root,
       blockTimestamp: block.timestamp
   })
-  log.Deposited(depositer, start, end, self.currentChildBlock)
+  log.Deposited(depositer, tokenId, start, end, self.currentChildBlock)
 
 # @dev processDepositFragment
 @private
@@ -266,7 +269,34 @@ def processDepositFragment(
       root: root,
       blockTimestamp: block.timestamp
   })
-  log.Deposited(depositer, start, end, self.currentChildBlock)
+  log.Deposited(depositer, tokenId, start, end, self.currentChildBlock)
+
+@private
+@constant
+def parseSegment(
+  segment: uint256
+) -> (uint256, uint256, uint256):
+  tokenId: uint256 = bitwise_and(shift(segment, -16 * 8), MASK8BYTES)
+  start: uint256 = bitwise_and(shift(segment, -8 * 8), MASK8BYTES)
+  end: uint256 = bitwise_and(segment, MASK8BYTES)
+  return (tokenId, start, end)
+
+@private
+@constant
+def checkSegment(
+  segment1: uint256,
+  segment2: uint256
+) -> (uint256, uint256, uint256):
+  tokenId1: uint256
+  start1: uint256
+  end1: uint256
+  tokenId2: uint256
+  start2: uint256
+  end2: uint256
+  (tokenId1, start1, end1) = self.parseSegment(segment1)
+  (tokenId2, start2, end2) = self.parseSegment(segment2)
+  assert tokenId1 == tokenId2 and start1 < end2 and start2 < end1
+  return (tokenId1, start1, end1)
 
 # @dev Constructor
 @public
@@ -283,7 +313,7 @@ def listToken(
   denomination: uint256
 ):
   tokenId: uint256 = self.listingNonce
-  self.listings[tokenId].decimalOffset = 0
+  self.listings[tokenId].decimalOffset = denomination
   self.listings[tokenId].tokenAddress = tokenAddress
   self.listed[tokenAddress] = tokenId
   self.listingNonce += 1
@@ -350,7 +380,7 @@ def depositERC20(
   self.processDeposit(
     depositer,
     tokenId,
-    amount)
+    amount / self.listings[tokenId].decimalOffset)
 
 # @dev exit
 @public
@@ -371,15 +401,16 @@ def exit(
   txHash: bytes32 = sha3(_txBytes)
   if self.challenges[txHash].isAvailable and self.challenges[txHash].blkNum < priority:
     priority = self.challenges[txHash].blkNum
-  start: uint256 = _segment / TOTAL_DEPOSIT
-  end: uint256 = _segment - start * TOTAL_DEPOSIT
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.parseSegment(_segment)
   root: bytes32 = self.childChain[blkNum].root
   if blkNum % 2 == 0:
     assert self.checkMembership(
-      start,
-      end,
+      start + tokenId * TOTAL_DEPOSIT,
+      end + tokenId * TOTAL_DEPOSIT,
       txHash,
-      TOTAL_DEPOSIT,
       root,
       _proof
     )
@@ -396,6 +427,7 @@ def exit(
     _hasSig,
     outputIndex,
     msg.sender,
+    tokenId,
     start,
     end)
   exitId: uint256 = self.exitNonce
@@ -414,7 +446,7 @@ def exit(
   })
   if _hasSig > 0:
     self.removed[txHash] = True
-  log.ExitStarted(msg.sender, exitId, exitableAt, start, end)
+  log.ExitStarted(msg.sender, exitId, exitableAt, tokenId, start, end)
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx
@@ -426,8 +458,7 @@ def challenge(
   _exitTxBytes: bytes[496],
   _utxoPos: uint256,
   _eInputPos: int128,
-  _start: uint256,
-  _end: uint256,
+  _segment: uint256,
   _txBytes: bytes[496],
   _proof: bytes[512],
   _sig: bytes[260]
@@ -436,20 +467,22 @@ def challenge(
   txoIndex: uint256 = _utxoPos - blkNum * 100
   root: bytes32 = self.childChain[blkNum].root
   spentTxoHash: bytes32
+  tokenId: uint256
+  start: uint256
+  end: uint256
   exit: Exit = self.exits[_exitId]
   exitBlkNum: uint256 = exit.utxoPos / 100
   exitIndex: uint256 = exit.utxoPos - exitBlkNum * 100
-  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
-  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
   assert exit.txHash == sha3(_exitTxBytes)
-  assert exitSegmentStart >= _start and _end <= exitSegmentEnd
   assert exit.exitableAt > as_unitless_number(block.timestamp)
   txHash: bytes32 = sha3(_txBytes)
   # check removed transaction sha3(_txBytes)
   assert not self.removed[txHash]
   self.checkTransaction(
-    _start,
-    _end,
+    tokenId,
+    start,
+    end,
     txHash,
     _txBytes,
     blkNum,
@@ -500,11 +533,7 @@ def requestHigherPriorityExit(
   parent: Exit = self.exits[_parentExitId]
   exit: Exit = self.exits[_exitId]
   assert parent.priority < exit.priority
-  parentSegmentStart: uint256 = parent.segment / TOTAL_DEPOSIT
-  parentSegmentEnd: uint256 = parent.segment - parentSegmentStart * TOTAL_DEPOSIT
-  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
-  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
-  assert exitSegmentEnd > parentSegmentStart and exitSegmentStart < parentSegmentEnd
+  self.checkSegment(parent.segment, exit.segment)
   self.exits[_parentExitId].lowerExit = _exitId
   self.exits[_exitId].challengeCount += 1
 
@@ -512,8 +541,7 @@ def requestHigherPriorityExit(
 def includeSignature(
   _exitId: uint256,
   _utxoPos: uint256,
-  _start: uint256,
-  _end: uint256,
+  _segment: uint256,
   _txBytes: bytes[496],
   _proof: bytes[512],
   _sig: bytes[260]
@@ -523,9 +551,14 @@ def includeSignature(
   txHash: bytes32 = sha3(_txBytes)
   exit: Exit = self.exits[_exitId]
   root: bytes32 = self.childChain[blkNum].root
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.parseSegment(_segment)
   self.checkTransaction(
-    _start,
-    _end,
+    tokenId,
+    start,
+    end,
     txHash,
     _txBytes,
     blkNum,
@@ -541,47 +574,45 @@ def includeSignature(
 # @dev finalizeExit
 @public
 def finalizeExit(
-  _tokenId: uint256,
   _exitableEnd: uint256,
   _exitId: uint256
 ):
   exit: Exit = self.exits[_exitId]
-  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
-  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.parseSegment(exit.segment)
   # check _tokenId is correct
-  assert exitSegmentStart >= _tokenId * TOTAL_DEPOSIT
-  assert exitSegmentEnd <= (_tokenId + 1) * TOTAL_DEPOSIT
   self.checkExitable(
-    _tokenId,
-    exitSegmentStart,
-    exitSegmentEnd,
+    tokenId,
+    start,
+    end,
     _exitableEnd,
   )
   self.removeExitable(
-    _tokenId,
-    exitSegmentStart,
-    exitSegmentEnd,
+    tokenId,
+    start,
+    end,
     _exitableEnd
   )
   assert exit.exitableAt < as_unitless_number(block.timestamp) and exit.extendedExitableAt < as_unitless_number(block.timestamp)
   assert exit.challengeCount == 0
   if exit.hasSig == 0:
-    if _tokenId == 0:
-      send(exit.owner, as_wei_value(exitSegmentEnd - exitSegmentStart, "wei") + EXIT_BOND)
+    if tokenId == 0:
+      send(exit.owner, as_wei_value(end - start, "wei") + EXIT_BOND)
     else:
-      ERC20(self.listings[_tokenId].tokenAddress).transfer(exit.owner, exitSegmentEnd - exitSegmentStart)
+      ERC20(self.listings[tokenId].tokenAddress).transfer(exit.owner, end - start)
       send(exit.owner, EXIT_BOND)
   else:
     send(exit.owner, FORCE_INCLUDE_BOND)
   clear(self.exits[_exitId])
-  log.FinalizedExit(_exitId, exitSegmentStart, exitSegmentEnd)
+  log.FinalizedExit(_exitId, tokenId, start, end)
 
 @public
 def challengeTooOldExit(
   _utxoPos: uint256,
   _exitId: uint256,
-  _start: uint256,
-  _end: uint256,
+  _segment: uint256,
   _txBytes: bytes[496],
   _proof: bytes[512],
   _sig: bytes[260]
@@ -589,16 +620,18 @@ def challengeTooOldExit(
   blkNum: uint256 = _utxoPos / 100
   outputIndex: uint256 = _utxoPos - blkNum * 100
   exit: Exit = self.exits[_exitId]
-  exitSegmentStart: uint256 = exit.segment / TOTAL_DEPOSIT
-  exitSegmentEnd: uint256 = exit.segment - exitSegmentStart * TOTAL_DEPOSIT
+  tokenId: uint256
+  start: uint256
+  end: uint256
+  (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
   txHash: bytes32 = sha3(_txBytes)
   # if tx is 12 weeks before
   assert self.childChain[blkNum].blockTimestamp  < as_unitless_number(block.timestamp) - 12 * 7 * 24 * 60 * 60
   assert blkNum > exit.priority
-  assert exitSegmentStart >= _start and _end <= exitSegmentEnd
   self.checkTransaction(
-    _start,
-    _end,
+    tokenId,
+    start,
+    end,
     txHash,
     _txBytes,
     blkNum,
@@ -612,21 +645,24 @@ def challengeTooOldExit(
 # @dev mergeExitable
 @public
 def mergeExitable(
-  _tokenId: uint256,
   _segment1: uint256,
   _segment2: uint256
 ):
-  start1: uint256 = _segment1 / TOTAL_DEPOSIT
-  end1: uint256 = _segment1 - start1 * TOTAL_DEPOSIT
-  start2: uint256 = _segment2 / TOTAL_DEPOSIT
-  end2: uint256 = _segment2 - start2 * TOTAL_DEPOSIT
-  assert end1 == start2
-  assert self.exitable[_tokenId][end1].start == start1
-  assert self.exitable[_tokenId][end2].start == start2
-  assert self.exitable[_tokenId][end1].isAvailable == self.exitable[_tokenId][end2].isAvailable
-  self.exitable[_tokenId][end2].start = start1
-  clear(self.exitable[_tokenId][end1])
-  log.ExitableMerged(start1, end2)
+  tokenId1: uint256
+  start1: uint256
+  end1: uint256
+  tokenId2: uint256
+  start2: uint256
+  end2: uint256
+  (tokenId1, start1, end1) = self.parseSegment(_segment1)
+  (tokenId2, start2, end2) = self.parseSegment(_segment2)
+  assert tokenId1 == tokenId2 and end1 == start2
+  assert self.exitable[tokenId1][end1].start == start1
+  assert self.exitable[tokenId1][end2].start == start2
+  assert self.exitable[tokenId1][end1].isAvailable == self.exitable[tokenId1][end2].isAvailable
+  self.exitable[tokenId1][end2].start = start1
+  clear(self.exitable[tokenId1][end1])
+  log.ExitableMerged(tokenId1, start1, end2)
 
 # @dev getExit
 @public

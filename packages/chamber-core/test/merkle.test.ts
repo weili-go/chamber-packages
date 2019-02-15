@@ -36,7 +36,7 @@ describe('SumMerkleTree', function() {
     it('should be success to verify', function() {
       const tree = new SumMerkleTree(leaves);
       const root = tree.root();
-      const proofs = tree.proofs(leaves[2].getHash());
+      const proofs = tree.proofs(0, leaves[2].getHash());
       //assert.equal(root.toString('hex'), '95cb4e0012c0cd6674800bc14c15d1af47a202067789e652d49c60b3f4f1c1cc');
       assert.equal(tree.verify(
         new BigNumber(5),
@@ -50,7 +50,7 @@ describe('SumMerkleTree', function() {
     it('should be failed to verify by invalid total deposit', function() {
       const tree = new SumMerkleTree(leaves);
       const root = tree.root();
-      const proofs = tree.proofs(leaves[2].getHash());
+      const proofs = tree.proofs(0, leaves[2].getHash());
       assert.equal(tree.verify(
         new BigNumber(5),
         new BigNumber(9),
@@ -63,7 +63,7 @@ describe('SumMerkleTree', function() {
     it('should be failed to verify by invalid left offset', function() {
       const tree = new SumMerkleTree(leaves);
       const root = tree.root();
-      const proofs = tree.proofs(leaves[2].getHash());
+      const proofs = tree.proofs(0, leaves[2].getHash());
       assert.equal(tree.verify(
         new BigNumber(7),
         new BigNumber(9),
@@ -76,7 +76,7 @@ describe('SumMerkleTree', function() {
     it('should be failed to verify because of non-inclusion', function() {
       const tree = new SumMerkleTree(leaves);
       const root = tree.root();
-      const proofs = tree.proofs(leaves[2].getHash());
+      const proofs = tree.proofs(0, leaves[2].getHash());
       assert.equal(tree.verify(
         new BigNumber(5),
         new BigNumber(9),

@@ -62,12 +62,14 @@ class SegmentNode {
   txs: SignedTransaction[]
   depositTx?: DepositTransaction
   tree: SumMerkleTree | null
+  numTokens: number
 
   constructor() {
     this.number = 0
     this.isDepositBlock = false
     this.txs = []
     this.tree = null
+    this.numTokens = 2
   }
 
   setBlockNumber(number: number) {
@@ -119,7 +121,9 @@ class SegmentNode {
     if(this.tree === null) {
       this.tree = this.createTree()
     }
-    return this.tree.proofs(Buffer.from(hash.substr(2), 'hex'))
+    return this.tree.proofs(
+      this.numTokens,
+      Buffer.from(hash.substr(2), 'hex'))
   }
 
   getSignedTransaction(hash: string): SignedTransaction {
@@ -136,11 +140,13 @@ class SegmentNode {
         utils.bigNumberify(this.number)))
   }
 
-  getExclusionProof(offset: BigNumber): SumMerkleProof {
+  getExclusionProof(segment: Segment): SumMerkleProof {
     if(this.tree === null) {
       this.tree = this.createTree()
     }
-    const proof = this.tree.getProofByRange(offset)
+    const proof = this.tree.getProofByRange(
+      this.numTokens,
+      segment.getGlobalStart())
     if(proof == null) {
       throw new Error('exclusion proof not found')
     }
@@ -149,19 +155,19 @@ class SegmentNode {
 
   checkInclusion(
     tx: SignedTransactionWithProof,
-    start: BigNumber,
-    end: BigNumber
+    segment: Segment
   ) {
     if(this.tree === null) {
       this.tree = this.createTree()
     }
+    const proof = tx.getProof()
     return this.tree.verify(
-      start,
-      end,
+      segment.getGlobalStart(),
+      segment.getGlobalEnd(),
       Buffer.from(tx.signedTx.hash().substr(2), 'hex'),
-      TOTAL_AMOUNT,
+      TOTAL_AMOUNT.mul(proof.numTokens),
       Buffer.from(this.getRoot().substr(2), 'hex'),
-      tx.getProof()   
+      proof
     )
   }
 
@@ -170,10 +176,23 @@ class SegmentNode {
    *     by segments of the transaction output
    */
   createTree() {
+    const numTokens = this.numTokens
+    const leaves = Array(numTokens).fill(0).map((_, i) => {
+      return this.createTokenTree(utils.bigNumberify(i))
+    }).reduce((acc: SumMerkleTreeNode[], item: SumMerkleTreeNode[]) => {
+      return acc.concat(item)
+    }, [])
+
+    return new SumMerkleTree(leaves)
+  }
+
+  createTokenTree(tokenId: BigNumber): SumMerkleTreeNode[] {
     let segments: SegmentNode[] = []
     this.txs.forEach(tx => {
       tx.getSegments().forEach(s => {
-        segments.push(new SegmentNode(s, tx.hash()))
+        if(tokenId.eq(s.getTokenId())) {
+          segments.push(new SegmentNode(s, tx.hash()))
+        }
       })
     })
     segments.sort((a, b) => {
@@ -186,7 +205,7 @@ class SegmentNode {
       if(acc.length > 0)
         prevEnd = acc[acc.length - 1].segment.end
       if(segmentNode.segment.start.gt(prevEnd)) {
-        return acc.concat([new SegmentNode(new Segment(prevEnd, segmentNode.segment.start), utils.keccak256(HashZero)), segmentNode])
+        return acc.concat([new SegmentNode(new Segment(tokenId, prevEnd, segmentNode.segment.start), utils.keccak256(HashZero)), segmentNode])
       }else if(segmentNode.segment.start.eq(prevEnd)) {
         return acc.concat([segmentNode])
       }else{
@@ -194,18 +213,24 @@ class SegmentNode {
       }
     }, [])
     // add last exclusion segment
-    const lastSegment = nodes[nodes.length - 1].segment
-    if(lastSegment.end.lt(TOTAL_AMOUNT)) {
-      const lastExclusion = new SegmentNode(
-        new Segment(lastSegment.end, TOTAL_AMOUNT),
-        utils.keccak256(HashZero))
-      nodes.push(lastExclusion)
+    if(nodes.length == 0) {
+      // if there are no transaction
+      nodes.push(new SegmentNode(
+        new Segment(tokenId, ethers.constants.Zero, TOTAL_AMOUNT),
+        utils.keccak256(HashZero)))
+    }else{
+      const lastSegment = nodes[nodes.length - 1].segment
+      if(lastSegment.end.lt(TOTAL_AMOUNT)) {
+        const lastExclusion = new SegmentNode(
+          new Segment(tokenId, lastSegment.end, TOTAL_AMOUNT),
+          utils.keccak256(HashZero))
+        nodes.push(lastExclusion)
+      }
     }
-    const leaves = nodes.map(n => new SumMerkleTreeNode(
+    return nodes.map(n => new SumMerkleTreeNode(
       n.tx,
       n.segment.getAmount()
     ))
-    return new SumMerkleTree(leaves)
   }
 
   getTransactions() {
