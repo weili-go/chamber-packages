@@ -22,13 +22,13 @@ describe('Block', () => {
   const BobAddress = utils.computeAddress(BobPrivateKey)
   const blkNum = utils.bigNumberify('1')
 
-  const segment1 = new Segment(
+  const segment1 = Segment.ETH(
     utils.bigNumberify('5000000'),
     utils.bigNumberify('6000000'))
-  const segment2 = new Segment(
+  const segment2 = Segment.ETH(
     utils.bigNumberify('6000000'),
     utils.bigNumberify('7000000'))
-  const segment3 = new Segment(
+  const segment3 = Segment.ETH(
     utils.bigNumberify('7000000'),
     utils.bigNumberify('8000000'))
 
@@ -49,8 +49,8 @@ describe('Block', () => {
     const sptx1 = block.getSignedTransactionWithProof(tx1.hash())[0]
     const sptx2 = block.getSignedTransactionWithProof(tx2.hash())[0]
 
-    assert.equal(block.checkInclusion(sptx1, segment1.start, segment1.end), true)
-    assert.equal(block.checkInclusion(sptx2, segment3.start, segment3.end), true)
+    assert.equal(block.checkInclusion(sptx1, segment1), true)
+    assert.equal(block.checkInclusion(sptx2, segment3), true)
   })
 
   it('should create tree for a tx', () => {
@@ -61,7 +61,7 @@ describe('Block', () => {
     assert.equal(utils.hexlify(block.createTree().getLeaves()[2].getHash()), '0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563')
     const sptx1 = block.getSignedTransactionWithProof(tx1.hash())[0]
 
-    assert.equal(block.checkInclusion(sptx1, segment1.start, segment1.end), true)
+    assert.equal(block.checkInclusion(sptx1, segment1), true)
   })
 
   it('should getExclusionProof', () => {
@@ -69,7 +69,12 @@ describe('Block', () => {
     block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
-    const exclusionProof = block.getExclusionProof(utils.bigNumberify('3000000'))
+    const segment = new Segment(
+      utils.bigNumberify('0'),
+      utils.bigNumberify('3000000'),
+      utils.bigNumberify('3200000')
+    )
+    const exclusionProof = block.getExclusionProof(segment)
     assert.equal(exclusionProof.index, 0)
     assert.equal(exclusionProof.segment.start.toNumber(), 0)
   })
@@ -111,7 +116,7 @@ describe('Block', () => {
       block.appendTx(tx1)
       block.appendTx(tx2)
       const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]
-      assert.equal(sinedTx.merkleHash(), '0x13f4edd61c0d8f1b9c7008aa65305425ca4c134658b4b6cb64d9175a12be7808')
+      assert.equal(sinedTx.merkleHash(), '0x4d699db26107e8277851bf202b8562cb3b467b0796e71932e0ce005452bd18d6')
     });
 
     it('serialize and deserialize', () => {

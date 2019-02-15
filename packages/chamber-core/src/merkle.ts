@@ -53,22 +53,32 @@ export class SumMerkleTreeNode {
 }
 
 export class SumMerkleProof {
+  numTokens: number
   index: number
   segment: Segment
   proof: string
 
   constructor(
+    numTokens: number,
     index: number,
     segment: Segment,
     proof: string
   ) {
+    this.numTokens = numTokens
     this.index = index
     this.segment = segment
     this.proof = proof
   }
 
+  toHex() {
+    const header = utils.padZeros(utils.arrayify(utils.bigNumberify(this.numTokens)), 2)
+    const body = utils.arrayify(this.proof)
+    return utils.hexlify(utils.concat([header, body]))
+  }
+  
   serialize() {
     return {
+      numTokens: this.numTokens,
       index: this.index,
       segment: this.segment.serialize(),
       proof: this.proof
@@ -77,6 +87,7 @@ export class SumMerkleProof {
 
   static deserialize(data: any): SumMerkleProof {
     return new SumMerkleProof(
+      data.numTokens,
       data.index,
       Segment.deserialize(data.segment),
       data.proof
@@ -162,7 +173,7 @@ export class SumMerkleTree {
    * 
    * @param {SumMerkleTreeNode} leaf 
    */
-  proofs(leaf: Buffer): SumMerkleProof[] {
+  proofs(numTokens:number, leaf: Buffer): SumMerkleProof[] {
     let proofs = []
     let start = new BigNumber(0)
     let end = new BigNumber(0)
@@ -171,8 +182,9 @@ export class SumMerkleTree {
       const amount = this.leaves[i].getLengthAsBigNumber()
       if(Buffer.compare(leaf, this.leaves[i].getHash()) === 0) {
         proofs.push(new SumMerkleProof(
+          numTokens,
           i,
-          new Segment(start, start.add(amount)),
+          Segment.fromGlobal(start, start.add(amount)),
           utils.hexlify(this._proof(i))))
       }
       start = start.add(amount)
@@ -184,15 +196,16 @@ export class SumMerkleTree {
    * getProofByRange
    * @param {BigNumber} offset 
    */
-  getProofByRange(offset: BigNumber): SumMerkleProof | null {
+  getProofByRange(numTokens: number, offset: BigNumber): SumMerkleProof | null {
     let start = new BigNumber(0)
 
     for(let i = 0; i < this.leaves.length; i++) {
       const amount = this.leaves[i].getLengthAsBigNumber()
       if(start.add(amount).gt(offset)) {
         return new SumMerkleProof(
+          numTokens,
           i,
-          new Segment(start, start.add(amount)),
+          Segment.fromGlobal(start, start.add(amount)),
           utils.hexlify(this._proof(i)))
       }
       start = start.add(amount)

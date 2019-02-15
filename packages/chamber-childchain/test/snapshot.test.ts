@@ -26,7 +26,7 @@ describe('Snapshot', () => {
     const snapshot = new Snapshot(new MockSnapshotDb())
     const tx = new TransferTransaction(
       AliceAddress,
-      new Segment(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000)),
+      Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000)),
       ethers.utils.bigNumberify(5),
       BobAddress
     )

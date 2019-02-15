@@ -59,12 +59,12 @@ contract TransactionVerifier():
 
 ListingEvent: event({_tokenId: uint256, _tokenAddress: address})
 BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
-Deposited: event({_depositer: indexed(address), _start: uint256, _end: uint256, _blkNum: uint256})
-ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _start: uint256, _end: uint256})
+Deposited: event({_depositer: indexed(address), _tokenId: uint256, _start: uint256, _end: uint256, _blkNum: uint256})
+ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
 Challenged: event({_exitId: uint256})
 ForceIncluded: event({_exitId: uint256})
-FinalizedExit: event({_exitId: uint256, _start: uint256, _end: uint256})
-ExitableMerged: event({_start: uint256, _end: uint256})
+FinalizedExit: event({_exitId: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
+ExitableMerged: event({_tokenId: uint256, _start: uint256, _end: uint256})
 
 # management
 operator: address
@@ -107,10 +107,10 @@ def checkMembership(
   _start: uint256,
   _end: uint256,
   _leaf: bytes32,
-  _totalAmount: uint256,
   _rootHash: bytes32,
   _proof: bytes[512]
 ) -> bool:
+  _totalAmount: uint256 = TOTAL_DEPOSIT * convert(slice(_proof, start=0, len=2), uint256)
   currentAmount: uint256 = _end - _start
   currentLeft: uint256 = 0
   currentRight: uint256 = _totalAmount
@@ -118,11 +118,11 @@ def checkMembership(
   proofElement: bytes32
 
   for i in range(16):
-    if (i * 41) >= len(_proof):
+    if (2 + i * 41) >= len(_proof):
       break
-    leftOrRight: uint256 = convert(slice(_proof, start=i * 41, len=1), uint256)
-    amount: uint256 = convert(slice(_proof, start=i * 41 + 1, len=8), uint256)
-    proofElement = extract32(_proof, i * 41 + 9, type=bytes32)
+    leftOrRight: uint256 = convert(slice(_proof, start=2 + i * 41, len=1), uint256)
+    amount: uint256 = convert(slice(_proof, start=2 + i * 41 + 1, len=8), uint256)
+    proofElement = extract32(_proof, 2 + i * 41 + 9, type=bytes32)
     if leftOrRight == 0:
       currentRight -= amount
       computedHash = sha3(concat(
@@ -154,7 +154,6 @@ def checkTransaction(
       _start + _tokenId * TOTAL_DEPOSIT,
       _end + _tokenId * TOTAL_DEPOSIT,
       _txHash,
-      TOTAL_DEPOSIT,
       root,
       _proof
     )
@@ -241,7 +240,7 @@ def processDeposit(
       root: root,
       blockTimestamp: block.timestamp
   })
-  log.Deposited(depositer, start, end, self.currentChildBlock)
+  log.Deposited(depositer, tokenId, start, end, self.currentChildBlock)
 
 # @dev processDepositFragment
 @private
@@ -270,7 +269,7 @@ def processDepositFragment(
       root: root,
       blockTimestamp: block.timestamp
   })
-  log.Deposited(depositer, start, end, self.currentChildBlock)
+  log.Deposited(depositer, tokenId, start, end, self.currentChildBlock)
 
 @private
 @constant
@@ -314,7 +313,7 @@ def listToken(
   denomination: uint256
 ):
   tokenId: uint256 = self.listingNonce
-  self.listings[tokenId].decimalOffset = 0
+  self.listings[tokenId].decimalOffset = denomination
   self.listings[tokenId].tokenAddress = tokenAddress
   self.listed[tokenAddress] = tokenId
   self.listingNonce += 1
@@ -381,7 +380,7 @@ def depositERC20(
   self.processDeposit(
     depositer,
     tokenId,
-    amount)
+    amount / self.listings[tokenId].decimalOffset)
 
 # @dev exit
 @public
@@ -412,7 +411,6 @@ def exit(
       start + tokenId * TOTAL_DEPOSIT,
       end + tokenId * TOTAL_DEPOSIT,
       txHash,
-      TOTAL_DEPOSIT,
       root,
       _proof
     )
@@ -448,7 +446,7 @@ def exit(
   })
   if _hasSig > 0:
     self.removed[txHash] = True
-  log.ExitStarted(msg.sender, exitId, exitableAt, start, end)
+  log.ExitStarted(msg.sender, exitId, exitableAt, tokenId, start, end)
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx
@@ -608,7 +606,7 @@ def finalizeExit(
   else:
     send(exit.owner, FORCE_INCLUDE_BOND)
   clear(self.exits[_exitId])
-  log.FinalizedExit(_exitId, start, end)
+  log.FinalizedExit(_exitId, tokenId, start, end)
 
 @public
 def challengeTooOldExit(
@@ -664,7 +662,7 @@ def mergeExitable(
   assert self.exitable[tokenId1][end1].isAvailable == self.exitable[tokenId1][end2].isAvailable
   self.exitable[tokenId1][end2].start = start1
   clear(self.exitable[tokenId1][end1])
-  log.ExitableMerged(start1, end2)
+  log.ExitableMerged(tokenId1, start1, end2)
 
 # @dev getExit
 @public

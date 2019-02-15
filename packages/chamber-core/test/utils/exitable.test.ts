@@ -33,7 +33,7 @@ describe('ExitableRangeManager', () => {
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
     exitableRangeManager.extendRight(bn3000000)
-    exitableRangeManager.remove(bn0, bn1000000)
+    exitableRangeManager.remove(bn0, bn0, bn1000000)
     assert.equal(
       exitableRangeManager.getExitableEnd(bn1000000, bn1500000).toString(),
       bn3000000.toString())
@@ -47,7 +47,7 @@ describe('ExitableRangeManager', () => {
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
     exitableRangeManager.extendRight(bn3000000)
-    exitableRangeManager.remove(bn1000000, bn2000000)
+    exitableRangeManager.remove(bn0, bn1000000, bn2000000)
     assert.equal(
       exitableRangeManager.getExitableEnd(bn0, bn1000000).toString(),
       bn1000000.toString())
@@ -61,7 +61,7 @@ describe('ExitableRangeManager', () => {
     const exitableRangeManager = new ExitableRangeManager()
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
-    exitableRangeManager.remove(bn0, bn2000000)
+    exitableRangeManager.remove(bn0, bn0, bn2000000)
     assert.throws(() => {
       exitableRangeManager.getExitableEnd(bn1000000, bn1500000)
     }, 'exitable ranges not found');
@@ -72,8 +72,8 @@ describe('ExitableRangeManager', () => {
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
     exitableRangeManager.extendRight(bn3000000)
-    exitableRangeManager.remove(bn1000000, bn2000000)
-    exitableRangeManager.insert(bn1000000, bn1500000)
+    exitableRangeManager.remove(bn0, bn1000000, bn2000000)
+    exitableRangeManager.insert(bn0, bn1000000, bn1500000)
     assert.equal(
       exitableRangeManager.getExitableEnd(bn1000000, bn1500000).toString(),
       bn1500000.toString())
@@ -84,8 +84,8 @@ describe('ExitableRangeManager', () => {
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
     exitableRangeManager.extendRight(bn3000000)
-    exitableRangeManager.remove(bn1000000, bn2000000)
-    exitableRangeManager.insert(bn1000000, bn1500000)
+    exitableRangeManager.remove(bn0, bn1000000, bn2000000)
+    exitableRangeManager.insert(bn0, bn1000000, bn1500000)
     const deserialized = ExitableRangeManager.deserialize(exitableRangeManager.serialize())
     assert.equal(
       deserialized.getExitableEnd(bn1000000, bn1500000).toString(),

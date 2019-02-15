@@ -132,7 +132,7 @@ export class SignedTransactionWithProof {
   }
 
   getProofAsHex(): HexString {
-    return this.proof.proof
+    return this.proof.toHex()
   }
 
   getSignatures(): HexString {

@@ -167,6 +167,7 @@ export class OwnState implements TransactionOutput {
       return utils.keccak256(join([
         utils.hexlify(utils.toUtf8Bytes('own')),
         utils.hexZeroPad(utils.hexlify(this.owner), 32),
+        utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.end), 32),
         utils.hexZeroPad(utils.hexlify(this.blkNum), 32)
@@ -354,12 +355,12 @@ export class SplitTransaction extends BaseTransaction {
   getOutput(index: number): TransactionOutput {
     if(index == 0) {
       return new OwnState(
-        new Segment(this.segment.start, this.offset),
+        new Segment(this.segment.tokenId, this.segment.start, this.offset),
         this.to1
       )
     }else {
       return new OwnState(
-        new Segment(this.offset, this.segment.end),
+        new Segment(this.segment.tokenId, this.offset, this.segment.end),
         this.to2
       )
     }
@@ -371,8 +372,8 @@ export class SplitTransaction extends BaseTransaction {
 
   getSegments(): Segment[] {
     return [
-      new Segment(this.segment.start, this.offset),
-      new Segment(this.offset, this.segment.end)
+      new Segment(this.segment.tokenId, this.segment.start, this.offset),
+      new Segment(this.segment.tokenId, this.offset, this.segment.end)
     ]
   }
 
@@ -401,7 +402,7 @@ export class MergeTransaction extends BaseTransaction {
   ) {
     super(3, 
       [from,
-        new Segment(segment1.start, segment2.end).toBigNumber(),
+        new Segment(segment1.tokenId, segment1.start, segment2.end).toBigNumber(),
         segment1.end,
         to,
         blkNum1,
@@ -420,8 +421,8 @@ export class MergeTransaction extends BaseTransaction {
     const offset = utils.bigNumberify(tuple[2])
     return new MergeTransaction(
       utils.getAddress(tuple[0]),
-      new Segment(segment.start, offset),
-      new Segment(offset, segment.end),
+      new Segment(segment.tokenId, segment.start, offset),
+      new Segment(segment.tokenId, offset, segment.end),
       utils.getAddress(tuple[3]),
       utils.bigNumberify(tuple[4]),
       utils.bigNumberify(tuple[5]))
@@ -451,7 +452,7 @@ export class MergeTransaction extends BaseTransaction {
 
   getOutput(): TransactionOutput {
     return new OwnState(
-      new Segment(this.segment1.start, this.segment2.end),
+      new Segment(this.segment1.tokenId, this.segment1.start, this.segment2.end),
       this.to
     )
   }
@@ -462,7 +463,7 @@ export class MergeTransaction extends BaseTransaction {
 
   getSegments(): Segment[] {
     return [
-      new Segment(this.segment1.start, this.segment2.end)
+      new Segment(this.segment1.tokenId, this.segment1.start, this.segment2.end)
     ]
   }
   
