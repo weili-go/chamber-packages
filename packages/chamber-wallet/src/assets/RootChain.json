@@ -51,6 +51,11 @@
         },
         {
           "type": "uint256",
+          "name": "_tokenId",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
           "name": "_start",
           "indexed": false
         },
@@ -84,6 +89,11 @@
         {
           "type": "uint256",
           "name": "exitableAt",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_tokenId",
           "indexed": false
         },
         {
@@ -134,6 +144,11 @@
         },
         {
           "type": "uint256",
+          "name": "_tokenId",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
           "name": "_start",
           "indexed": false
         },
@@ -147,11 +162,21 @@
       "type": "event"
     },
     {
-      "name": "Log",
+      "name": "ExitableMerged",
       "inputs": [
         {
-          "type": "bytes32",
-          "name": "_a",
+          "type": "uint256",
+          "name": "_tokenId",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_start",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "_end",
           "indexed": false
         }
       ],
@@ -167,6 +192,10 @@
         }
       ],
       "inputs": [
+        {
+          "type": "uint256",
+          "name": "_tokenId"
+        },
         {
           "type": "uint256",
           "name": "_start"
@@ -203,7 +232,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 82755
+      "gas": 92512
     },
     {
       "name": "__init__",
@@ -234,7 +263,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 164222
+      "gas": 179315
     },
     {
       "name": "setup",
@@ -243,7 +272,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 165654
+      "gas": 180837
     },
     {
       "name": "submit",
@@ -257,7 +286,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 111305
+      "gas": 111395
     },
     {
       "name": "deposit",
@@ -266,7 +295,29 @@
       "constant": false,
       "payable": true,
       "type": "function",
-      "gas": 261480
+      "gas": 261771
+    },
+    {
+      "name": "depositFragment",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "start"
+        },
+        {
+          "type": "uint256",
+          "name": "end"
+        },
+        {
+          "type": "uint256",
+          "name": "exitableEnd"
+        }
+      ],
+      "constant": false,
+      "payable": true,
+      "type": "function",
+      "gas": 221304
     },
     {
       "name": "depositERC20",
@@ -284,7 +335,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 263710
+      "gas": 264931
     },
     {
       "name": "exit",
@@ -318,7 +369,7 @@
       "constant": false,
       "payable": true,
       "type": "function",
-      "gas": 430782
+      "gas": 477859
     },
     {
       "name": "challenge",
@@ -342,11 +393,7 @@
         },
         {
           "type": "uint256",
-          "name": "_start"
-        },
-        {
-          "type": "uint256",
-          "name": "_end"
+          "name": "_segment"
         },
         {
           "type": "bytes",
@@ -364,7 +411,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 421396
+      "gas": 447491
     },
     {
       "name": "requestHigherPriorityExit",
@@ -382,7 +429,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 79075
+      "gas": 84420
     },
     {
       "name": "includeSignature",
@@ -398,11 +445,7 @@
         },
         {
           "type": "uint256",
-          "name": "_start"
-        },
-        {
-          "type": "uint256",
-          "name": "_end"
+          "name": "_segment"
         },
         {
           "type": "bytes",
@@ -420,16 +463,12 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 66203
+      "gas": 68484
     },
     {
       "name": "finalizeExit",
       "outputs": [],
       "inputs": [
-        {
-          "type": "uint256",
-          "name": "_tokenType"
-        },
         {
           "type": "uint256",
           "name": "_exitableEnd"
@@ -442,7 +481,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 370105
+      "gas": 447645
     },
     {
       "name": "challengeTooOldExit",
@@ -458,11 +497,7 @@
         },
         {
           "type": "uint256",
-          "name": "_start"
-        },
-        {
-          "type": "uint256",
-          "name": "_end"
+          "name": "_segment"
         },
         {
           "type": "bytes",
@@ -480,7 +515,25 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 191385
+      "gas": 217582
+    },
+    {
+      "name": "mergeExitable",
+      "outputs": [],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_segment1"
+        },
+        {
+          "type": "uint256",
+          "name": "_segment2"
+        }
+      ],
+      "constant": false,
+      "payable": false,
+      "type": "function",
+      "gas": 84250
     },
     {
       "name": "getExit",
@@ -503,7 +556,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 3692
+      "gas": 4139
     },
     {
       "name": "totalDeposited",
@@ -522,7 +575,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1126
+      "gas": 1276
     },
     {
       "name": "listings__decimalOffset",
@@ -541,7 +594,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1228
+      "gas": 1378
     },
     {
       "name": "listings__tokenAddress",
@@ -560,7 +613,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1264
+      "gas": 1414
     },
     {
       "name": "listed",
@@ -579,7 +632,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1255
+      "gas": 1405
     },
     {
       "name": "listingNonce",
@@ -593,7 +646,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1113
+      "gas": 1263
     },
     {
       "name": "exitNonce",
@@ -607,7 +660,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1143
+      "gas": 1293
     },
     {
       "name": "exitable__start",
@@ -630,7 +683,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1505
+      "gas": 1655
     },
     {
       "name": "exitable__isAvailable",
@@ -653,7 +706,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1529
+      "gas": 1679
     }
   ],
   "networks": {},
