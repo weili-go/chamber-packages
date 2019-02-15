@@ -1,6 +1,6 @@
 {
   "name": "@layer2/childchain",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -16,7 +16,7 @@
     "test:ci": "yarn run test"
   },
   "dependencies": {
-    "@layer2/core": "^0.0.14",
+    "@layer2/core": "^0.0.15",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.5",
     "chai": "^4.2.0",
