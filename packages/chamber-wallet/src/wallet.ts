@@ -18,6 +18,9 @@ import {
   Segment,
   SumMerkleProof,
 } from '@layer2/core'
+import {
+  Exit
+} from './models/exit'
 import { Contract } from 'ethers'
 import { BigNumber } from 'ethers/utils';
 import artifact from './assets/RootChain.json'
@@ -28,7 +31,7 @@ const abi = [
   'event ExitStarted(address indexed _exitor, uint256 _exitId, uint256 exitableAt, uint256 _tokenId, uint256 _start, uint256 _end)',
   'event FinalizedExit(uint256 _exitId, uint256 _tokenId, uint256 _start, uint256 _end)',
   'function deposit() payable',
-  'function exit(uint256 _utxoPos, uint256 _start, uint256 _end, bytes _txBytes, bytes _proof, bytes _sig, uint256 _hasSig) payable',
+  'function exit(uint256 _utxoPos, uint256 _segment, bytes _txBytes, bytes _proof, bytes _sig, uint256 _hasSig) payable',
   'function finalizeExit(uint256 _exitableEnd, uint256 _exitId)',
   'function getExit(uint256 _exitId) constant returns(address, uint256)',
 ]
@@ -59,48 +62,6 @@ class WaitingBlockWrapper {
       data.root
     )
   }
-}
-
-class Exit {
-  id: BigNumber
-  exitableAt: BigNumber
-  segment: Segment
-
-  constructor(
-    id: BigNumber,
-    exitableAt: BigNumber,
-    segment: Segment
-  ) {
-    this.id = id
-    this.exitableAt = exitableAt
-    this.segment = segment
-  }
-
-  getId(): string {
-    return this.id.toString()
-  }
-
-  getAmount() {
-    this.segment.getAmount()
-  }
-
-  serialize() {
-    return JSON.stringify({
-      id: this.id,
-      exitableAt: this.exitableAt.toString(),
-      segment: this.segment.serialize()
-    })
-  }
-
-  static deserialize(str: string) {
-    const data = JSON.parse(str)
-    return new Exit(
-      data.id,
-      ethers.utils.bigNumberify(data.exitableAt),
-      Segment.deserialize(data.segment)
-    )
-  }
-
 }
 
 export class ChamberWallet {
