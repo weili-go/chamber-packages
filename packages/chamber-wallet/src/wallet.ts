@@ -203,9 +203,9 @@ export class ChamberWallet {
     const segment = new Segment(tokenId, start, end)
     const depositTx = new DepositTransaction(
       depositorAddress,
-      tokenId,
       segment
     )
+    console.log(depositorAddress, this.getAddress())
     if(depositorAddress === this.getAddress()) {
       this.addUTXO(new SignedTransactionWithProof(
         new SignedTransaction(depositTx),

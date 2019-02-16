@@ -63,6 +63,7 @@ describe('ChamberWallet', () => {
         utils.bigNumberify(10000000),
         utils.bigNumberify(2)
       )
+      console.log(wallet.getUTXOArray())
       assert.equal(wallet.getBalance().toNumber(), 10000000)
     })
     

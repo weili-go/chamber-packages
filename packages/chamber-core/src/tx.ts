@@ -184,24 +184,20 @@ export class OwnState implements TransactionOutput {
 
 export class DepositTransaction extends BaseTransaction {
   depositor: Address
-  token: BigNumber
   segment: Segment
 
   constructor(
     depositor: Address,
-    token: BigNumber,
     segment: Segment
   ) {
-    super(4, [depositor, token, segment.toBigNumber()])
+    super(4, [depositor, segment.getTokenId(), segment.toBigNumber()])
     this.depositor = depositor
-    this.token = token
     this.segment = segment
   }
 
   static fromTuple(tuple: RLPItem[]): DepositTransaction {
     return new DepositTransaction(
       utils.getAddress(tuple[0]),
-      utils.bigNumberify(tuple[1]),
       Segment.fromBigNumber(utils.bigNumberify(tuple[2])))
   }
 
