@@ -128,6 +128,13 @@ export class ChamberWallet {
     })
     this.listener.addEvent('Deposited', (e) => {
       console.log('Deposited', e)
+      this.handleDeposit(
+        e.values._depositer,
+        e.values._tokenId,
+        e.values._start,
+        e.values._end,
+        e.values._blkNum
+      )
       this.exitableRangeManager.extendRight(
         e.values._end
       )
@@ -192,18 +199,21 @@ export class ChamberWallet {
   }
 
   handleDeposit(depositor: string, tokenId: BigNumber, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
+    const depositorAddress = ethers.utils.getAddress(depositor)
     const segment = new Segment(tokenId, start, end)
     const depositTx = new DepositTransaction(
-      depositor,
-      ethers.constants.Zero,
+      depositorAddress,
+      tokenId,
       segment
     )
-    this.addUTXO(new SignedTransactionWithProof(
-      new SignedTransaction(depositTx),
-      0,
-      '',
-      new SumMerkleProof(1, 0, segment, ''),
-      blkNum))
+    if(depositorAddress === this.getAddress()) {
+      this.addUTXO(new SignedTransactionWithProof(
+        new SignedTransaction(depositTx),
+        0,
+        '',
+        new SumMerkleProof(1, 0, segment, ''),
+        blkNum))
+    }
     return depositTx
   }
 
