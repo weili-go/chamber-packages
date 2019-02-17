@@ -74,6 +74,11 @@ export class Chain {
     await this.writeWaitingBlock(root, block)
     return new ChamberOk(root)
   }
+
+  clear() {
+    this.txQueue = []
+    this.txFilter.clear()
+  }
   
   async handleSubmit(root: string, blkNum: BigNumber) {
     const block = await this.readWaitingBlock(root)
