@@ -6,6 +6,10 @@
     "access": "public"
   },
   "license": "MIT",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/cryptoeconomicslab/chamber-packages.git"
+  },
   "scripts": {
     "clean": "rm -rf build/*",
     "build": "yarn clean && truffle compile",

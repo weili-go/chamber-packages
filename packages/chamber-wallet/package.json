@@ -6,6 +6,10 @@
     "access": "public"
   },
   "license": "MIT",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/cryptoeconomicslab/chamber-packages.git"
+  },
   "scripts": {
     "build": "tsc --build ./tsconfig.json",
     "build:dev": "tsc",
