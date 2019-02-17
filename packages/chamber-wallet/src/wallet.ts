@@ -65,20 +65,43 @@ class WaitingBlockWrapper {
 }
 
 export class ChamberWallet {
-  client: PlasmaClient
-  latestBlockNumber: number
-  loadedBlockNumber: number
-  rootChainContract: Contract
-  wallet: ethers.Wallet
-  utxos: Map<string, string>
-  storage: IWalletStorage
-  httpProvider: ethers.providers.JsonRpcProvider
-  listener: RootChainEventListener
-  rootChainInterface: ethers.utils.Interface
-  exitList: Map<string, string>
-  waitingBlocks: Map<string, string>
-  exitableRangeManager: ExitableRangeManager
+  private client: PlasmaClient
+  private latestBlockNumber: number
+  private loadedBlockNumber: number
+  private rootChainContract: Contract
+  private wallet: ethers.Wallet
+  private utxos: Map<string, string>
+  private storage: IWalletStorage
+  private httpProvider: ethers.providers.JsonRpcProvider
+  private listener: RootChainEventListener
+  private rootChainInterface: ethers.utils.Interface
+  private exitList: Map<string, string>
+  private waitingBlocks: Map<string, string>
+  private exitableRangeManager: ExitableRangeManager
 
+  /**
+   * 
+   * @param client 
+   * @param privateKey 
+   * @param rootChainEndpoint Main chain endpoint
+   * @param contractAddress RootChain address
+   * @param storage 
+   * 
+   * ### Example
+   * 
+   * ```typescript
+   *  const jsonRpcClient = new JsonRpcClient('http://localhost:3000')
+   *  const client = new PlasmaClient(jsonRpcClient)
+   *  const storage = new WalletStorage()
+   *  return new ChamberWallet(
+   *    client,
+   *    '0x00... private key',
+   *    'http://127.0.0.1:8545',
+   *    '0x00... root chain address',
+   *    storage
+   *  )
+   * ```
+   */
   constructor(
     client: PlasmaClient,
     privateKey: string,
@@ -144,6 +167,9 @@ export class ChamberWallet {
     this.exitableRangeManager = this.loadExitableRangeManager()
   }
 
+  /**
+   * @ignore
+   */
   private loadExitableRangeManager() {
     try {
       const loaded = this.storage.get('exitable')
@@ -153,10 +179,21 @@ export class ChamberWallet {
     }
   }
 
+  /**
+   * @ignore
+   */
   private saveExitableRangeManager() {
     this.storage.add('exitable', this.exitableRangeManager.serialize())
   }
 
+  /**
+   * 
+   * @param handler 
+   * 
+   * ```typescript
+   * await wallet.init((wallet) => {})
+   * ```
+   */
   async init(handler: (wallet: ChamberWallet) => void) {
     await this.listener.initPolling(() => {
       handler(this)
@@ -167,6 +204,9 @@ export class ChamberWallet {
     return await this.client.getBlockNumber()
   }
 
+  /**
+   * @ignore
+   */
   private async loadBlocks() {
     const tasks = this.getWaitingBlocks().map(block => {
       return this.client.getBlock(block.blkNum.toNumber())
@@ -180,6 +220,9 @@ export class ChamberWallet {
     return this.getUTXOArray()
   }
 
+  /**
+   * @ignore
+   */
   private updateBlock(block: Block) {
     this.getUTXOArray().forEach((tx) => {
       const exclusionProof = block.getExclusionProof(tx.getOutput().getSegment(0))
@@ -198,6 +241,9 @@ export class ChamberWallet {
     this.storage.add('loadedBlockNumber', this.loadedBlockNumber.toString())
   }
 
+  /**
+   * @ignore
+   */
   handleDeposit(depositor: string, tokenId: BigNumber, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
     const depositorAddress = ethers.utils.getAddress(depositor)
     const segment = new Segment(tokenId, start, end)
@@ -216,6 +262,9 @@ export class ChamberWallet {
     return depositTx
   }
 
+  /**
+   * @ignore
+   */
   handleExit(exitId: BigNumber, exitableAt: BigNumber, tokenId: BigNumber, start: BigNumber, end: BigNumber) {
     const segment = new Segment(tokenId, start, end)
     const exit = new Exit(
@@ -236,13 +285,19 @@ export class ChamberWallet {
     return arr
   }
 
-  getExitFromLocal(exitId: string) {
+  /**
+   * @ignore
+   */
+  private getExitFromLocal(exitId: string) {
     const serialized = this.exitList.get(exitId)
     if(serialized)
       return Exit.deserialize(serialized)
     return null
   }
 
+  /**
+   * @ignore
+   */
   loadExits() {
     return this.loadMap<string>('exits')
   }
@@ -263,30 +318,48 @@ export class ChamberWallet {
     return arr
   }
 
-  addWaitingBlock(tx: WaitingBlockWrapper) {
+  /**
+   * @ignore
+   */
+  private addWaitingBlock(tx: WaitingBlockWrapper) {
     this.waitingBlocks.set(tx.blkNum.toString(), tx.serialize())
     this.storeMap('waitingBlocks', this.waitingBlocks)
   }
 
-  addUTXO(tx: SignedTransactionWithProof) {
+  /**
+   * @ignore
+   */
+  private addUTXO(tx: SignedTransactionWithProof) {
     this.utxos.set(tx.getOutput().hash(), JSON.stringify(tx.serialize()))
     this.storeMap('utxos', this.utxos)
   }
 
-  loadUTXO() {
+  /**
+   * @ignore
+   */
+  private loadUTXO() {
     return this.loadMap<string>('utxos')
   }
 
-  deleteUTXO(key: string) {
+  /**
+   * @ignore
+   */
+  private deleteUTXO(key: string) {
     this.utxos.delete(key)
     this.storeMap('utxos', this.utxos)
   }
 
+  /**
+   * @ignore
+   */
   private loadSeenEvents() {
     return this.loadMap<boolean>('seenEvents')
   }
 
-  getNumberFromStorage(key: string): number {
+  /**
+   * @ignore
+   */
+  private getNumberFromStorage(key: string): number {
     try {
       return Number(this.storage.get(key))
     } catch(e) {
@@ -294,6 +367,9 @@ export class ChamberWallet {
     }
   }
 
+  /**
+   * @ignore
+   */
   private storeMap<T>(key: string, map: Map<string, T>) {
     let obj: any = {}
     map.forEach((value, key) => {
@@ -302,6 +378,9 @@ export class ChamberWallet {
     this.storage.add(key, JSON.stringify(obj))
   }
 
+  /**
+   * @ignore
+   */
   private loadMap<T>(key: string) {
     const map = new Map<string, T>()
     try {
@@ -391,7 +470,10 @@ export class ChamberWallet {
       exitId)
   }
 
-  searchUtxo(amount: BigNumber): SignedTransactionWithProof | null {
+  /**
+   * @ignore
+   */
+  private searchUtxo(amount: BigNumber): SignedTransactionWithProof | null {
     let tx: SignedTransactionWithProof | null = null
     this.getUTXOArray().forEach((_tx) => {
       if(_tx.getOutput().getSegment(0).getAmount().gt(amount)) {
