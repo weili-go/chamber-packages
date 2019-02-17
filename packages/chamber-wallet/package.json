@@ -7,8 +7,8 @@
   },
   "license": "MIT",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/cryptoeconomicslab/chamber-packages.git"
+    "type": "git",
+    "url": "https://github.com/cryptoeconomicslab/chamber-packages.git"
   },
   "scripts": {
     "build": "tsc --build ./tsconfig.json",
@@ -17,7 +17,8 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "mocha -r ts-node/register 'test/**/*.ts'",
     "pretest:ci": "tsc --build ./tsconfig-ci.json",
-    "test:ci": "yarn run test"
+    "test:ci": "yarn run test",
+    "docs": "typedoc --out ../../docs/wallet ./src"
   },
   "dependencies": {
     "@layer2/core": "^0.0.15",
@@ -37,6 +38,7 @@
     "typescript": "^3.2.2"
   },
   "devDependencies": {
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "typedoc": "^0.14.2"
   }
 }

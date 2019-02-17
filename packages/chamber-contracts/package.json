@@ -7,8 +7,8 @@
   },
   "license": "MIT",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/cryptoeconomicslab/chamber-packages.git"
+    "type": "git",
+    "url": "https://github.com/cryptoeconomicslab/chamber-packages.git"
   },
   "scripts": {
     "clean": "rm -rf build/*",
@@ -38,7 +38,8 @@
     "ts-node": "^7.0.1"
   },
   "devDependencies": {
-    "typechain": "^0.3.11"
+    "typechain": "^0.3.11",
+    "typedoc": "^0.14.2"
   },
   "gitHead": "4710480312e99fc60bfc746ea095c73b54b437d5"
 }
