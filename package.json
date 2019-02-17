@@ -21,7 +21,9 @@
     "test:ci": "lerna run test:ci",
     "format": "lerna run format",
     "publish": "yarn build && lerna publish",
-    "start": "node app"
+    "start": "node app",
+    "docs:wallet": "typedoc --out ./docs ./packages/chamber-wallet/src",
+    "docs": "lerna run docs"
   },
   "dependencies": {
     "lerna": "^3.10.5"
