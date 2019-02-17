@@ -18,6 +18,7 @@
   "dependencies": {
     "@layer2/core": "^0.0.15",
     "@types/chai": "^4.1.7",
+    "@types/chai-as-promised": "^7.1.0",
     "@types/mocha": "^5.2.5",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",

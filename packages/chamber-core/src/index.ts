@@ -35,3 +35,10 @@ export {
 export {
   ExitableRangeManager
 } from './utils/exitable'
+
+
+export {
+  ChamberResult,
+  ChamberOk,
+  ChamberError
+} from './utils/result'
