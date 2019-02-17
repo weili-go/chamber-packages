@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@types/chai": "^4.1.7",
+    "@types/chai-as-promised": "^7.1.0",
     "@types/mocha": "^5.2.5",
     "@types/node-fetch": "^2.1.4",
     "chai": "^4.2.0",

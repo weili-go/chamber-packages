@@ -35,7 +35,6 @@ export class Snapshot {
     }).then(() => {
       return Promise.resolve(true);
     }).catch((e) => {
-      console.error(e);
       return Promise.resolve(false);
     })
   }
