@@ -32,13 +32,6 @@ export {
   SumMerkleTree
 } from './merkle'
 
-export {
-  ExitableRangeManager
-} from './utils/exitable'
-
-
-export {
-  ChamberResult,
-  ChamberOk,
-  ChamberError
-} from './utils/result'
+export * from './utils/error'
+export * from './utils/exitable'
+export * from './utils/result'  

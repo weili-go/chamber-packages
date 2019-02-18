@@ -1,8 +1,9 @@
 import { describe, it } from "mocha"
 import {
   ChamberOk,
+  ChamberResultError,
   ChamberError
-} from '../../src/utils/result'
+} from '../../src/index'
 import { assert } from "chai"
 
 describe('ChamberResult', () => {
@@ -14,7 +15,7 @@ describe('ChamberResult', () => {
   })
 
   it('shoud success to error', () => {
-    const result = new ChamberError<string>(new Error('Test Error'))
+    const result = new ChamberResultError<string>(new ChamberError(0, 'Test Error'))
     assert.isTrue(result.isError())
     assert.equal(result.error().message, 'Test Error')
   })

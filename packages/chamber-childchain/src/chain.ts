@@ -3,13 +3,14 @@ import { TxFilter } from './txfilter'
 import {
   ChamberResult,
   ChamberOk,
-  ChamberError,
+  ChamberResultError,
   DepositTransaction,
   SignedTransaction,
   Block,
   Segment,
   SignedTransactionWithProof
-} from '@layer2/core';
+} from '@layer2/core'
+import { ChainErrorFactory } from './error'
 import { BigNumber } from 'ethers/utils';
 
 export interface IChainDb {
@@ -46,7 +47,7 @@ export class Chain {
         return new ChamberOk(false)
       }
     } catch (e) {
-      return new ChamberError(e)
+      return new ChamberResultError(ChainErrorFactory.InvalidTransaction())
     }
   }
 
@@ -57,7 +58,7 @@ export class Chain {
   async generateBlock(): Promise<ChamberResult<string>> {
     const block = new Block()
     if(this.txQueue.length == 0) {
-      return ChamberError.getError<string>('txQueue is empty')
+      return new ChamberResultError(ChainErrorFactory.NoValidTransactions())
     }
     const tasks = this.txQueue.map(async tx => {
       const inputChecked = await this.snapshot.checkInput(tx)
@@ -67,7 +68,7 @@ export class Chain {
     })
     await Promise.all(tasks)
     if(block.getTransactions().length == 0) {
-      return ChamberError.getError<string>('no valid transactions')
+      return new ChamberResultError(ChainErrorFactory.NoValidTransactions())
     }
     // write to DB
     const root = block.getRoot()
@@ -113,7 +114,7 @@ export class Chain {
       const block = await this.readFromDb(blkNum)
       return new ChamberOk(block)
     } catch(e) {
-      return ChamberError.getError(e)
+      return new ChamberResultError(ChainErrorFactory.BlockNotFound())
     }
   }
 
@@ -122,7 +123,7 @@ export class Chain {
     if(block.isOk()) {
       return new ChamberOk(block.ok().getUserTransactionAndProofs(owner))
     } else {
-      return new ChamberError(block.error())
+      return new ChamberResultError(block.error())
     }
   }
 
