@@ -102,7 +102,8 @@ contract EscrowVerifier():
     _owner: address,
     _tokenId: uint256,
     _start: uint256,
-    _end: uint256
+    _end: uint256,
+    _timestamp: uint256
   ) -> bool: constant
   def getTxoHash(
     _label: uint256,
@@ -235,7 +236,8 @@ def verify(
   _owner: address,
   _tokenId: uint256,
   _start: uint256,
-  _end: uint256
+  _end: uint256,
+  _timestamp: uint256
 ) -> bool:
   label: uint256
   maxBlock: uint256
@@ -258,7 +260,7 @@ def verify(
     elif label == 10:
       return MultisigVerifier(self.multisigverifier).verifyMultisig2(_txHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
     elif label >= 20:
-      return EscrowVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
+      return EscrowVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _timestamp)
   return False
 
 # @dev get hash of input state of the transaction

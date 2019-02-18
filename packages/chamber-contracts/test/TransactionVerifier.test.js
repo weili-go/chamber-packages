@@ -45,6 +45,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         ethers.constants.Zero,
         transactions.segments[0].start,
         transactions.segments[0].end,
+        0,
         {
           from: alice
         });
@@ -64,6 +65,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         ethers.constants.Zero,
         transactions.segments[0].start,
         transactions.segments[0].end,
+        0,
         {
           from: alice
         });
@@ -83,6 +85,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         ethers.constants.Zero,
         transactions.segments[1].start,
         transactions.segments[1].end,
+        0,
         {
           from: alice
         });
@@ -106,6 +109,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         ethers.constants.Zero,
         transactions.segment45.start,
         transactions.segment45.end,
+        0,
         {
           from: alice
         });
