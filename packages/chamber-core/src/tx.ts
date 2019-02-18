@@ -113,24 +113,6 @@ export interface TransactionOutput {
   hash(): Hash
 }
 
-export class EmptyTransactionOutput implements TransactionOutput {
-  withBlkNum(blkNum: BigNumber) {
-    return this
-  }
-
-  getOwners(): Address[] {
-    throw new Error('blkNum should not be null to get hash')
-  }
-
-  getSegment(index: number): Segment {
-    throw new Error('blkNum should not be null to get hash')
-  }
-
-  hash(): Hash {
-    throw new Error('blkNum should not be null to get hash')
-  }
-}
-
 export class OwnState implements TransactionOutput {
   segment: Segment
   owner: Address
