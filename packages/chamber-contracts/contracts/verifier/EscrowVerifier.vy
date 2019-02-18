@@ -107,7 +107,8 @@ def verify(
   _owner: address,
   _tokenId: uint256,
   _start: uint256,
-  _end: uint256
+  _end: uint256,
+  _timestamp: uint256
 ) -> (bool):
   _from: address
   segment: uint256
@@ -135,7 +136,7 @@ def verify(
     # timeout escrow
     if _owner != ZERO_ADDRESS:
       assert(_owner == _from and _outputIndex == 0)
-    assert timeout >= as_unitless_number(block.timestamp)
+    assert timeout >= _timestamp
     return (self.ecrecoverSig(_txHash, _sigs) == _from)
 
 @public

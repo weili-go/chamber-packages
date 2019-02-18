@@ -28,7 +28,8 @@ contract TransactionVerifier():
     _owner: address,
     _tokenId: uint256,
     _start: uint256,
-    _end: uint256
+    _end: uint256,
+    _timestamp: uint256
   ) -> bool: constant
   def getTxoHash(
     _txBytes: bytes[1024],
@@ -125,7 +126,8 @@ def dispute(
     msg.sender,
     _tokenId,
     _start,
-    _end)
+    _end,
+    0)
   self.disputes[txHash] = Dispute({
     recipient: msg.sender,
     withdrawableAt: block.timestamp + 1 * 7 * 24 * 60 * 60,

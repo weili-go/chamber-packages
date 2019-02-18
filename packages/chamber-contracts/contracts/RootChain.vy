@@ -6,7 +6,7 @@ struct tokenListing:
 
 struct ChildChainBlock:
   root: bytes32
-  blockTimestamp: timestamp
+  blockTimestamp: uint256
 
 struct Exit:
   owner: address
@@ -43,7 +43,8 @@ contract TransactionVerifier():
     _owner: address,
     _tokenId: uint256,
     _start: uint256,
-    _end: uint256
+    _end: uint256,
+    _timestamp: uint256
   ) -> bool: constant
   def getTxoHash(
     _txBytes: bytes[496],
@@ -149,6 +150,7 @@ def checkTransaction(
   _outputIndex: uint256
 ) -> bool:
   root: bytes32 = self.childChain[_blkNum].root
+  blockTimestamp: uint256 = self.childChain[_blkNum].blockTimestamp
   if _blkNum % 2 == 0:
     assert self.checkMembership(
       _start + _tokenId * TOTAL_DEPOSIT,
@@ -171,7 +173,8 @@ def checkTransaction(
     ZERO_ADDRESS,
     _tokenId,
     _start,
-    _end)
+    _end,
+    blockTimestamp)
 
 @private
 @constant
@@ -238,7 +241,7 @@ def processDeposit(
   self.exitable[tokenId][end].isAvailable = True
   self.childChain[self.currentChildBlock] = ChildChainBlock({
       root: root,
-      blockTimestamp: block.timestamp
+      blockTimestamp: as_unitless_number(block.timestamp)
   })
   log.Deposited(depositer, tokenId, start, end, self.currentChildBlock)
 
@@ -267,7 +270,7 @@ def processDepositFragment(
                   )
   self.childChain[self.currentChildBlock] = ChildChainBlock({
       root: root,
-      blockTimestamp: block.timestamp
+      blockTimestamp: as_unitless_number(block.timestamp)
   })
   log.Deposited(depositer, tokenId, start, end, self.currentChildBlock)
 
@@ -334,7 +337,7 @@ def submit(_root: bytes32):
   # 3 + 1 = 4
   self.childChain[self.currentChildBlock] = ChildChainBlock({
       root: _root,
-      blockTimestamp: block.timestamp
+      blockTimestamp: as_unitless_number(block.timestamp)
   })
   log.BlockSubmitted(_root, block.timestamp, self.currentChildBlock)
 
@@ -429,7 +432,8 @@ def exit(
     msg.sender,
     tokenId,
     start,
-    end)
+    end,
+    self.childChain[blkNum].blockTimestamp)
   exitId: uint256 = self.exitNonce
   self.exitNonce += 1
   self.exits[exitId] = Exit({
@@ -626,7 +630,7 @@ def challengeTooOldExit(
   (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
   txHash: bytes32 = sha3(_txBytes)
   # if tx is 12 weeks before
-  assert self.childChain[blkNum].blockTimestamp  < as_unitless_number(block.timestamp) - 12 * 7 * 24 * 60 * 60
+  assert self.childChain[blkNum].blockTimestamp < as_unitless_number(block.timestamp) - 12 * 7 * 24 * 60 * 60
   assert blkNum > exit.priority
   self.checkTransaction(
     tokenId,
