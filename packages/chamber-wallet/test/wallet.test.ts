@@ -34,12 +34,12 @@ describe('ChamberWallet', () => {
   })
 
   it('should create wallet', () => {
-    const wallet = new ChamberWallet(
+    const wallet = ChamberWallet.createWalletWithPrivateKey(
       client,
-      AlicePrivateKey,
       'http://127.0.0.1:8545',
       ContractAddress,
-      storage
+      storage,
+      AlicePrivateKey,
     )
     assert.equal(wallet.getBalance().toNumber(), 0)
   })
@@ -47,12 +47,12 @@ describe('ChamberWallet', () => {
 
   describe('handleDeposit', () => {
 
-    const wallet = new ChamberWallet(
+    const wallet = ChamberWallet.createWalletWithPrivateKey(
       client,
-      AlicePrivateKey,
       'http://127.0.0.1:8545',
       ContractAddress,
-      storage
+      storage,
+      AlicePrivateKey,
     )
 
     it('should handleDeposit', () => {
@@ -71,12 +71,12 @@ describe('ChamberWallet', () => {
 
   describe('getExits', () => {
 
-    const wallet = new ChamberWallet(
+    const wallet = ChamberWallet.createWalletWithPrivateKey(
       client,
-      AlicePrivateKey,
       'http://127.0.0.1:8545',
       ContractAddress,
-      storage
+      storage,
+      AlicePrivateKey,
     )
 
     it('should getExit', () => {
@@ -96,12 +96,12 @@ describe('ChamberWallet', () => {
   
   describe('transfer', () => {
 
-    const wallet = new ChamberWallet(
+    const wallet = ChamberWallet.createWalletWithPrivateKey(
       client,
-      AlicePrivateKey,
       'http://127.0.0.1:8545',
       ContractAddress,
-      storage
+      storage,
+      AlicePrivateKey,
     )
 
     it('should transfer', async () => {

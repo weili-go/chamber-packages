@@ -22,7 +22,7 @@ import {
   ChamberOk,
 } from '@layer2/core'
 import { WalletErrorFactory } from './error'
-import { Exit } from './models/exit'
+import { Exit, WaitingBlockWrapper } from './models'
 import { Contract } from 'ethers'
 import { BigNumber } from 'ethers/utils';
 import artifact from './assets/RootChain.json'
@@ -38,37 +38,8 @@ const abi = [
   'function getExit(uint256 _exitId) constant returns(address, uint256)',
 ]
 
-class WaitingBlockWrapper {
-  blkNum: BigNumber
-  root: string
-
-  constructor(
-    blkNum: BigNumber,
-    root: string
-  ) {
-    this.blkNum = blkNum
-    this.root = root
-  }
-
-  serialize() {
-    return JSON.stringify({
-      blkNum: this.blkNum,
-      root: this.root
-    })
-  }
-
-  static deserialize(str: string) {
-    const data = JSON.parse(str)
-    return new WaitingBlockWrapper(
-      ethers.utils.bigNumberify(data.blkNum),
-      data.root
-    )
-  }
-}
-
 export class ChamberWallet {
   private client: PlasmaClient
-  private latestBlockNumber: number
   private loadedBlockNumber: number
   private rootChainContract: Contract
   private wallet: ethers.Wallet
@@ -95,28 +66,75 @@ export class ChamberWallet {
    *  const jsonRpcClient = new JsonRpcClient('http://localhost:3000')
    *  const client = new PlasmaClient(jsonRpcClient)
    *  const storage = new WalletStorage()
-   *  return new ChamberWallet(
+   *  return ChamberWallet.createWalletWithPrivateKey(
    *    client,
-   *    '0x00... private key',
    *    'http://127.0.0.1:8545',
    *    '0x00... root chain address',
-   *    storage
+   *    storage,
+   *    '0x00... private key'
    *  )
    * ```
    */
-  constructor(
+  static createWalletWithPrivateKey(
     client: PlasmaClient,
-    privateKey: string,
+    rootChainEndpoint: string,
+    contractAddress: Address,
+    storage: IWalletStorage,
+    privateKey: string
+  ) {
+    const httpProvider = new ethers.providers.JsonRpcProvider(rootChainEndpoint)
+    return new ChamberWallet(
+      client,
+      httpProvider,
+      new ethers.Wallet(privateKey, httpProvider),
+      contractAddress,
+      storage
+    )
+  }
+
+  static createWalletWithMnemonic(
+    client: PlasmaClient,
+    rootChainEndpoint: string,
+    contractAddress: Address,
+    storage: IWalletStorage,
+    mnemonic: string
+  ) {
+    return new ChamberWallet(
+      client,
+      new ethers.providers.JsonRpcProvider(rootChainEndpoint),
+      ethers.Wallet.fromMnemonic(mnemonic),
+      contractAddress,
+      storage
+    )    
+  }
+
+  static createRandomWallet(
+    client: PlasmaClient,
     rootChainEndpoint: string,
     contractAddress: Address,
     storage: IWalletStorage
   ) {
+    return new ChamberWallet(
+      client,
+      new ethers.providers.JsonRpcProvider(rootChainEndpoint),
+      ethers.Wallet.createRandom(),
+      contractAddress,
+      storage
+    )
+  }
+
+  constructor(
+    client: PlasmaClient,
+    provider: ethers.providers.JsonRpcProvider,
+    wallet: ethers.Wallet,
+    contractAddress: Address,
+    storage: IWalletStorage
+  ) {
     this.client = client
-    this.latestBlockNumber = 0
     this.loadedBlockNumber = 0
-    this.httpProvider = new ethers.providers.JsonRpcProvider(rootChainEndpoint)
+    this.httpProvider = provider
     const contract = new ethers.Contract(contractAddress, abi, this.httpProvider)
-    this.wallet = new ethers.Wallet(privateKey, this.httpProvider)
+    this.wallet = wallet
     this.rootChainContract = contract.connect(this.wallet)
     this.storage = storage
     this.utxos = this.loadUTXO()
@@ -144,12 +162,11 @@ export class ChamberWallet {
     })
     this.listener.addEvent('FinalizedExit', (e) => {
       console.log('FinalizedExit', e)
-      this.exitableRangeManager.remove(
+      this.handleFinalizedExit(
         e.values._tokenId,
         e.values._start,
         e.values._end
       )
-      this.saveExitableRangeManager()
     })
     this.listener.addEvent('Deposited', (e) => {
       console.log('Deposited', e)
@@ -160,10 +177,6 @@ export class ChamberWallet {
         e.values._end,
         e.values._blkNum
       )
-      this.exitableRangeManager.extendRight(
-        e.values._end
-      )
-      this.saveExitableRangeManager()
     })
 
     this.exitableRangeManager = this.loadExitableRangeManager()
@@ -267,6 +280,8 @@ export class ChamberWallet {
         new SumMerkleProof(1, 0, segment, ''),
         blkNum))
     }
+    this.exitableRangeManager.extendRight(end)
+    this.saveExitableRangeManager()
     return depositTx
   }
 
@@ -283,6 +298,18 @@ export class ChamberWallet {
     this.exitList.set(exit.getId(), exit.serialize())
     this.storeMap('exits', this.exitList)
     return exit
+  }
+
+  /**
+   * @ignore
+   */
+  handleFinalizedExit(tokenId: BigNumber, start: BigNumber, end: BigNumber) {
+    this.exitableRangeManager.remove(
+      tokenId,
+      start,
+      end
+    )
+    this.saveExitableRangeManager()
   }
 
   getExits() {
