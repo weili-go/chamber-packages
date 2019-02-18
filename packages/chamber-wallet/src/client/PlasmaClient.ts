@@ -1,7 +1,14 @@
 import {
   INetworkClient
 } from './JsonRpcClient'
-import { SignedTransactionWithProof } from '@layer2/core';
+import {
+  ChamberResult,
+  ChamberOk,
+  ChamberResultError,
+  ChamberError,
+  SignedTransactionWithProof,
+  Block
+} from '@layer2/core';
 
 export class PlasmaClient {
   jsonRpcClient: INetworkClient
@@ -12,17 +19,22 @@ export class PlasmaClient {
     this.jsonRpcClient = client
   }
 
+  static deserialize<T>(serialized: any, handler: (data: any) => T): ChamberResult<T> {
+    if(serialized.error) {
+      return new ChamberResultError<T>(new ChamberError(serialized.error.code, serialized.error.message))
+    } else {
+      return new ChamberOk<T>(handler(serialized.result))
+    }
+  }
+
   async getBlockNumber(): Promise<number> {
     const res = await this.jsonRpcClient.request('getBlockNumber', {})
     return res.result
   }
 
-  async getBlock(blkNum: number) {
+  async getBlock(blkNum: number): Promise<ChamberResult<Block>> {
     const res = await this.jsonRpcClient.request('getBlock', [blkNum])
-    if(res.error) {
-      throw new Error(res.error.message)
-    }
-    return res.result
+    return PlasmaClient.deserialize<Block>(res, (result) => Block.deserialize(result))
   }
 
   async getUserTransactions(blkNum: number): Promise<SignedTransactionWithProof[]> {
@@ -30,8 +42,9 @@ export class PlasmaClient {
     return res.result.map((r: string) => SignedTransactionWithProof.deserialize(r))
   }
 
-  sendTransaction(data: any) {
-    return this.jsonRpcClient.request('sendTransaction', [data])
+  async sendTransaction(data: any): Promise<ChamberResult<boolean>> {
+    const res = await this.jsonRpcClient.request('sendTransaction', [data])
+    return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
   
 }

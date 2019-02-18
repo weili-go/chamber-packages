@@ -107,7 +107,7 @@ describe('Chain', () => {
     chain.appendTx(signedTx)
     const result = chain.appendTx(signedTx)
     assert.isTrue(result.isError())
-    assert.equal(result.error().message, 'conflicted transaction hash')
+    assert.equal(result.error().message, 'invalid transaction')
     // segment duplecated will be occurred, but block generate root correctly
     const root = await chain.generateBlock()
     assert.equal(root.ok().length, 66)

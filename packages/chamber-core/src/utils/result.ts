@@ -1,8 +1,10 @@
+import { ChamberError } from './error'
+
 export interface ChamberResult<T> {
   isOk(): boolean
   isError(): boolean
   ok(): T
-  error(): Error
+  error(): ChamberError
 }
 
 export class ChamberOk<T> implements ChamberResult<T> {
@@ -24,16 +26,16 @@ export class ChamberOk<T> implements ChamberResult<T> {
     return this.value
   }
 
-  error(): Error {
+  error(): ChamberError {
     throw 'ok.error'
   }
 
 }
 
-export class ChamberError<T> implements ChamberResult<T> {
-  private err: Error
+export class ChamberResultError<T> implements ChamberResult<T> {
+  private err: ChamberError
 
-  constructor(error: Error) {
+  constructor(error: ChamberError) {
     this.err = error
   }
 
@@ -49,12 +51,12 @@ export class ChamberError<T> implements ChamberResult<T> {
     throw 'error.ok'
   }
 
-  error(): Error {
+  error(): ChamberError {
     return this.err
   }
 
-  static getError<T>(message: string) {
-    return new ChamberError<T>(new Error(message))
+  static getError<T>(code: number, message: string) {
+    return new ChamberResultError<T>(new ChamberError(code, message))
   }
 
 }

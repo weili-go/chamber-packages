@@ -17,10 +17,12 @@ import {
   DepositTransaction,
   Segment,
   SumMerkleProof,
+  ChamberResult,
+  ChamberResultError,
+  ChamberOk,
 } from '@layer2/core'
-import {
-  Exit
-} from './models/exit'
+import { WalletErrorFactory } from './error'
+import { Exit } from './models/exit'
 import { Contract } from 'ethers'
 import { BigNumber } from 'ethers/utils';
 import artifact from './assets/RootChain.json'
@@ -216,7 +218,13 @@ export class ChamberWallet {
 
   async syncChildChain(): Promise<SignedTransactionWithProof[]> {
     const results = await this.loadBlocks()
-    results.map(block => this.updateBlock(Block.deserialize(block)))
+    results.map(block => {
+      if(block.isOk()) {
+        this.updateBlock(block.ok())
+      } else {
+        console.warn(block.error())
+      }
+    })
     return this.getUTXOArray()
   }
 
@@ -409,7 +417,7 @@ export class ChamberWallet {
    * 
    * @param ether 1.0
    */
-  async deposit(ether: string): Promise<DepositTransaction> {
+  async deposit(ether: string): Promise<ChamberResult<DepositTransaction>> {
     const result = await this.rootChainContract.deposit({
       value: ethers.utils.parseEther(ether)
     })
@@ -417,19 +425,19 @@ export class ChamberWallet {
     const receipt = await this.httpProvider.getTransactionReceipt(result.hash)
     if(receipt.logs && receipt.logs[0]) {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
-      return this.handleDeposit(
+      return new ChamberOk(this.handleDeposit(
         logDesc.values._depositer,
         logDesc.values._tokenId,
         logDesc.values._start,
         logDesc.values._end,
         logDesc.values._blkNum
-      )
+      ))
     } else {
-      throw new Error('invalid receipt')
+      return new ChamberResultError(WalletErrorFactory.InvalidReceipt())
     }
   }
 
-  async exit(tx: SignedTransactionWithProof): Promise<Exit> {
+  async exit(tx: SignedTransactionWithProof): Promise<ChamberResult<Exit>> {
     const result = await this.rootChainContract.exit(
       tx.blkNum.mul(100),
       tx.getOutput().getSegment(0).toBigNumber(),
@@ -444,15 +452,15 @@ export class ChamberWallet {
     const receipt = await this.httpProvider.getTransactionReceipt(result.hash)
     if(receipt.logs && receipt.logs[0]) {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
-      return this.handleExit(
+      return new ChamberOk(this.handleExit(
         logDesc.values._exitId,
         logDesc.values.exitableAt,
         logDesc.values._tokenId,
         logDesc.values._start,
         logDesc.values._end
-      )
+      ))
     } else {
-      throw new Error('invalid receipt')
+      return new ChamberResultError(WalletErrorFactory.InvalidReceipt())
     }
   }
 
@@ -460,14 +468,15 @@ export class ChamberWallet {
     return await this.rootChainContract.getExit(exitId)
   }
   
-  async finalizeExit(exitId: string) {
+  async finalizeExit(exitId: string): Promise<ChamberResult<Exit>> {
     const exit = this.getExitFromLocal(exitId)
     if(exit == null) {
-      throw new Error('exit not found')
+      return new ChamberResultError(WalletErrorFactory.ExitNotFound())
     }
-    return await this.rootChainContract.finalizeExit(
+    await this.rootChainContract.finalizeExit(
       this.exitableRangeManager.getExitableEnd(exit.segment.start, exit.segment.end),
       exitId)
+    return new ChamberOk(exit)
   }
 
   /**
@@ -486,11 +495,11 @@ export class ChamberWallet {
   async transfer(
     to: Address,
     amountStr: string
-  ) {
+  ): Promise<ChamberResult<boolean>> {
     const amount = ethers.utils.bigNumberify(amountStr)
     const tx = this.searchUtxo(amount)
     if(tx == null) {
-      throw new Error('too large amount')
+      return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
     }
     const output = tx.getOutput()
     const segment = output.getSegment(0)
@@ -504,7 +513,7 @@ export class ChamberWallet {
     )
     const signedTx = new SignedTransaction(newTx)
     signedTx.sign(this.wallet.privateKey)
-    await this.client.sendTransaction(signedTx.serialize())
+    return await this.client.sendTransaction(signedTx.serialize())
   }
 
   private getExitableEnd(tokenId: number, end: BigNumber) {
