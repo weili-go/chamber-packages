@@ -30,7 +30,7 @@ async function deployContracts() {
     'constructor(address _stdverifier, address _multisig, address _escrow)'
   ], bytecodes.TransactionVerifier, wallet);
   const RootChainFactory = new ethers.ContractFactory([
-    'constructor(address _txverifierAddress)',
+    'constructor(address _txverifierAddress, address _exitToken)',
     'function listToken(address tokenAddress, uint256 denomination)'
   ], bytecodes.RootChain, wallet);
   const FastFinalityFactory = new ethers.ContractFactory([
