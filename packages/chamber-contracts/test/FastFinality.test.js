@@ -38,7 +38,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
   const tokenId = 0
 
   beforeEach(async () => {
-    this.erc721 = await ERC721.new({ from: operator })
+    this.erc721 = await ERC721.new()
     this.standardVerifier = await StandardVerifier.new({ from: operator })
     this.multisigVerifier = await MultisigVerifier.new({ from: operator })
     this.escrowVerifier = await EscrowVerifier.new({ from: operator })
@@ -62,31 +62,35 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
       {
         from: operator
       })
-
+    const getTokenAddressResult = await this.fastFinality.getTokenAddress.call()
+    this.ffToken = await ERC721.at(getTokenAddressResult)
   })
 
-  describe('deposit', () => {
+  describe('depositAndMintToken', () => {
 
-    it('should success to deposit', async () => {
-      await this.fastFinality.deposit({
-        value: utils.parseEther('2'),
+    it('should success to deposit and withdraw', async () => {
+      const result = await this.fastFinality.depositAndMintToken(
+        7 * 24 * 60 * 60,
+        {
+          from: operator,
+          value: utils.parseEther('1')
+        }
+      )
+      const merchantId = result.logs[0].args._merchantId.toString()
+      await this.ffToken.approve(merchant, merchantId, {
         from: operator
       })
-    })
-
-  })
-
-  describe('buyBandwidth', () => {
-
-    it('should success to buy bandwidth', async () => {
-      await this.fastFinality.deposit({
-        value: utils.parseEther('2'),
-        from: operator
-      })
-      await this.fastFinality.buyBandwidth({
-        value: utils.parseEther('1'),
+      await this.ffToken.transferFrom(operator, merchant, merchantId, {
         from: merchant
       })
+      increaseTime(8 * 24 * 60 * 60)
+      await this.fastFinality.withdrawAndBurnToken(
+        merchantId,
+        {
+          from: operator
+        }
+      )
+
     })
 
   })
@@ -95,12 +99,17 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
   describe('dispute', () => {
 
     beforeEach(async () => {
-      await this.fastFinality.deposit({
-        value: utils.parseEther('1'),
+      const result = await this.fastFinality.depositAndMintToken(
+        8 * 7 * 24 * 60 * 60,
+        {
+        from: operator,
+        value: utils.parseEther('2')
+      })
+      const merchantId = result.logs[0].args._merchantId.toString()
+      await this.ffToken.approve(bob, merchantId, {
         from: operator
       })
-      await this.fastFinality.buyBandwidth({
-        value: utils.parseEther('1'),
+      await this.ffToken.transferFrom(operator, bob, merchantId, {
         from: bob
       })
     })

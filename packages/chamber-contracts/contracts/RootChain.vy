@@ -320,6 +320,10 @@ def __init__(_txverifierAddress: address, _exitToken: address):
   self.exitNonce = 1
 
 @public
+def getTokenAddress() -> address:
+  return self.exitToken
+
+@public
 def listToken(
   tokenAddress: address,
   denomination: uint256
