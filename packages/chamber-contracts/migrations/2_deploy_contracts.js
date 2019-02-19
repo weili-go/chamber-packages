@@ -25,6 +25,7 @@ module.exports = (deployer) => {
   .then(() => deployer.deploy(
     FastFinality,
     RootChain.address,
-    TransactionVerifier.address
+    TransactionVerifier.address,
+    ERC721.address
   ))
 }

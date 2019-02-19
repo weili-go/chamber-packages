@@ -58,6 +58,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     this.fastFinality = await FastFinality.new(
       this.rootChain.address,
       this.transactionVerifier.address,
+      this.erc721.address,
       {
         from: operator
       })
@@ -98,6 +99,10 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         value: utils.parseEther('1'),
         from: operator
       })
+      await this.fastFinality.buyBandwidth({
+        value: utils.parseEther('1'),
+        from: bob
+      })
     })
 
     it('should success to dispute and finalizeDispute', async () => {
@@ -120,6 +125,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
       increaseTime(15 * 24 * 60 * 60)
       
       await this.fastFinality.finalizeDispute(
+        0,
         tx.getTxHash(),
         {
           from: bob
@@ -145,6 +151,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         })
 
       await assertRevert(this.fastFinality.finalizeDispute(
+        0,
         tx.getTxHash(),
         {
           from: bob

@@ -4,6 +4,12 @@ struct Dispute:
   amount: uint256
   status: uint256
 
+contract ERC721:
+  def setup(): modifying
+  def mint(_to: address, _tokenId: uint256) -> bool: modifying
+  def ownerOf(_tokenId: uint256) -> address: constant
+  def burn(_tokenId: uint256): modifying
+
 contract RootChain():
   def checkTransaction(
     _tokenId: uint256,
@@ -43,9 +49,13 @@ STATE_FIRST_DISPUTED: constant(uint256) = 1
 STATE_CHALLENGED: constant(uint256) = 2
 STATE_SECOND_DISPUTED: constant(uint256) = 3
 STATE_FINALIZED: constant(uint256) = 4
-  
+
+ffToken: address
+
 totalAmount: wei_value
-deposits: map(address, wei_value)
+merchants: map(uint256, wei_value)
+merchantNonce: uint256
+
 operator: address
 disputes: map(bytes32, Dispute)
 rootchain: address
@@ -80,11 +90,15 @@ def ecrecoverSig(_txHash: bytes32, _sig: bytes[65]) -> address:
 @public
 def __init__(
   _rootchain: address,
-  _txverifier: address
+  _txverifier: address,
+  _erc721: address
 ):
   self.operator = msg.sender
   self.rootchain = _rootchain
   self.txverifier = _txverifier
+  self.merchantNonce = 0
+  self.ffToken = create_with_code_of(_erc721)
+  ERC721(self.ffToken).setup()
 
 @public
 @payable
@@ -94,10 +108,14 @@ def deposit():
 # @dev buy bandwidth by merchant
 @public
 @payable
-def buyBandwidth():
+def buyBandwidth() -> uint256:
   assert self.totalAmount >= msg.value
-  self.deposits[msg.sender] = msg.value
+  merchantId: uint256 = self.merchantNonce
+  self.merchantNonce += 1
+  self.merchants[merchantId] = msg.value
   self.totalAmount -= msg.value
+  ERC721(self.ffToken).mint(msg.sender, merchantId)
+  return merchantId
 
 # @dev dispute
 @public
@@ -202,13 +220,18 @@ def secondDispute(
 # @dev finalizeDispute
 @public
 def finalizeDispute(
+  _merchantId: uint256,
   _txHash: bytes32
 ):
   # finalize dispute after 7 days
   dispute: Dispute = self.disputes[_txHash]
   assert dispute.withdrawableAt < block.timestamp
   assert dispute.status == STATE_FIRST_DISPUTED or dispute.status == STATE_SECOND_DISPUTED
-  send(dispute.recipient, as_wei_value(dispute.amount, "wei") + BOND)
+  assert ERC721(self.ffToken).ownerOf(_merchantId) == msg.sender
+  amount: wei_value = as_wei_value(dispute.amount, "wei")
+  assert self.merchants[_merchantId] >= amount
+  send(dispute.recipient, amount + BOND)
+  self.merchants[_merchantId] -= amount
   self.disputes[_txHash].status = STATE_FINALIZED
 
 # @dev getDispute
