@@ -94,7 +94,6 @@
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_wallet_.chamberwallet.html#exitlist" class="tsd-kind-icon">exit<wbr>List</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_wallet_.chamberwallet.html#exitablerangemanager" class="tsd-kind-icon">exitable<wbr>Range<wbr>Manager</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_wallet_.chamberwallet.html#httpprovider" class="tsd-kind-icon">http<wbr>Provider</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_wallet_.chamberwallet.html#latestblocknumber" class="tsd-kind-icon">latest<wbr>Block<wbr>Number</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_wallet_.chamberwallet.html#listener" class="tsd-kind-icon">listener</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_wallet_.chamberwallet.html#loadedblocknumber" class="tsd-kind-icon">loaded<wbr>Block<wbr>Number</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_wallet_.chamberwallet.html#rootchaincontract" class="tsd-kind-icon">root<wbr>Chain<wbr>Contract</a></li>
@@ -122,6 +121,9 @@
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_wallet_.chamberwallet.html#loadblocknumber" class="tsd-kind-icon">load<wbr>Block<wbr>Number</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_wallet_.chamberwallet.html#syncchildchain" class="tsd-kind-icon">sync<wbr>Child<wbr>Chain</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_wallet_.chamberwallet.html#transfer" class="tsd-kind-icon">transfer</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_wallet_.chamberwallet.html#createrandomwallet" class="tsd-kind-icon">create<wbr>Random<wbr>Wallet</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_wallet_.chamberwallet.html#createwalletwithmnemonic" class="tsd-kind-icon">create<wbr>Wallet<wbr>With<wbr>Mnemonic</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_wallet_.chamberwallet.html#createwalletwithprivatekey" class="tsd-kind-icon">create<wbr>Wallet<wbr>With<wbr>Private<wbr>Key</a></li>
 							</ul>
 						</section>
 					</div>
@@ -133,58 +135,31 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Chamber<wbr>Wallet<span class="tsd-signature-symbol">(</span>client<span class="tsd-signature-symbol">: </span><a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a>, privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, rootChainEndpoint<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, contractAddress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, storage<span class="tsd-signature-symbol">: </span><a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_wallet_.chamberwallet.html" class="tsd-signature-type">ChamberWallet</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Chamber<wbr>Wallet<span class="tsd-signature-symbol">(</span>client<span class="tsd-signature-symbol">: </span><a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a>, provider<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">JsonRpcProvider</span>, wallet<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Wallet</span>, contractAddress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, storage<span class="tsd-signature-symbol">: </span><a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_wallet_.chamberwallet.html" class="tsd-signature-type">ChamberWallet</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L80">wallet.ts:80</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L124">wallet.ts:124</a></li>
 								</ul>
 							</aside>
-							<div class="tsd-comment tsd-typography">
-							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>client: <a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a></h5>
 								</li>
 								<li>
-									<h5>privateKey: <span class="tsd-signature-type">string</span></h5>
+									<h5>provider: <span class="tsd-signature-type">JsonRpcProvider</span></h5>
 								</li>
 								<li>
-									<h5>rootChainEndpoint: <span class="tsd-signature-type">string</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>Main chain endpoint</p>
-										</div>
-									</div>
+									<h5>wallet: <span class="tsd-signature-type">Wallet</span></h5>
 								</li>
 								<li>
 									<h5>contractAddress: <span class="tsd-signature-type">Address</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>RootChain address</p>
-										</div>
-									</div>
 								</li>
 								<li>
 									<h5>storage: <a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<h3 id="example">Example</h3>
-											<pre><code class="language-typescript"> <span class="hljs-keyword">const</span> jsonRpcClient = <span class="hljs-keyword">new</span> JsonRpcClient(<span class="hljs-string">'http://localhost:3000'</span>)
- <span class="hljs-keyword">const</span> client = <span class="hljs-keyword">new</span> PlasmaClient(jsonRpcClient)
- <span class="hljs-keyword">const</span> storage = <span class="hljs-keyword">new</span> WalletStorage()
- <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> ChamberWallet(
-   client,
-   <span class="hljs-string">'0x00... private key'</span>,
-   <span class="hljs-string">'http://127.0.0.1:8545'</span>,
-   <span class="hljs-string">'0x00... root chain address'</span>,
-   storage
- )</code></pre>
-										</div>
-									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_wallet_.chamberwallet.html" class="tsd-signature-type">ChamberWallet</a></h4>
@@ -200,7 +175,7 @@
 					<div class="tsd-signature tsd-kind-icon">client<span class="tsd-signature-symbol">:</span> <a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L68">wallet.ts:68</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L42">wallet.ts:42</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -210,7 +185,7 @@
 					<div class="tsd-signature tsd-kind-icon">exit<wbr>List<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L78">wallet.ts:78</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L51">wallet.ts:51</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -220,7 +195,7 @@
 					<div class="tsd-signature tsd-kind-icon">exitable<wbr>Range<wbr>Manager<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ExitableRangeManager</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L80">wallet.ts:80</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L53">wallet.ts:53</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -230,17 +205,7 @@
 					<div class="tsd-signature tsd-kind-icon">http<wbr>Provider<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">JsonRpcProvider</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L75">wallet.ts:75</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="latestblocknumber" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> latest<wbr>Block<wbr>Number</h3>
-					<div class="tsd-signature tsd-kind-icon">latest<wbr>Block<wbr>Number<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L69">wallet.ts:69</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L48">wallet.ts:48</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -250,7 +215,7 @@
 					<div class="tsd-signature tsd-kind-icon">listener<span class="tsd-signature-symbol">:</span> <a href="_client_event_.rootchaineventlistener.html" class="tsd-signature-type">RootChainEventListener</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L76">wallet.ts:76</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L49">wallet.ts:49</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -260,7 +225,7 @@
 					<div class="tsd-signature tsd-kind-icon">loaded<wbr>Block<wbr>Number<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L70">wallet.ts:70</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L43">wallet.ts:43</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -270,7 +235,7 @@
 					<div class="tsd-signature tsd-kind-icon">root<wbr>Chain<wbr>Contract<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Contract</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L71">wallet.ts:71</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L44">wallet.ts:44</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -280,7 +245,7 @@
 					<div class="tsd-signature tsd-kind-icon">root<wbr>Chain<wbr>Interface<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Interface</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L77">wallet.ts:77</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L50">wallet.ts:50</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -290,7 +255,7 @@
 					<div class="tsd-signature tsd-kind-icon">storage<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L74">wallet.ts:74</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L47">wallet.ts:47</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -300,7 +265,7 @@
 					<div class="tsd-signature tsd-kind-icon">utxos<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L73">wallet.ts:73</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L46">wallet.ts:46</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -310,7 +275,7 @@
 					<div class="tsd-signature tsd-kind-icon">waiting<wbr>Blocks<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L79">wallet.ts:79</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L52">wallet.ts:52</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -320,7 +285,7 @@
 					<div class="tsd-signature tsd-kind-icon">wallet<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Wallet</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L72">wallet.ts:72</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L45">wallet.ts:45</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -331,13 +296,13 @@
 					<a name="deposit" class="tsd-anchor"></a>
 					<h3>deposit</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">deposit<span class="tsd-signature-symbol">(</span>ether<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">DepositTransaction</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">deposit<span class="tsd-signature-symbol">(</span>ether<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">DepositTransaction</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L404">wallet.ts:404</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L447">wallet.ts:447</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -351,7 +316,7 @@
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">DepositTransaction</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">DepositTransaction</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -359,13 +324,13 @@
 					<a name="exit" class="tsd-anchor"></a>
 					<h3>exit</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">exit<span class="tsd-signature-symbol">(</span>tx<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SignedTransactionWithProof</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="_models_exit_.exit.html" class="tsd-signature-type">Exit</a><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">exit<span class="tsd-signature-symbol">(</span>tx<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SignedTransactionWithProof</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><a href="_models_exit_.exit.html" class="tsd-signature-type">Exit</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L424">wallet.ts:424</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L467">wallet.ts:467</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -374,7 +339,7 @@
 									<h5>tx: <span class="tsd-signature-type">SignedTransactionWithProof</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="_models_exit_.exit.html" class="tsd-signature-type">Exit</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><a href="_models_exit_.exit.html" class="tsd-signature-type">Exit</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -382,13 +347,13 @@
 					<a name="finalizeexit" class="tsd-anchor"></a>
 					<h3>finalize<wbr>Exit</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">finalize<wbr>Exit<span class="tsd-signature-symbol">(</span>exitId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">finalize<wbr>Exit<span class="tsd-signature-symbol">(</span>exitId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><a href="_models_exit_.exit.html" class="tsd-signature-type">Exit</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L455">wallet.ts:455</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L498">wallet.ts:498</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -397,7 +362,7 @@
 									<h5>exitId: <span class="tsd-signature-type">string</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><a href="_models_exit_.exit.html" class="tsd-signature-type">Exit</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -411,7 +376,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L388">wallet.ts:388</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L431">wallet.ts:431</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
@@ -428,7 +393,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L392">wallet.ts:392</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L435">wallet.ts:435</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">BigNumber</span></h4>
@@ -445,7 +410,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L451">wallet.ts:451</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L494">wallet.ts:494</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -468,7 +433,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L502">wallet.ts:502</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L546">wallet.ts:546</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -494,7 +459,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L272">wallet.ts:272</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L315">wallet.ts:315</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="_models_exit_.exit.html" class="tsd-signature-type">Exit</a><span class="tsd-signature-symbol">[]</span></h4>
@@ -511,7 +476,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L297">wallet.ts:297</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L340">wallet.ts:340</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">SignedTransactionWithProof</span><span class="tsd-signature-symbol">[]</span></h4>
@@ -522,16 +487,16 @@
 					<a name="getwaitingblocks" class="tsd-anchor"></a>
 					<h3>get<wbr>Waiting<wbr>Blocks</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Waiting<wbr>Blocks<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_wallet_.waitingblockwrapper.html" class="tsd-signature-type">WaitingBlockWrapper</a><span class="tsd-signature-symbol">[]</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Waiting<wbr>Blocks<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_models_waitingblockwrapper_.waitingblockwrapper.html" class="tsd-signature-type">WaitingBlockWrapper</a><span class="tsd-signature-symbol">[]</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L305">wallet.ts:305</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L348">wallet.ts:348</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="_wallet_.waitingblockwrapper.html" class="tsd-signature-type">WaitingBlockWrapper</a><span class="tsd-signature-symbol">[]</span></h4>
+							<h4 class="tsd-returns-title">Returns <a href="_models_waitingblockwrapper_.waitingblockwrapper.html" class="tsd-signature-type">WaitingBlockWrapper</a><span class="tsd-signature-symbol">[]</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -545,13 +510,18 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L189">wallet.ts:189</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L212">wallet.ts:212</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>handler: <span class="tsd-signature-type">function</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<pre><code class="language-typescript"><span class="hljs-keyword">await</span> wallet.init(<span class="hljs-function">(<span class="hljs-params">wallet</span>) =&gt;</span> {})</code></pre>
+									</div>
 									<ul class="tsd-parameters">
 										<li class="tsd-parameter-siganture">
 											<ul class="tsd-signatures tsd-kind-type-literal tsd-is-not-exported">
@@ -586,7 +556,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L195">wallet.ts:195</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L218">wallet.ts:218</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -603,7 +573,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L209">wallet.ts:209</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L232">wallet.ts:232</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">SignedTransactionWithProof</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -614,13 +584,13 @@
 					<a name="transfer" class="tsd-anchor"></a>
 					<h3>transfer</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">transfer<span class="tsd-signature-symbol">(</span>to<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, amountStr<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">transfer<span class="tsd-signature-symbol">(</span>to<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, amountStr<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/wallet.ts#L478">wallet.ts:478</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L522">wallet.ts:522</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -632,7 +602,130 @@
 									<h5>amountStr: <span class="tsd-signature-type">string</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="createrandomwallet" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> create<wbr>Random<wbr>Wallet</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Random<wbr>Wallet<span class="tsd-signature-symbol">(</span>client<span class="tsd-signature-symbol">: </span><a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a>, rootChainEndpoint<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, contractAddress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, storage<span class="tsd-signature-symbol">: </span><a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_wallet_.chamberwallet.html" class="tsd-signature-type">ChamberWallet</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L111">wallet.ts:111</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>client: <a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a></h5>
+								</li>
+								<li>
+									<h5>rootChainEndpoint: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5>contractAddress: <span class="tsd-signature-type">Address</span></h5>
+								</li>
+								<li>
+									<h5>storage: <a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_wallet_.chamberwallet.html" class="tsd-signature-type">ChamberWallet</a></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="createwalletwithmnemonic" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> create<wbr>Wallet<wbr>With<wbr>Mnemonic</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Wallet<wbr>With<wbr>Mnemonic<span class="tsd-signature-symbol">(</span>client<span class="tsd-signature-symbol">: </span><a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a>, rootChainEndpoint<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, contractAddress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, storage<span class="tsd-signature-symbol">: </span><a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a>, mnemonic<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_wallet_.chamberwallet.html" class="tsd-signature-type">ChamberWallet</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L95">wallet.ts:95</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>client: <a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a></h5>
+								</li>
+								<li>
+									<h5>rootChainEndpoint: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5>contractAddress: <span class="tsd-signature-type">Address</span></h5>
+								</li>
+								<li>
+									<h5>storage: <a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a></h5>
+								</li>
+								<li>
+									<h5>mnemonic: <span class="tsd-signature-type">string</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_wallet_.chamberwallet.html" class="tsd-signature-type">ChamberWallet</a></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="createwalletwithprivatekey" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> create<wbr>Wallet<wbr>With<wbr>Private<wbr>Key</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Wallet<wbr>With<wbr>Private<wbr>Key<span class="tsd-signature-symbol">(</span>client<span class="tsd-signature-symbol">: </span><a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a>, rootChainEndpoint<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, contractAddress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, storage<span class="tsd-signature-symbol">: </span><a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a>, privateKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_wallet_.chamberwallet.html" class="tsd-signature-type">ChamberWallet</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/wallet.ts#L78">wallet.ts:78</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>client: <a href="_client_plasmaclient_.plasmaclient.html" class="tsd-signature-type">PlasmaClient</a></h5>
+								</li>
+								<li>
+									<h5>rootChainEndpoint: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Main chain endpoint</p>
+									</div>
+								</li>
+								<li>
+									<h5>contractAddress: <span class="tsd-signature-type">Address</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>RootChain address</p>
+									</div>
+								</li>
+								<li>
+									<h5>storage: <a href="../interfaces/_storage_iwalletstorage_.iwalletstorage.html" class="tsd-signature-type">IWalletStorage</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<h3 id="example">Example</h3>
+										<pre><code class="language-typescript"> <span class="hljs-keyword">const</span> jsonRpcClient = <span class="hljs-keyword">new</span> JsonRpcClient(<span class="hljs-string">'http://localhost:3000'</span>)
+ <span class="hljs-keyword">const</span> client = <span class="hljs-keyword">new</span> PlasmaClient(jsonRpcClient)
+ <span class="hljs-keyword">const</span> storage = <span class="hljs-keyword">new</span> WalletStorage()
+ <span class="hljs-keyword">return</span> ChamberWallet.createWalletWithPrivateKey(
+   client,
+   <span class="hljs-string">'http://127.0.0.1:8545'</span>,
+   <span class="hljs-string">'0x00... root chain address'</span>,
+   storage,
+   <span class="hljs-string">'0x00... private key'</span>
+ )</code></pre>
+									</div>
+								</li>
+								<li>
+									<h5>privateKey: <span class="tsd-signature-type">string</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_wallet_.chamberwallet.html" class="tsd-signature-type">ChamberWallet</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -660,10 +753,19 @@
 						<a href="../modules/_client_index_.html">"client/index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_error_.html">"error"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_index_.html">"index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_models_waitingblockwrapper_.html">"models/<wbr>Waiting<wbr>Block<wbr>Wrapper"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_models_exit_.html">"models/exit"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_models_index_.html">"models/index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_storage_iwalletstorage_.html">"storage/IWallet<wbr>Storage"</a>
@@ -709,9 +811,6 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="_wallet_.chamberwallet.html#httpprovider" class="tsd-kind-icon">http<wbr>Provider</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_wallet_.chamberwallet.html#latestblocknumber" class="tsd-kind-icon">latest<wbr>Block<wbr>Number</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="_wallet_.chamberwallet.html#listener" class="tsd-kind-icon">listener</a>
@@ -779,13 +878,19 @@
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_wallet_.chamberwallet.html#transfer" class="tsd-kind-icon">transfer</a>
 							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_wallet_.chamberwallet.html#createrandomwallet" class="tsd-kind-icon">create<wbr>Random<wbr>Wallet</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_wallet_.chamberwallet.html#createwalletwithmnemonic" class="tsd-kind-icon">create<wbr>Wallet<wbr>With<wbr>Mnemonic</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_wallet_.chamberwallet.html#createwalletwithprivatekey" class="tsd-kind-icon">create<wbr>Wallet<wbr>With<wbr>Private<wbr>Key</a>
+							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_wallet_.waitingblockwrapper.html" class="tsd-kind-icon">Waiting<wbr>Block<wbr>Wrapper</a>
-					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../modules/_wallet_.html#abi" class="tsd-kind-icon">abi</a>
 					</li>

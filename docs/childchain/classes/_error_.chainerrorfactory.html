@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>EmptyTransactionOutput | @layer2/core</title>
+	<title>ChainErrorFactory | @layer2/childchain</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@layer2/core</a>
+					<a href="../index.html" class="title">@layer2/childchain</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -56,13 +56,13 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_tx_.html">&quot;tx&quot;</a>
+					<a href="../modules/_error_.html">&quot;error&quot;</a>
 				</li>
 				<li>
-					<a href="_tx_.emptytransactionoutput.html">EmptyTransactionOutput</a>
+					<a href="_error_.chainerrorfactory.html">ChainErrorFactory</a>
 				</li>
 			</ul>
-			<h1>Class EmptyTransactionOutput</h1>
+			<h1>Class ChainErrorFactory</h1>
 		</div>
 	</div>
 </header>
@@ -73,14 +73,8 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">EmptyTransactionOutput</span>
+						<span class="target">ChainErrorFactory</span>
 					</li>
-				</ul>
-			</section>
-			<section class="tsd-panel">
-				<h3>Implements</h3>
-				<ul class="tsd-hierarchy">
-					<li><a href="../interfaces/_tx_.transactionoutput.html" class="tsd-signature-type">TransactionOutput</a></li>
 				</ul>
 			</section>
 			<section class="tsd-panel-group tsd-index-group">
@@ -90,10 +84,10 @@
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_tx_.emptytransactionoutput.html#getowners" class="tsd-kind-icon">get<wbr>Owners</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_tx_.emptytransactionoutput.html#getsegment" class="tsd-kind-icon">get<wbr>Segment</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_tx_.emptytransactionoutput.html#hash" class="tsd-kind-icon">hash</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_tx_.emptytransactionoutput.html#withblknum" class="tsd-kind-icon">with<wbr>Blk<wbr>Num</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_error_.chainerrorfactory.html#blocknotfound" class="tsd-kind-icon">Block<wbr>Not<wbr>Found</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_error_.chainerrorfactory.html#conflictsegment" class="tsd-kind-icon">Conflict<wbr>Segment</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_error_.chainerrorfactory.html#invalidtransaction" class="tsd-kind-icon">Invalid<wbr>Transaction</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_error_.chainerrorfactory.html#novalidtransactions" class="tsd-kind-icon">No<wbr>Valid<wbr>Transactions</a></li>
 							</ul>
 						</section>
 					</div>
@@ -101,87 +95,71 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="getowners" class="tsd-anchor"></a>
-					<h3>get<wbr>Owners</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Owners<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../modules/_helpers_types_.html#address" class="tsd-signature-type">Address</a><span class="tsd-signature-symbol">[]</span></li>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="blocknotfound" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> Block<wbr>Not<wbr>Found</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">Block<wbr>Not<wbr>Found<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ChamberError</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Implementation of <a href="../interfaces/_tx_.transactionoutput.html">TransactionOutput</a>.<a href="../interfaces/_tx_.transactionoutput.html#getowners">getOwners</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-core/src/tx.ts#L121">tx.ts:121</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-childchain/src/error.ts#L5">error.ts:5</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="../modules/_helpers_types_.html#address" class="tsd-signature-type">Address</a><span class="tsd-signature-symbol">[]</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ChamberError</span></h4>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="getsegment" class="tsd-anchor"></a>
-					<h3>get<wbr>Segment</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Segment<span class="tsd-signature-symbol">(</span>index<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_segment_.segment.html" class="tsd-signature-type">Segment</a></li>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="conflictsegment" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> Conflict<wbr>Segment</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">Conflict<wbr>Segment<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ChamberError</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Implementation of <a href="../interfaces/_tx_.transactionoutput.html">TransactionOutput</a>.<a href="../interfaces/_tx_.transactionoutput.html#getsegment">getSegment</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-core/src/tx.ts#L125">tx.ts:125</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-childchain/src/error.ts#L11">error.ts:11</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>index: <span class="tsd-signature-type">number</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_segment_.segment.html" class="tsd-signature-type">Segment</a></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ChamberError</span></h4>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="hash" class="tsd-anchor"></a>
-					<h3>hash</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">hash<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../modules/_helpers_types_.html#hash" class="tsd-signature-type">Hash</a></li>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="invalidtransaction" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> Invalid<wbr>Transaction</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">Invalid<wbr>Transaction<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ChamberError</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Implementation of <a href="../interfaces/_tx_.transactionoutput.html">TransactionOutput</a>.<a href="../interfaces/_tx_.transactionoutput.html#hash">hash</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-core/src/tx.ts#L129">tx.ts:129</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-childchain/src/error.ts#L8">error.ts:8</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="../modules/_helpers_types_.html#hash" class="tsd-signature-type">Hash</a></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ChamberError</span></h4>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="withblknum" class="tsd-anchor"></a>
-					<h3>with<wbr>Blk<wbr>Num</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">with<wbr>Blk<wbr>Num<span class="tsd-signature-symbol">(</span>blkNum<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BigNumber</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span></li>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="novalidtransactions" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> No<wbr>Valid<wbr>Transactions</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">No<wbr>Valid<wbr>Transactions<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ChamberError</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Implementation of <a href="../interfaces/_tx_.transactionoutput.html">TransactionOutput</a>.<a href="../interfaces/_tx_.transactionoutput.html#withblknum">withBlkNum</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-core/src/tx.ts#L117">tx.ts:117</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-childchain/src/error.ts#L14">error.ts:14</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>blkNum: <span class="tsd-signature-type">BigNumber</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ChamberError</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -194,90 +172,45 @@
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="../modules/_signedtransaction_.html">"<wbr>Signed<wbr>Transaction"</a>
+						<a href="../modules/_chain_.html">"chain"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_block_.html">"block"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_helpers_constants_.html">"helpers/constants"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_helpers_types_.html">"helpers/types"</a>
+					<li class="current tsd-kind-external-module">
+						<a href="../modules/_error_.html">"error"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_index_.html">"index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="../modules/_merkle_.html">"merkle"</a>
+						<a href="../modules/_snapshot_.html">"snapshot"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="../modules/_segment_.html">"segment"</a>
-					</li>
-					<li class="current tsd-kind-external-module">
-						<a href="../modules/_tx_.html">"tx"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_utils_exitable_.html">"utils/exitable"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_utils_result_.html">"utils/result"</a>
+						<a href="../modules/_txfilter_.html">"txfilter"</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_tx_.basetransaction.html" class="tsd-kind-icon">Base<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_tx_.decoderutility.html" class="tsd-kind-icon">Decoder<wbr>Utility</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_tx_.deposittransaction.html" class="tsd-kind-icon">Deposit<wbr>Transaction</a>
-					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_tx_.emptytransactionoutput.html" class="tsd-kind-icon">Empty<wbr>Transaction<wbr>Output</a>
+						<a href="_error_.chainerrorfactory.html" class="tsd-kind-icon">Chain<wbr>Error<wbr>Factory</a>
 						<ul>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_tx_.emptytransactionoutput.html#getowners" class="tsd-kind-icon">get<wbr>Owners</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_error_.chainerrorfactory.html#blocknotfound" class="tsd-kind-icon">Block<wbr>Not<wbr>Found</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_tx_.emptytransactionoutput.html#getsegment" class="tsd-kind-icon">get<wbr>Segment</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_error_.chainerrorfactory.html#conflictsegment" class="tsd-kind-icon">Conflict<wbr>Segment</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_tx_.emptytransactionoutput.html#hash" class="tsd-kind-icon">hash</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_error_.chainerrorfactory.html#invalidtransaction" class="tsd-kind-icon">Invalid<wbr>Transaction</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_tx_.emptytransactionoutput.html#withblknum" class="tsd-kind-icon">with<wbr>Blk<wbr>Num</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_error_.chainerrorfactory.html#novalidtransactions" class="tsd-kind-icon">No<wbr>Valid<wbr>Transactions</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_tx_.mergetransaction.html" class="tsd-kind-icon">Merge<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_tx_.ownstate.html" class="tsd-kind-icon">Own<wbr>State</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_tx_.splittransaction.html" class="tsd-kind-icon">Split<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_tx_.swaptransaction.html" class="tsd-kind-icon">Swap<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_tx_.transactiondecoder.html" class="tsd-kind-icon">Transaction<wbr>Decoder</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_tx_.transfertransaction.html" class="tsd-kind-icon">Transfer<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_tx_.transactionoutput.html" class="tsd-kind-icon">Transaction<wbr>Output</a>
-					</li>
 				</ul>
 			</nav>
 		</div>

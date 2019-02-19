@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;tx&quot; | @layer2/core</title>
+	<title>WalletErrorFactory | @layer2/wallet</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@layer2/core</a>
+					<a href="../index.html" class="title">@layer2/wallet</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -56,41 +56,94 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="_tx_.html">&quot;tx&quot;</a>
+					<a href="../modules/_error_.html">&quot;error&quot;</a>
+				</li>
+				<li>
+					<a href="_error_.walleterrorfactory.html">WalletErrorFactory</a>
 				</li>
 			</ul>
-			<h1>External module &quot;tx&quot;</h1>
+			<h1>Class WalletErrorFactory</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-hierarchy">
+				<h3>Hierarchy</h3>
+				<ul class="tsd-hierarchy">
+					<li>
+						<span class="target">WalletErrorFactory</span>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel-group tsd-index-group">
 				<h2>Index</h2>
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Classes</h3>
+							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_tx_.basetransaction.html" class="tsd-kind-icon">Base<wbr>Transaction</a></li>
-								<li class="tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported"><a href="../classes/_tx_.decoderutility.html" class="tsd-kind-icon">Decoder<wbr>Utility</a></li>
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_tx_.deposittransaction.html" class="tsd-kind-icon">Deposit<wbr>Transaction</a></li>
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_tx_.mergetransaction.html" class="tsd-kind-icon">Merge<wbr>Transaction</a></li>
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_tx_.ownstate.html" class="tsd-kind-icon">Own<wbr>State</a></li>
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_tx_.splittransaction.html" class="tsd-kind-icon">Split<wbr>Transaction</a></li>
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_tx_.swaptransaction.html" class="tsd-kind-icon">Swap<wbr>Transaction</a></li>
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_tx_.transactiondecoder.html" class="tsd-kind-icon">Transaction<wbr>Decoder</a></li>
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_tx_.transfertransaction.html" class="tsd-kind-icon">Transfer<wbr>Transaction</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section ">
-							<h3>Interfaces</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_tx_.transactionoutput.html" class="tsd-kind-icon">Transaction<wbr>Output</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_error_.walleterrorfactory.html#exitnotfound" class="tsd-kind-icon">Exit<wbr>Not<wbr>Found</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_error_.walleterrorfactory.html#invalidreceipt" class="tsd-kind-icon">Invalid<wbr>Receipt</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_error_.walleterrorfactory.html#toolargeamount" class="tsd-kind-icon">Too<wbr>Large<wbr>Amount</a></li>
 							</ul>
 						</section>
 					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="exitnotfound" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> Exit<wbr>Not<wbr>Found</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">Exit<wbr>Not<wbr>Found<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ChamberError</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/error.ts#L7">error.ts:7</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ChamberError</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="invalidreceipt" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> Invalid<wbr>Receipt</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">Invalid<wbr>Receipt<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ChamberError</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/error.ts#L4">error.ts:4</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ChamberError</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="toolargeamount" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> Too<wbr>Large<wbr>Amount</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">Too<wbr>Large<wbr>Amount<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ChamberError</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/error.ts#L10">error.ts:10</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ChamberError</span></h4>
+						</li>
+					</ul>
 				</section>
 			</section>
 		</div>
@@ -100,73 +153,79 @@
 					<li class="globals  ">
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_signedtransaction_.html">"<wbr>Signed<wbr>Transaction"</a>
+					<li class="label tsd-is-external">
+						<span>Internals</span>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_block_.html">"block"</a>
+						<a href="../modules/_client_jsonrpcclient_.html">"client/<wbr>Json<wbr>Rpc<wbr>Client"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_helpers_constants_.html">"helpers/constants"</a>
+						<a href="../modules/_client_plasmaclient_.html">"client/<wbr>Plasma<wbr>Client"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_helpers_types_.html">"helpers/types"</a>
+						<a href="../modules/_client_event_.html">"client/event"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_index_.html">"index"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_merkle_.html">"merkle"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_segment_.html">"segment"</a>
+						<a href="../modules/_client_index_.html">"client/index"</a>
 					</li>
 					<li class="current tsd-kind-external-module">
-						<a href="_tx_.html">"tx"</a>
+						<a href="../modules/_error_.html">"error"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_utils_error_.html">"utils/error"</a>
+						<a href="../modules/_index_.html">"index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_utils_exitable_.html">"utils/exitable"</a>
+						<a href="../modules/_models_waitingblockwrapper_.html">"models/<wbr>Waiting<wbr>Block<wbr>Wrapper"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_utils_result_.html">"utils/result"</a>
+						<a href="../modules/_models_exit_.html">"models/exit"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_models_index_.html">"models/index"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_storage_iwalletstorage_.html">"storage/IWallet<wbr>Storage"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_storage_mockwalletstorage_.html">"storage/<wbr>Mock<wbr>Wallet<wbr>Storage"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_storage_index_.html">"storage/index"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_test_.html">"test"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_wallet_.html">"wallet"</a>
+					</li>
+					<li class="label tsd-is-external">
+						<span>Externals</span>
+					</li>
+					<li class=" tsd-kind-external-module tsd-is-external">
+						<a href="../modules/_assets_rootchain_.html">"assets/<wbr>Root<wbr>Chain"</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_tx_.basetransaction.html" class="tsd-kind-icon">Base<wbr>Transaction</a>
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-class tsd-parent-kind-external-module">
+						<a href="_error_.walleterrorfactory.html" class="tsd-kind-icon">Wallet<wbr>Error<wbr>Factory</a>
+						<ul>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_error_.walleterrorfactory.html#exitnotfound" class="tsd-kind-icon">Exit<wbr>Not<wbr>Found</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_error_.walleterrorfactory.html#invalidreceipt" class="tsd-kind-icon">Invalid<wbr>Receipt</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_error_.walleterrorfactory.html#toolargeamount" class="tsd-kind-icon">Too<wbr>Large<wbr>Amount</a>
+							</li>
+						</ul>
 					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../classes/_tx_.decoderutility.html" class="tsd-kind-icon">Decoder<wbr>Utility</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_tx_.deposittransaction.html" class="tsd-kind-icon">Deposit<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_tx_.mergetransaction.html" class="tsd-kind-icon">Merge<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_tx_.ownstate.html" class="tsd-kind-icon">Own<wbr>State</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_tx_.splittransaction.html" class="tsd-kind-icon">Split<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_tx_.swaptransaction.html" class="tsd-kind-icon">Swap<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_tx_.transactiondecoder.html" class="tsd-kind-icon">Transaction<wbr>Decoder</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_tx_.transfertransaction.html" class="tsd-kind-icon">Transfer<wbr>Transaction</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_tx_.transactionoutput.html" class="tsd-kind-icon">Transaction<wbr>Output</a>
-					</li>
+				</ul>
+				<ul class="after-current">
 				</ul>
 			</nav>
 		</div>
