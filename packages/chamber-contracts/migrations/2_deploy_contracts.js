@@ -1,3 +1,4 @@
+const ERC721 = artifacts.require("ERC721")
 const RootChain = artifacts.require("RootChain")
 const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
@@ -6,7 +7,8 @@ const EscrowVerifier = artifacts.require("EscrowVerifier")
 const FastFinality = artifacts.require("FastFinality")
 
 module.exports = (deployer) => {
-  deployer.deploy(StandardVerifier)
+  deployer.deploy(ERC721)
+  .then(() => deployer.deploy(StandardVerifier))
   .then(() => deployer.deploy(EscrowVerifier))
   .then(() => deployer.deploy(MultisigVerifier))
   .then(() => deployer.deploy(
@@ -17,7 +19,8 @@ module.exports = (deployer) => {
   ))
   .then(() => deployer.deploy(
     RootChain,
-    TransactionVerifier.address
+    TransactionVerifier.address,
+    ERC721.address
   ))
   .then(() => deployer.deploy(
     FastFinality,
