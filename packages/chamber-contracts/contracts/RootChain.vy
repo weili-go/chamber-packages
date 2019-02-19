@@ -314,7 +314,8 @@ def __init__(_txverifierAddress: address, _exitToken: address):
   self.operator = msg.sender
   self.currentChildBlock = 1
   self.txverifier = _txverifierAddress
-  self.exitToken = _exitToken
+  self.exitToken = create_with_code_of(_exitToken)
+  ERC721(self.exitToken).setup()
   self.listingNonce = 0
   self.exitNonce = 1
 
@@ -328,8 +329,6 @@ def listToken(
   self.listings[tokenId].tokenAddress = tokenAddress
   self.listed[tokenAddress] = tokenId
   self.listingNonce += 1
-  self.exitToken = create_with_code_of(self.exitToken)
-  ERC721(self.exitToken).setup()
   # init the new token exitable ranges
   self.exitable[tokenId][0].isAvailable = True
   log.ListingEvent(tokenId, tokenAddress)
