@@ -100,6 +100,7 @@
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_client_plasmaclient_.plasmaclient.html#getblocknumber" class="tsd-kind-icon">get<wbr>Block<wbr>Number</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_client_plasmaclient_.plasmaclient.html#getusertransactions" class="tsd-kind-icon">get<wbr>User<wbr>Transactions</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_client_plasmaclient_.plasmaclient.html#sendtransaction" class="tsd-kind-icon">send<wbr>Transaction</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static"><a href="_client_plasmaclient_.plasmaclient.html#deserialize" class="tsd-kind-icon">deserialize</a></li>
 							</ul>
 						</section>
 					</div>
@@ -117,7 +118,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/client/PlasmaClient.ts#L7">client/PlasmaClient.ts:7</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/client/PlasmaClient.ts#L14">client/PlasmaClient.ts:14</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -139,7 +140,7 @@
 					<div class="tsd-signature tsd-kind-icon">json<wbr>Rpc<wbr>Client<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_client_jsonrpcclient_.inetworkclient.html" class="tsd-signature-type">INetworkClient</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/client/PlasmaClient.ts#L7">client/PlasmaClient.ts:7</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/client/PlasmaClient.ts#L14">client/PlasmaClient.ts:14</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -150,13 +151,13 @@
 					<a name="getblock" class="tsd-anchor"></a>
 					<h3>get<wbr>Block</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Block<span class="tsd-signature-symbol">(</span>blkNum<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Block<span class="tsd-signature-symbol">(</span>blkNum<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Block</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/client/PlasmaClient.ts#L20">client/PlasmaClient.ts:20</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/client/PlasmaClient.ts#L35">client/PlasmaClient.ts:35</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -165,7 +166,7 @@
 									<h5>blkNum: <span class="tsd-signature-type">number</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Block</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -179,7 +180,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/client/PlasmaClient.ts#L15">client/PlasmaClient.ts:15</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/client/PlasmaClient.ts#L30">client/PlasmaClient.ts:30</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -196,7 +197,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/client/PlasmaClient.ts#L28">client/PlasmaClient.ts:28</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/client/PlasmaClient.ts#L40">client/PlasmaClient.ts:40</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -213,13 +214,13 @@
 					<a name="sendtransaction" class="tsd-anchor"></a>
 					<h3>send<wbr>Transaction</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">send<wbr>Transaction<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">send<wbr>Transaction<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/8e853d2/packages/chamber-wallet/src/client/PlasmaClient.ts#L33">client/PlasmaClient.ts:33</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/client/PlasmaClient.ts#L45">client/PlasmaClient.ts:45</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -228,7 +229,57 @@
 									<h5>data: <span class="tsd-signature-type">any</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
+					<a name="deserialize" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> deserialize</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">deserialize&lt;T&gt;<span class="tsd-signature-symbol">(</span>serialized<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, handler<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">function</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-wallet/src/client/PlasmaClient.ts#L22">client/PlasmaClient.ts:22</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-type-parameters-title">Type parameters</h4>
+							<ul class="tsd-type-parameters">
+								<li>
+									<h4>T</h4>
+								</li>
+							</ul>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>serialized: <span class="tsd-signature-type">any</span></h5>
+								</li>
+								<li>
+									<h5>handler: <span class="tsd-signature-type">function</span></h5>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter-siganture">
+											<ul class="tsd-signatures tsd-kind-type-literal tsd-is-not-exported">
+												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span></li>
+											</ul>
+											<ul class="tsd-descriptions">
+												<li class="tsd-description">
+													<h4 class="tsd-parameters-title">Parameters</h4>
+													<ul class="tsd-parameters">
+														<li>
+															<h5>data: <span class="tsd-signature-type">any</span></h5>
+														</li>
+													</ul>
+													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">T</span></h4>
+												</li>
+											</ul>
+										</li>
+									</ul>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ChamberResult</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -256,10 +307,19 @@
 						<a href="../modules/_client_index_.html">"client/index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_error_.html">"error"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_index_.html">"index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_models_waitingblockwrapper_.html">"models/<wbr>Waiting<wbr>Block<wbr>Wrapper"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_models_exit_.html">"models/exit"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_models_index_.html">"models/index"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_storage_iwalletstorage_.html">"storage/IWallet<wbr>Storage"</a>
@@ -308,6 +368,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_client_plasmaclient_.plasmaclient.html#sendtransaction" class="tsd-kind-icon">send<wbr>Transaction</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
+								<a href="_client_plasmaclient_.plasmaclient.html#deserialize" class="tsd-kind-icon">deserialize</a>
 							</li>
 						</ul>
 					</li>

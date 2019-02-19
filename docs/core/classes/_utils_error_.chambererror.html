@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>SumMerkleProof | @layer2/core</title>
+	<title>ChamberError | @layer2/core</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -56,13 +56,13 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_merkle_.html">&quot;merkle&quot;</a>
+					<a href="../modules/_utils_error_.html">&quot;utils/error&quot;</a>
 				</li>
 				<li>
-					<a href="_merkle_.summerkleproof.html">SumMerkleProof</a>
+					<a href="_utils_error_.chambererror.html">ChamberError</a>
 				</li>
 			</ul>
-			<h1>Class SumMerkleProof</h1>
+			<h1>Class ChamberError</h1>
 		</div>
 	</div>
 </header>
@@ -73,8 +73,14 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">SumMerkleProof</span>
+						<span class="target">ChamberError</span>
 					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel">
+				<h3>Implements</h3>
+				<ul class="tsd-hierarchy">
+					<li><span class="tsd-signature-type">Error</span></li>
 				</ul>
 			</section>
 			<section class="tsd-panel-group tsd-index-group">
@@ -84,24 +90,22 @@
 						<section class="tsd-index-section ">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_merkle_.summerkleproof.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_utils_error_.chambererror.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_merkle_.summerkleproof.html#index" class="tsd-kind-icon">index</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_merkle_.summerkleproof.html#numtokens" class="tsd-kind-icon">num<wbr>Tokens</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_merkle_.summerkleproof.html#proof" class="tsd-kind-icon">proof</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_merkle_.summerkleproof.html#segment" class="tsd-kind-icon">segment</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_utils_error_.chambererror.html#code" class="tsd-kind-icon">code</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_utils_error_.chambererror.html#message" class="tsd-kind-icon">message</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_utils_error_.chambererror.html#name" class="tsd-kind-icon">name</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_merkle_.summerkleproof.html#serialize" class="tsd-kind-icon">serialize</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_merkle_.summerkleproof.html#tohex" class="tsd-kind-icon">to<wbr>Hex</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_merkle_.summerkleproof.html#deserialize" class="tsd-kind-icon">deserialize</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_utils_error_.chambererror.html#serialize" class="tsd-kind-icon">serialize</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_utils_error_.chambererror.html#tostring" class="tsd-kind-icon">to<wbr>String</a></li>
 							</ul>
 						</section>
 					</div>
@@ -113,31 +117,25 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Sum<wbr>Merkle<wbr>Proof<span class="tsd-signature-symbol">(</span>numTokens<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, index<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, segment<span class="tsd-signature-symbol">: </span><a href="_segment_.segment.html" class="tsd-signature-type">Segment</a>, proof<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_merkle_.summerkleproof.html" class="tsd-signature-type">SumMerkleProof</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Chamber<wbr>Error<span class="tsd-signature-symbol">(</span>code<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_utils_error_.chambererror.html" class="tsd-signature-type">ChamberError</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/merkle.ts#L59">merkle.ts:59</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/utils/error.ts#L4">utils/error.ts:4</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>numTokens: <span class="tsd-signature-type">number</span></h5>
+									<h5>code: <span class="tsd-signature-type">number</span></h5>
 								</li>
 								<li>
-									<h5>index: <span class="tsd-signature-type">number</span></h5>
-								</li>
-								<li>
-									<h5>segment: <a href="_segment_.segment.html" class="tsd-signature-type">Segment</a></h5>
-								</li>
-								<li>
-									<h5>proof: <span class="tsd-signature-type">string</span></h5>
+									<h5>message: <span class="tsd-signature-type">string</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_merkle_.summerkleproof.html" class="tsd-signature-type">SumMerkleProof</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="_utils_error_.chambererror.html" class="tsd-signature-type">ChamberError</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -145,42 +143,32 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="index" class="tsd-anchor"></a>
-					<h3>index</h3>
-					<div class="tsd-signature tsd-kind-icon">index<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="code" class="tsd-anchor"></a>
+					<h3>code</h3>
+					<div class="tsd-signature tsd-kind-icon">code<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/merkle.ts#L57">merkle.ts:57</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/utils/error.ts#L6">utils/error.ts:6</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="numtokens" class="tsd-anchor"></a>
-					<h3>num<wbr>Tokens</h3>
-					<div class="tsd-signature tsd-kind-icon">num<wbr>Tokens<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="message" class="tsd-anchor"></a>
+					<h3>message</h3>
+					<div class="tsd-signature tsd-kind-icon">message<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/merkle.ts#L56">merkle.ts:56</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/utils/error.ts#L6">utils/error.ts:6</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="proof" class="tsd-anchor"></a>
-					<h3>proof</h3>
-					<div class="tsd-signature tsd-kind-icon">proof<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="name" class="tsd-anchor"></a>
+					<h3>name</h3>
+					<div class="tsd-signature tsd-kind-icon">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;ChamberError&quot;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/merkle.ts#L59">merkle.ts:59</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="segment" class="tsd-anchor"></a>
-					<h3>segment</h3>
-					<div class="tsd-signature tsd-kind-icon">segment<span class="tsd-signature-symbol">:</span> <a href="_segment_.segment.html" class="tsd-signature-type">Segment</a></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/merkle.ts#L58">merkle.ts:58</a></li>
+							<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/utils/error.ts#L4">utils/error.ts:4</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -197,64 +185,40 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/merkle.ts#L79">merkle.ts:79</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/utils/error.ts#L13">utils/error.ts:13</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">object</span></h4>
 							<ul class="tsd-parameters">
 								<li class="tsd-parameter">
-									<h5>index<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
-								</li>
-								<li class="tsd-parameter">
-									<h5>num<wbr>Tokens<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
-								</li>
-								<li class="tsd-parameter">
-									<h5>proof<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-								</li>
-								<li class="tsd-parameter">
-									<h5>segment<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">object</span></h5>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter">
+											<h5>code<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
+										</li>
+										<li class="tsd-parameter">
+											<h5>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+										</li>
+									</ul>
 								</li>
 							</ul>
 						</li>
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="tohex" class="tsd-anchor"></a>
-					<h3>to<wbr>Hex</h3>
+					<a name="tostring" class="tsd-anchor"></a>
+					<h3>to<wbr>String</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">to<wbr>Hex<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						<li class="tsd-signature tsd-kind-icon">to<wbr>String<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/merkle.ts#L73">merkle.ts:73</a></li>
+									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/utils/error.ts#L9">utils/error.ts:9</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
-					<a name="deserialize" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagStatic">Static</span> deserialize</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">deserialize<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_merkle_.summerkleproof.html" class="tsd-signature-type">SumMerkleProof</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/cryptoeconomicslab/chamber-packages/blob/d6bad82/packages/chamber-core/src/merkle.ts#L88">merkle.ts:88</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>data: <span class="tsd-signature-type">any</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_merkle_.summerkleproof.html" class="tsd-signature-type">SumMerkleProof</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -281,7 +245,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_index_.html">"index"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_merkle_.html">"merkle"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -290,7 +254,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_tx_.html">"tx"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_utils_error_.html">"utils/error"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -306,54 +270,30 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_merkle_.summerkleproof.html" class="tsd-kind-icon">Sum<wbr>Merkle<wbr>Proof</a>
+						<a href="_utils_error_.chambererror.html" class="tsd-kind-icon">Chamber<wbr>Error</a>
 						<ul>
 							<li class=" tsd-kind-constructor tsd-parent-kind-class">
-								<a href="_merkle_.summerkleproof.html#constructor" class="tsd-kind-icon">constructor</a>
+								<a href="_utils_error_.chambererror.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_merkle_.summerkleproof.html#index" class="tsd-kind-icon">index</a>
+								<a href="_utils_error_.chambererror.html#code" class="tsd-kind-icon">code</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_merkle_.summerkleproof.html#numtokens" class="tsd-kind-icon">num<wbr>Tokens</a>
+								<a href="_utils_error_.chambererror.html#message" class="tsd-kind-icon">message</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_merkle_.summerkleproof.html#proof" class="tsd-kind-icon">proof</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_merkle_.summerkleproof.html#segment" class="tsd-kind-icon">segment</a>
+								<a href="_utils_error_.chambererror.html#name" class="tsd-kind-icon">name</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_merkle_.summerkleproof.html#serialize" class="tsd-kind-icon">serialize</a>
+								<a href="_utils_error_.chambererror.html#serialize" class="tsd-kind-icon">serialize</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_merkle_.summerkleproof.html#tohex" class="tsd-kind-icon">to<wbr>Hex</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
-								<a href="_merkle_.summerkleproof.html#deserialize" class="tsd-kind-icon">deserialize</a>
+								<a href="_utils_error_.chambererror.html#tostring" class="tsd-kind-icon">to<wbr>String</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_merkle_.summerkletree.html" class="tsd-kind-icon">Sum<wbr>Merkle<wbr>Tree</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_merkle_.summerkletreenode.html" class="tsd-kind-icon">Sum<wbr>Merkle<wbr>Tree<wbr>Node</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_merkle_.html#bignumto32bytesbuffer" class="tsd-kind-icon">bignum<wbr>To32<wbr>Bytes<wbr>Buffer</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_merkle_.html#bignumto8bytesbuffer" class="tsd-kind-icon">bignum<wbr>To8<wbr>Bytes<wbr>Buffer</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_merkle_.html#convert32" class="tsd-kind-icon">convert32</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_merkle_.html#keccak256" class="tsd-kind-icon">keccak256</a>
-					</li>
 				</ul>
 			</nav>
 		</div>
