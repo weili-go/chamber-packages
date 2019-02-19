@@ -8,6 +8,7 @@ const StandardVerifier = require('../build/contracts/StandardVerifier.json')
 const MultisigVerifier = require('../build/contracts/MultisigVerifier.json')
 const EscrowVerifier = require('../build/contracts/EscrowVerifier.json')
 const FastFinality = require('../build/contracts/FastFinality.json')
+const ERC721 = require('../build/contracts/ERC721.json')
 
 const data = JSON.stringify({
   Migrations: Migrations.bytecode,
@@ -16,7 +17,8 @@ const data = JSON.stringify({
   StandardVerifier: StandardVerifier.bytecode,
   MultisigVerifier: MultisigVerifier.bytecode,
   EscrowVerifier: EscrowVerifier.bytecode,
-  FastFinality: FastFinality.bytecode
+  FastFinality: FastFinality.bytecode,
+  ERC721: ERC721.bytecode
 }, null, 2)
 
 fs.writeFileSync(path.join(__dirname, './bytescodes.json'), data)

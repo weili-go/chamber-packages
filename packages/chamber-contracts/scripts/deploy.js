@@ -22,6 +22,7 @@ async function deployContracts() {
   const MigrationsFactory = new ethers.ContractFactory([
     'function setCompleted(uint256 completed)'
   ], bytecodes.Migrations, wallet);
+  const ERC721Factory = new ethers.ContractFactory([], bytecodes.ERC721, wallet);
   const StandardVerifierFactory = new ethers.ContractFactory([], bytecodes.StandardVerifier, wallet);
   const EscrowVerifierFactory = new ethers.ContractFactory([], bytecodes.EscrowVerifier, wallet);
   const MultisigVerifierFactory = new ethers.ContractFactory([], bytecodes.MultisigVerifier, wallet);
@@ -40,6 +41,7 @@ async function deployContracts() {
   const migrationsContract = await MigrationsFactory.deploy()
   await migrationsContract.deployed()
   await migrationsContract.setCompleted(0)
+  const erc721Contract = await ERC721Factory.deploy()
   const standardVerifierContract = await StandardVerifierFactory.deploy()
   const escrowVerifierContract = await EscrowVerifierFactory.deploy()
   const multisigVerifierContract = await MultisigVerifierFactory.deploy()
@@ -49,7 +51,8 @@ async function deployContracts() {
     multisigVerifierContract.address
   )
   const rootChainContract = await RootChainFactory.deploy(
-    transactionVerifierContract.address
+    transactionVerifierContract.address,
+    erc721Contract.address
   )
   const fastFinalityContract = await FastFinalityFactory.deploy(
     rootChainContract.address,
