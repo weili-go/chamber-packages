@@ -13,6 +13,7 @@ const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
 const MultisigVerifier = artifacts.require("MultisigVerifier")
 const EscrowVerifier = artifacts.require("EscrowVerifier")
+const ERC721 = artifacts.require("ERC721")
 const TestPlasmaToken = artifacts.require("TestPlasmaToken")
 const ethers = require('ethers')
 const BigNumber = ethers.utils.BigNumber
@@ -39,6 +40,7 @@ const BOND = constants.EXIT_BOND
 contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   beforeEach(async () => {
+    this.erc721 = await ERC721.new()
     this.standardVerifier = await StandardVerifier.new({ from: operator })
     this.multisigVerifier = await MultisigVerifier.new({ from: operator })
     this.escrowVerifier = await EscrowVerifier.new({ from: operator })
@@ -51,6 +53,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       })
     this.rootChain = await RootChain.new(
       this.transactionVerifier.address,
+      this.erc721.address,
       {
         from: operator
       })
@@ -110,7 +113,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob,
           value: BOND
         });
-      // gas cost of exit is 116480
+      // gas cost of exit is 282823
       console.log('gasCost', gasCost)
       const result = await this.rootChain.exit(
         6 * 100,
@@ -397,7 +400,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     it("should success to exits diffirent UTXO with same transaction", async () => {
       const tx0 = Scenario3.blocks[0].signedTransactions[0][0]
       const tx1 = Scenario3.blocks[0].signedTransactions[0][1]
-      const exitId = 1
       const result1 = await this.rootChain.exit(
         6 * 100,
         Segment.ETH(ethers.utils.bigNumberify('0'), ethers.utils.bigNumberify('500000')).toBigNumber(),
@@ -420,7 +422,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob,
           value: BOND
         });
-
+      const exitId = result2.receipt.logs[0].args._exitId
       assert.equal(result1.logs[0].event, 'ExitStarted')
       assert.equal(result2.logs[0].event, 'ExitStarted')
       // 6 weeks after
