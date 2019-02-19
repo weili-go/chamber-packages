@@ -28,7 +28,7 @@ import { BigNumber } from 'ethers/utils';
 import artifact from './assets/RootChain.json'
 
 const abi = [
-  'event BlockSubmitted(bytes32 _root, uint256 _timestamp, uint256 _blkNum)',
+  'event BlockSubmitted(bytes32 _superRoot, bytes32 _root, uint256 _timestamp, uint256 _blkNum)',
   'event Deposited(address indexed _depositer, uint256 _tokenId, uint256 _start, uint256 _end, uint256 _blkNum)',
   'event ExitStarted(address indexed _exitor, uint256 _exitId, uint256 exitableAt, uint256 _tokenId, uint256 _start, uint256 _end)',
   'event FinalizedExit(uint256 _exitId, uint256 _tokenId, uint256 _start, uint256 _end)',
@@ -277,6 +277,7 @@ export class ChamberWallet {
         new SignedTransaction(depositTx),
         0,
         '',
+        ethers.constants.Zero,
         new SumMerkleProof(1, 0, segment, ''),
         blkNum))
     }

@@ -92,6 +92,7 @@ export class SignedTransactionWithProof {
   outputIndex: number
   proof: SumMerkleProof
   root: Hash
+  timestamp: BigNumber
   blkNum: BigNumber
   confSigs: Signature[]
 
@@ -99,12 +100,14 @@ export class SignedTransactionWithProof {
     tx: SignedTransaction,
     outputIndex: number,
     root: Hash,
+    timestamp: BigNumber,
     proof: SumMerkleProof,
     blkNum: BigNumber
   ) {
     this.signedTx = tx
     this.outputIndex = outputIndex
     this.root = root
+    this.timestamp = timestamp
     this.proof = proof
     this.blkNum = blkNum
     this.confSigs = []
@@ -132,7 +135,10 @@ export class SignedTransactionWithProof {
   }
 
   getProofAsHex(): HexString {
-    return this.proof.toHex()
+    const rootHeader = utils.arrayify(this.root)
+    const timestampHeader = utils.padZeros(utils.arrayify(this.timestamp), 8)
+    const body = utils.arrayify(this.proof.toHex())
+    return utils.hexlify(utils.concat([rootHeader, timestampHeader, body]))
   }
 
   getSignatures(): HexString {
@@ -163,6 +169,7 @@ export class SignedTransactionWithProof {
       signedTx: this.getSignedTx().serialize(),
       outputIndex: this.outputIndex,
       root: this.root,
+      timestamp: this.timestamp.toString(),
       proof: this.proof.serialize(),
       blkNum: this.blkNum.toString(),
       confSigs: this.confSigs
@@ -174,6 +181,7 @@ export class SignedTransactionWithProof {
       SignedTransaction.deserialize(data.signedTx),
       data.outputIndex,
       data.root,
+      utils.bigNumberify(data.timestamp),
       SumMerkleProof.deserialize(data.proof),
       utils.bigNumberify(data.blkNum)
     ).withRawConfSigs(data.confSigs)

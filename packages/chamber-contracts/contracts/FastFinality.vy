@@ -24,7 +24,9 @@ contract RootChain():
     _blkNum: uint256,
     _proof: bytes[512],
     _sigs: bytes[260],
-    _outputIndex: uint256
+    _hasSig: uint256,
+    _outputIndex: uint256,
+    _owner: address
   ) -> bool: constant
 
 contract TransactionVerifier():
@@ -202,7 +204,9 @@ def challenge(
     blkNum,
     _proof,
     _sigs,
-    index)
+    0,
+    index,
+    ZERO_ADDRESS)
   self.disputes[txHash].status = STATE_CHALLENGED
 
 # @dev secondDispute
@@ -229,7 +233,9 @@ def secondDispute(
     blkNum,
     _proof,
     _sigs,
-    index)
+    0,
+    index,
+    ZERO_ADDRESS)
   inputDisputeTx: bytes32 = TransactionVerifier(self.txverifier).getTxoHash(
     _disputeTxBytes,
     10,

@@ -13,7 +13,7 @@ import {
 import * as ethers from 'ethers'
 import { HashZero } from 'ethers/constants'
 import { BigNumber } from 'ethers/utils'
-import { utils } from 'ethers';
+import { constants, utils } from 'ethers';
 import {
   TOTAL_AMOUNT
 } from './helpers/constants'
@@ -58,6 +58,7 @@ class SegmentNode {
  */
  export class Block {
   number: number
+  timestamp: BigNumber
   isDepositBlock: boolean
   txs: SignedTransaction[]
   depositTx?: DepositTransaction
@@ -66,6 +67,7 @@ class SegmentNode {
 
   constructor() {
     this.number = 0
+    this.timestamp = constants.Zero
     this.isDepositBlock = false
     this.txs = []
     this.tree = null
@@ -74,6 +76,10 @@ class SegmentNode {
 
   setBlockNumber(number: number) {
     this.number = number
+  }
+
+  setBlockTimestamp(bn: BigNumber) {
+    this.timestamp = bn
   }
 
   setDepositTx(depositTx: DepositTransaction) {
@@ -136,6 +142,7 @@ class SegmentNode {
         signedTx,
         i,
         this.getRoot(),
+        this.timestamp,
         p,
         utils.bigNumberify(this.number)))
   }

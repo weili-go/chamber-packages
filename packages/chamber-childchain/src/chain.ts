@@ -81,12 +81,13 @@ export class Chain {
     this.txFilter.clear()
   }
   
-  async handleSubmit(root: string, blkNum: BigNumber) {
+  async handleSubmit(superRoot: string, root: string, blkNum: BigNumber, timestamp: BigNumber) {
     const block = await this.readWaitingBlock(root)
     block.txs.forEach(tx => {
       this.snapshot.applyTx(tx, blkNum)
     })
     block.setBlockNumber(blkNum.toNumber())
+    block.setBlockTimestamp(timestamp)
     this.blockHeight = blkNum.toNumber()
     await this.writeToDb(block)
   }
