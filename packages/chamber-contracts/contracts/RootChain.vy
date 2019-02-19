@@ -28,6 +28,12 @@ contract ERC20:
   def transferFrom(_from: address, _to: address, _value: uint256) -> bool: modifying
   def transfer(_to: address, _value: uint256) -> bool: modifying
 
+contract ERC721:
+  def setup(): modifying
+  def mint(_to: address, _tokenId: uint256) -> bool: modifying
+  def ownerOf(_tokenId: uint256) -> address: constant
+  def burn(_tokenId: uint256): modifying
+
 contract TransactionVerifier():
   def verify(
     _txHash: bytes32,
@@ -67,6 +73,7 @@ ExitableMerged: event({_tokenId: uint256, _start: uint256, _end: uint256})
 operator: address
 txverifier: address
 childChain: map(uint256, bytes32)
+exitToken: address
 currentChildBlock: uint256
 totalDeposited: public(map(uint256, uint256))
 lastPublished: public(uint256)
@@ -311,10 +318,12 @@ def checkSegment(
 
 # @dev Constructor
 @public
-def __init__(_txverifierAddress: address):
+def __init__(_txverifierAddress: address, _exitToken: address):
   self.operator = msg.sender
   self.currentChildBlock = 1
   self.txverifier = _txverifierAddress
+  self.exitToken = create_with_code_of(_exitToken)
+  ERC721(self.exitToken).setup()
   self.listingNonce = 0
   self.exitNonce = 1
 
@@ -344,6 +353,12 @@ def submit(_root: bytes32):
   _superRoot: bytes32 = self.getPlasmaBlockHash(_root, as_unitless_number(block.timestamp))
   self.childChain[self.currentChildBlock] = _superRoot
   log.BlockSubmitted(_superRoot, _root, block.timestamp, self.currentChildBlock)
+
+# @dev __default__
+@public
+@payable 
+def __default__():
+  assert msg.value >= 0
 
 # @dev deposit
 @public
@@ -441,6 +456,7 @@ def exit(
   })
   if _hasSig > 0:
     self.removed[txHash] = True
+  assert ERC721(self.exitToken).mint(msg.sender, exitId)
   log.ExitStarted(msg.sender, exitId, exitableAt, tokenId, start, end)
 
 # @dev challenge
@@ -576,6 +592,7 @@ def finalizeExit(
   _exitableEnd: uint256,
   _exitId: uint256
 ):
+  assert ERC721(self.exitToken).ownerOf(_exitId) == msg.sender
   exit: Exit = self.exits[_exitId]
   tokenId: uint256
   start: uint256
@@ -605,6 +622,7 @@ def finalizeExit(
   else:
     send(exit.owner, FORCE_INCLUDE_BOND)
   clear(self.exits[_exitId])
+  ERC721(self.exitToken).burn(_exitId)
   log.FinalizedExit(_exitId, tokenId, start, end)
 
 @public
