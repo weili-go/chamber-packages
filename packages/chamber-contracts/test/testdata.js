@@ -346,5 +346,6 @@ module.exports = {
   Scenario2: scenario2(),
   Scenario3: scenario3(),
   Scenario4: scenario4(),
-  transactions: transactions()
+  transactions: transactions(),
+  testKeys: {AlicePrivateKey, BobPrivateKey, OperatorPrivateKey}
 }

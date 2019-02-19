@@ -4,10 +4,6 @@ struct tokenListing:
   # address of the ERC20, ETH is ZERO_ADDRESS
   tokenAddress: address
 
-struct ChildChainBlock:
-  root: bytes32
-  blockTimestamp: uint256
-
 struct Exit:
   owner: address
   exitableAt: uint256
@@ -59,7 +55,7 @@ contract TransactionVerifier():
   ) -> bytes32: constant
 
 ListingEvent: event({_tokenId: uint256, _tokenAddress: address})
-BlockSubmitted: event({_root: bytes32, _timestamp: timestamp, _blkNum: uint256})
+BlockSubmitted: event({_superRoot: bytes32, _root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: indexed(address), _tokenId: uint256, _start: uint256, _end: uint256, _blkNum: uint256})
 ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
 Challenged: event({_exitId: uint256})
@@ -70,9 +66,10 @@ ExitableMerged: event({_tokenId: uint256, _start: uint256, _end: uint256})
 # management
 operator: address
 txverifier: address
-childChain: map(uint256, ChildChainBlock)
+childChain: map(uint256, bytes32)
 currentChildBlock: uint256
 totalDeposited: public(map(uint256, uint256))
+lastPublished: public(uint256)
 
 # token types
 
@@ -101,6 +98,16 @@ EXIT_BOND: constant(wei_value) = as_wei_value(1, "finney")
 CHALLENGE_BOND: constant(wei_value) = as_wei_value(1, "finney")
 FORCE_INCLUDE_BOND: constant(wei_value) = as_wei_value(1, "finney")
 
+@private
+@constant
+def getPlasmaBlockHash(
+  _root: bytes32,
+  _timestamp: uint256
+) -> bytes32:
+  return sha3(concat(
+    _root,
+    convert(_timestamp, bytes32)
+  ))
 
 @private
 @constant
@@ -111,7 +118,7 @@ def checkMembership(
   _rootHash: bytes32,
   _proof: bytes[512]
 ) -> bool:
-  _totalAmount: uint256 = TOTAL_DEPOSIT * convert(slice(_proof, start=0, len=2), uint256)
+  _totalAmount: uint256 = TOTAL_DEPOSIT * convert(slice(_proof, start=40, len=2), uint256)
   currentAmount: uint256 = _end - _start
   currentLeft: uint256 = 0
   currentRight: uint256 = _totalAmount
@@ -119,11 +126,11 @@ def checkMembership(
   proofElement: bytes32
 
   for i in range(16):
-    if (2 + i * 41) >= len(_proof):
+    if (42 + i * 41) >= len(_proof):
       break
-    leftOrRight: uint256 = convert(slice(_proof, start=2 + i * 41, len=1), uint256)
-    amount: uint256 = convert(slice(_proof, start=2 + i * 41 + 1, len=8), uint256)
-    proofElement = extract32(_proof, 2 + i * 41 + 9, type=bytes32)
+    leftOrRight: uint256 = convert(slice(_proof, start=42 + i * 41, len=1), uint256)
+    amount: uint256 = convert(slice(_proof, start=42 + i * 41 + 1, len=8), uint256)
+    proofElement = extract32(_proof, 42 + i * 41 + 9, type=bytes32)
     if leftOrRight == 0:
       currentRight -= amount
       computedHash = sha3(concat(
@@ -147,11 +154,16 @@ def checkTransaction(
   _blkNum: uint256,
   _proof: bytes[512],
   _sigs: bytes[260],
-  _outputIndex: uint256
+  _hasSig: uint256,
+  _outputIndex: uint256,
+  _owner: address
 ) -> bool:
-  root: bytes32 = self.childChain[_blkNum].root
-  blockTimestamp: uint256 = self.childChain[_blkNum].blockTimestamp
+  root: bytes32
+  blockTimestamp: uint256
   if _blkNum % 2 == 0:
+    root = extract32(_proof, 0, type=bytes32)
+    blockTimestamp = convert(slice(_proof, start=32, len=8), uint256)
+    assert self.childChain[_blkNum] == self.getPlasmaBlockHash(root, blockTimestamp)
     assert self.checkMembership(
       _start + _tokenId * TOTAL_DEPOSIT,
       _end + _tokenId * TOTAL_DEPOSIT,
@@ -160,6 +172,8 @@ def checkTransaction(
       _proof
     )
   else:
+    root = self.childChain[_blkNum]
+    blockTimestamp = 0
     # deposit transaction
     depositHash: bytes32 = TransactionVerifier(self.txverifier).getDepositHash(_txBytes)
     assert depositHash == root
@@ -168,9 +182,9 @@ def checkTransaction(
     sha3(concat(_txHash, root)),
     _txBytes,
     _sigs,
-    0,
+    _hasSig,
     _outputIndex,
-    ZERO_ADDRESS,
+    _owner,
     _tokenId,
     _start,
     _end,
@@ -239,10 +253,7 @@ def processDeposit(
   clear(self.exitable[tokenId][start])
   self.exitable[tokenId][end].start = oldStart
   self.exitable[tokenId][end].isAvailable = True
-  self.childChain[self.currentChildBlock] = ChildChainBlock({
-      root: root,
-      blockTimestamp: as_unitless_number(block.timestamp)
-  })
+  self.childChain[self.currentChildBlock] = root
   log.Deposited(depositer, tokenId, start, end, self.currentChildBlock)
 
 # @dev processDepositFragment
@@ -268,10 +279,7 @@ def processDepositFragment(
                       convert(end, bytes32)
                     )
                   )
-  self.childChain[self.currentChildBlock] = ChildChainBlock({
-      root: root,
-      blockTimestamp: as_unitless_number(block.timestamp)
-  })
+  self.childChain[self.currentChildBlock] = root
   log.Deposited(depositer, tokenId, start, end, self.currentChildBlock)
 
 @private
@@ -333,13 +341,9 @@ def setup():
 def submit(_root: bytes32):
   assert msg.sender == self.operator
   self.currentChildBlock += (2 - (self.currentChildBlock % 2))
-  # 2 + 2 = 4
-  # 3 + 1 = 4
-  self.childChain[self.currentChildBlock] = ChildChainBlock({
-      root: _root,
-      blockTimestamp: as_unitless_number(block.timestamp)
-  })
-  log.BlockSubmitted(_root, block.timestamp, self.currentChildBlock)
+  _superRoot: bytes32 = self.getPlasmaBlockHash(_root, as_unitless_number(block.timestamp))
+  self.childChain[self.currentChildBlock] = _superRoot
+  log.BlockSubmitted(_superRoot, _root, block.timestamp, self.currentChildBlock)
 
 # @dev deposit
 @public
@@ -408,32 +412,19 @@ def exit(
   start: uint256
   end: uint256
   (tokenId, start, end) = self.parseSegment(_segment)
-  root: bytes32 = self.childChain[blkNum].root
-  if blkNum % 2 == 0:
-    assert self.checkMembership(
-      start + tokenId * TOTAL_DEPOSIT,
-      end + tokenId * TOTAL_DEPOSIT,
-      txHash,
-      root,
-      _proof
-    )
-  else:
-    # deposit transaction
-    depositHash: bytes32 = TransactionVerifier(self.txverifier).getDepositHash(_txBytes)
-    assert depositHash == root
-  # verify signature, owner and segment
-  assert TransactionVerifier(self.txverifier).verify(
-    txHash,
-    sha3(concat(txHash, root)),
-    _txBytes,
-    _sig,
-    _hasSig,
-    outputIndex,
-    msg.sender,
+  self.checkTransaction(
     tokenId,
     start,
     end,
-    self.childChain[blkNum].blockTimestamp)
+    txHash,
+    _txBytes,
+    blkNum,
+    _proof,
+    _sig,
+    _hasSig,
+    outputIndex,
+    ZERO_ADDRESS
+  )
   exitId: uint256 = self.exitNonce
   self.exitNonce += 1
   self.exits[exitId] = Exit({
@@ -469,7 +460,7 @@ def challenge(
 ):
   blkNum: uint256 = _utxoPos / 100
   txoIndex: uint256 = _utxoPos - blkNum * 100
-  root: bytes32 = self.childChain[blkNum].root
+  root: bytes32 = self.childChain[blkNum]
   spentTxoHash: bytes32
   tokenId: uint256
   start: uint256
@@ -492,7 +483,9 @@ def challenge(
     blkNum,
     _proof,
     _sig,
-    0
+    0,
+    0,
+    ZERO_ADDRESS
   )
   if _eInputPos < 0:
     # spent challenge
@@ -554,7 +547,7 @@ def includeSignature(
   outputIndex: uint256 = _utxoPos - blkNum * 100
   txHash: bytes32 = sha3(_txBytes)
   exit: Exit = self.exits[_exitId]
-  root: bytes32 = self.childChain[blkNum].root
+  root: bytes32 = self.childChain[blkNum]
   tokenId: uint256
   start: uint256
   end: uint256
@@ -568,7 +561,9 @@ def includeSignature(
     blkNum,
     _proof,
     _sig,
-    outputIndex
+    0,
+    outputIndex,
+    ZERO_ADDRESS
   )
   assert exit.hasSig > 0
   self.removed[txHash] = False
@@ -630,7 +625,11 @@ def challengeTooOldExit(
   (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
   txHash: bytes32 = sha3(_txBytes)
   # if tx is 12 weeks before
-  assert self.childChain[blkNum].blockTimestamp < as_unitless_number(block.timestamp) - 12 * 7 * 24 * 60 * 60
+  # blockTimestamp
+  root: bytes32 = extract32(_proof, 0, type=bytes32)
+  blockTimestamp: uint256 = convert(slice(_proof, start=32, len=8), uint256)
+  assert self.childChain[blkNum] == self.getPlasmaBlockHash(root, blockTimestamp)
+  assert blockTimestamp < as_unitless_number(block.timestamp) - 12 * 7 * 24 * 60 * 60
   assert blkNum > exit.priority
   self.checkTransaction(
     tokenId,
@@ -641,7 +640,9 @@ def challengeTooOldExit(
     blkNum,
     _proof,
     _sig,
-    outputIndex
+    0,
+    outputIndex,
+    ZERO_ADDRESS
   )
   # break exit
   clear(self.exits[_exitId])
