@@ -34,7 +34,7 @@ async function deployContracts() {
     'function listToken(address tokenAddress, uint256 denomination)'
   ], bytecodes.RootChain, wallet);
   const FastFinalityFactory = new ethers.ContractFactory([
-    'constructor(address _rootchain, address _txverifier)'
+    'constructor(address _rootchain, address _txverifier, address _erc721)'
 
   ], bytecodes.FastFinality, wallet);
 
@@ -56,7 +56,8 @@ async function deployContracts() {
   )
   const fastFinalityContract = await FastFinalityFactory.deploy(
     rootChainContract.address,
-    transactionVerifierContract.address
+    transactionVerifierContract.address,
+    erc721Contract.address
   )
   console.log('Migrations', migrationsContract.address)
   console.log('StandardVerifier', standardVerifierContract.address)
