@@ -687,7 +687,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     })
 
     it("should success to exit and finalizeExit ERC20", async () => {
-      console.log(Scenario4.blocks[0].block)
       const tx = Scenario4.blocks[0].block.getSignedTransactionWithProof(
         Scenario4.blocks[0].transactions[0].hash())[0]
       const result = await this.rootChain.exit(

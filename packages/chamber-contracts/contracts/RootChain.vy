@@ -12,7 +12,6 @@ struct Exit:
   utxoPos: uint256
   priority: uint256
   segment: uint256
-  lowerExit: uint256
   hasSig: uint256
   challengeCount: uint256
 
@@ -91,11 +90,8 @@ exitNonce: public(uint256)
 exitable: public(map(uint256, map(uint256, exitableRange)))
 exits: map(uint256, Exit)
 challenges: map(bytes32, Challenge)
+relations: map(uint256, uint256)
 removed: map(bytes32, bool)
-
-# [end:start]
-withdrawals: map(uint256, uint256)
-
 
 # total deposit amount per token type
 TOTAL_DEPOSIT: constant(uint256) = 2**48
@@ -460,7 +456,6 @@ def exit(
     utxoPos: _utxoPos,
     priority: priority,
     segment: _segment,
-    lowerExit: 0,
     challengeCount: 0,
     hasSig: _hasSig
   })
@@ -521,10 +516,11 @@ def challenge(
       exitIndex,
       exitBlkNum)
     assert blkNum > exitBlkNum
-    if self.exits[exit.lowerExit].owner != ZERO_ADDRESS:
-      self.exits[exit.lowerExit].challengeCount -= 1
-      if as_unitless_number(block.timestamp) > self.exits[exit.lowerExit].exitableAt - EXTEND_PERIOD_DAYS * 7 * 24 * 60 * 60:
-        self.exits[exit.lowerExit].extendedExitableAt = as_unitless_number(block.timestamp + EXTEND_PERIOD_DAYS * 7 * 24 * 60 * 60)
+    lowerExit: uint256 = self.relations[_exitId]
+    if self.exits[lowerExit].owner != ZERO_ADDRESS:
+      self.exits[lowerExit].challengeCount -= 1
+      if as_unitless_number(block.timestamp) > self.exits[lowerExit].exitableAt - EXTEND_PERIOD_DAYS * 7 * 24 * 60 * 60:
+        self.exits[lowerExit].extendedExitableAt = as_unitless_number(block.timestamp + EXTEND_PERIOD_DAYS * 7 * 24 * 60 * 60)
     if not TransactionVerifier(self.txverifier).doesRequireConfsig(_txBytes):
       self.challenges[txHash] = Challenge({
         blkNum: exitBlkNum,
@@ -556,9 +552,10 @@ def requestHigherPriorityExit(
   parent: Exit = self.exits[_parentExitId]
   exit: Exit = self.exits[_exitId]
   assert parent.priority < exit.priority
+  assert self.relations[_parentExitId] == 0
   self.checkSegment(parent.segment, exit.segment)
-  self.exits[_parentExitId].lowerExit = _exitId
   self.exits[_exitId].challengeCount += 1
+  self.relations[_parentExitId] = _exitId
 
 @public
 def includeSignature(
