@@ -236,7 +236,10 @@ export class ChamberWallet {
     const results = await this.loadBlocks()
     results.map(block => {
       if(block.isOk()) {
-        this.updateBlock(block.ok())
+        if(this.updateBlock(block.ok())) {
+          // When success to get block, remove the block from waiting block list
+          this.deleteWaitingBlock(block.ok().number)
+        }
       } else {
         console.warn(block.error())
       }
@@ -263,6 +266,7 @@ export class ChamberWallet {
     })
     this.loadedBlockNumber = block.getBlockNumber()
     this.storage.add('loadedBlockNumber', this.loadedBlockNumber.toString())
+    return true
   }
 
   /**
@@ -309,11 +313,15 @@ export class ChamberWallet {
    * @ignore
    */
   handleFinalizedExit(tokenId: BigNumber, start: BigNumber, end: BigNumber) {
-    this.exitableRangeManager.remove(
-      tokenId,
-      start,
-      end
-    )
+    try {
+      this.exitableRangeManager.remove(
+        tokenId,
+        start,
+        end
+      )
+    }catch(e){
+      console.warn(e.message)
+    }
     this.saveExitableRangeManager()
   }
 
@@ -371,6 +379,14 @@ export class ChamberWallet {
    */
   private addWaitingBlock(tx: WaitingBlockWrapper) {
     this.waitingBlocks.set(tx.blkNum.toString(), tx.serialize())
+    this.storeMap('waitingBlocks', this.waitingBlocks)
+  }
+
+  /**
+   * @ignore
+   */
+  private deleteWaitingBlock(blkNum: number) {
+    this.waitingBlocks.delete(blkNum.toString())
     this.storeMap('waitingBlocks', this.waitingBlocks)
   }
 
@@ -443,6 +459,10 @@ export class ChamberWallet {
 
   getAddress() {
     return this.wallet.address
+  }
+
+  getBalanceOfMainChain() {
+    return this.wallet.getBalance()
   }
 
   getBalance() {
