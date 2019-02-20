@@ -101,6 +101,12 @@ withdrawals: map(uint256, uint256)
 TOTAL_DEPOSIT: constant(uint256) = 2**48
 MASK8BYTES: constant(uint256) = 2**64 - 1
 
+# exit period is 4 weeks
+EXIT_PERIOD_DAYS: constant(uint256) = 4 * 7
+# 3 days extended period for withholding attack
+EXTEND_PERIOD_DAYS: constant(uint256) = 3
+
+# bonds
 EXIT_BOND: constant(wei_value) = as_wei_value(1, "finney")
 CHALLENGE_BOND: constant(wei_value) = as_wei_value(1, "finney")
 FORCE_INCLUDE_BOND: constant(wei_value) = as_wei_value(1, "finney")
@@ -420,7 +426,7 @@ def exit(
   _hasSig: uint256
 ):
   assert msg.value == EXIT_BOND
-  exitableAt: uint256 = as_unitless_number(block.timestamp + 4 * 7 * 24 * 60 * 60)
+  exitableAt: uint256 = as_unitless_number(block.timestamp + EXIT_PERIOD_DAYS * 24 * 60 * 60)
   blkNum: uint256 = _utxoPos / 100
   outputIndex: uint256 = _utxoPos - blkNum * 100
   priority: uint256 = blkNum
@@ -517,8 +523,8 @@ def challenge(
     assert blkNum > exitBlkNum
     if self.exits[exit.lowerExit].owner != ZERO_ADDRESS:
       self.exits[exit.lowerExit].challengeCount -= 1
-      if as_unitless_number(block.timestamp) > self.exits[exit.lowerExit].exitableAt - 1 * 7 * 24 * 60 * 60:
-        self.exits[exit.lowerExit].extendedExitableAt = as_unitless_number(block.timestamp + 1 * 7 * 24 * 60 * 60)
+      if as_unitless_number(block.timestamp) > self.exits[exit.lowerExit].exitableAt - EXTEND_PERIOD_DAYS * 7 * 24 * 60 * 60:
+        self.exits[exit.lowerExit].extendedExitableAt = as_unitless_number(block.timestamp + EXTEND_PERIOD_DAYS * 7 * 24 * 60 * 60)
     if not TransactionVerifier(self.txverifier).doesRequireConfsig(_txBytes):
       self.challenges[txHash] = Challenge({
         blkNum: exitBlkNum,
@@ -651,7 +657,7 @@ def challengeTooOldExit(
   root: bytes32 = extract32(_proof, 0, type=bytes32)
   blockTimestamp: uint256 = convert(slice(_proof, start=32, len=8), uint256)
   assert self.childChain[blkNum] == self.getPlasmaBlockHash(root, blockTimestamp)
-  assert blockTimestamp < as_unitless_number(block.timestamp) - 12 * 7 * 24 * 60 * 60
+  assert blockTimestamp < as_unitless_number(block.timestamp) - 3 * EXIT_PERIOD_DAYS * 24 * 60 * 60
   assert blkNum > exit.priority
   self.checkTransaction(
     tokenId,
