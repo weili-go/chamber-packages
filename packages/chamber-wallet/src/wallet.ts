@@ -13,6 +13,7 @@ import {
   SplitTransaction,
   SignedTransaction,
   SignedTransactionWithProof,
+  TransferTransaction,
   Block,
   DepositTransaction,
   Segment,
@@ -546,11 +547,27 @@ export class ChamberWallet {
   /**
    * @ignore
    */
-  private searchUtxo(amount: BigNumber): SignedTransactionWithProof | null {
-    let tx: SignedTransactionWithProof | null = null
+  private searchUtxo(to: Address, amount: BigNumber): TransferTransaction | SplitTransaction | null {
+    let tx: TransferTransaction | SplitTransaction | null = null
     this.getUTXOArray().forEach((_tx) => {
-      if(_tx.getOutput().getSegment(0).getAmount().gt(amount)) {
-        tx = _tx
+      const output = _tx.getOutput()
+      const segment = output.getSegment(0)  
+      if(segment.getAmount().eq(amount)) {
+        tx = new TransferTransaction(
+          this.wallet.address,
+          segment,
+          _tx.blkNum,
+          to
+        )
+      } else if(segment.getAmount().gt(amount)) {
+        tx = new SplitTransaction(
+          this.wallet.address,
+          segment,
+          _tx.blkNum,
+          to,
+          this.wallet.address,
+          segment.start.add(amount)
+        )
       }
     })
     return tx
@@ -561,21 +578,11 @@ export class ChamberWallet {
     amountStr: string
   ): Promise<ChamberResult<boolean>> {
     const amount = ethers.utils.bigNumberify(amountStr)
-    const tx = this.searchUtxo(amount)
+    const tx = this.searchUtxo(to, amount)
     if(tx == null) {
       return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
     }
-    const output = tx.getOutput()
-    const segment = output.getSegment(0)
-    const newTx = new SplitTransaction(
-      this.wallet.address,
-      segment,
-      tx.blkNum,
-      to,
-      this.wallet.address,
-      segment.start.add(amount)
-    )
-    const signedTx = new SignedTransaction(newTx)
+    const signedTx = new SignedTransaction(tx)
     signedTx.sign(this.wallet.privateKey)
     return await this.client.sendTransaction(signedTx.serialize())
   }
