@@ -7,6 +7,8 @@ const EscrowVerifier = artifacts.require("EscrowVerifier")
 const FastFinality = artifacts.require("FastFinality")
 
 module.exports = (deployer) => {
+  let rootChain
+  let fastFinality
   deployer.deploy(ERC721)
   .then(() => deployer.deploy(StandardVerifier))
   .then(() => deployer.deploy(EscrowVerifier))
@@ -22,10 +24,25 @@ module.exports = (deployer) => {
     TransactionVerifier.address,
     ERC721.address
   ))
+  .then((_rootChain) => {
+    rootChain = _rootChain
+    return rootChain.setup()
+  })
   .then(() => deployer.deploy(
-    FastFinality,
-    RootChain.address,
-    TransactionVerifier.address,
-    ERC721.address
+      FastFinality,
+      RootChain.address,
+      TransactionVerifier.address,
+      ERC721.address
   ))
+  .then((_fastFinality) => {
+    fastFinality = _fastFinality
+    return rootChain.getTokenAddress.call()
+  })
+  .then((exitNFT) => {
+    console.log('exitNFT', exitNFT)
+    return fastFinality.getTokenAddress.call()
+  })
+  .then((ffNFT) => {
+    console.log('ffNFT', ffNFT)
+  })
 }
