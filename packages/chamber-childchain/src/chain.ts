@@ -26,6 +26,7 @@ export class Chain {
   db: IChainDb
   txQueue: SignedTransaction[]
   txFilter: TxFilter
+  numTokens: number
 
   constructor(
     snapshot: Snapshot,
@@ -36,6 +37,11 @@ export class Chain {
     this.db = db
     this.txQueue = []
     this.txFilter = new TxFilter()
+    this.numTokens = 1
+  }
+
+  setNumTokens(numTokens: number) {
+    this.numTokens = numTokens
   }
 
   appendTx(tx: SignedTransaction): ChamberResult<boolean> {
@@ -56,7 +62,7 @@ export class Chain {
   }
   
   async generateBlock(): Promise<ChamberResult<string>> {
-    const block = new Block()
+    const block = new Block(this.numTokens)
     if(this.txQueue.length == 0) {
       return new ChamberResultError(ChainErrorFactory.NoValidTransactions())
     }
@@ -88,6 +94,7 @@ export class Chain {
     })
     block.setBlockNumber(blkNum.toNumber())
     block.setBlockTimestamp(timestamp)
+    block.setSuperRoot(superRoot)
     this.blockHeight = blkNum.toNumber()
     await this.writeToDb(block)
   }

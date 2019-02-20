@@ -58,6 +58,7 @@ class SegmentNode {
  */
  export class Block {
   number: number
+  superRoot: string | null
   timestamp: BigNumber
   isDepositBlock: boolean
   txs: SignedTransaction[]
@@ -65,13 +66,35 @@ class SegmentNode {
   tree: SumMerkleTree | null
   numTokens: number
 
-  constructor() {
+  constructor(numTokens?: number) {
     this.number = 0
+    this.superRoot = null
     this.timestamp = constants.Zero
     this.isDepositBlock = false
     this.txs = []
     this.tree = null
-    this.numTokens = 2
+    this.numTokens = numTokens || 1
+  }
+
+  checkSuperRoot() {
+    return utils.keccak256(
+      utils.concat([
+        utils.arrayify(this.getRoot()),
+        utils.padZeros(utils.arrayify(this.timestamp), 8)
+      ])
+    )
+  }
+
+  verifySuperRoot() {
+    if(this.superRoot != null) {
+      return this.checkSuperRoot() === this.superRoot
+    }else{
+      throw new Error("superRoot doesn't setted")
+    }
+  }
+
+  setSuperRoot(superRoot: string) {
+    this.superRoot = superRoot
   }
 
   setBlockNumber(number: number) {
@@ -81,7 +104,7 @@ class SegmentNode {
   setBlockTimestamp(bn: BigNumber) {
     this.timestamp = bn
   }
-
+  
   setDepositTx(depositTx: DepositTransaction) {
     this.depositTx = depositTx
     this.isDepositBlock = true
@@ -97,13 +120,18 @@ class SegmentNode {
       isDepositBlock: this.isDepositBlock,
       depositTx: this.depositTx?this.depositTx.encode():null,
       txs: this.txs.map(tx => tx.serialize()),
-      root: this.txs.length>0?this.getRoot():null
+      root: this.txs.length>0?this.getRoot():null,
+      numTokens: this.numTokens,
+      superRoot: this.superRoot,
+      timestamp: this.timestamp.toString()
     }
   }
 
   static deserialize(data: any): Block {
-    let block = new Block()
+    let block = new Block(data.numTokens)
     block.setBlockNumber(data.number)
+    block.setBlockTimestamp(ethers.utils.bigNumberify(data.timestamp))
+    block.setSuperRoot(data.superRoot)
     if(data.depositTx !== null)
       block.setDepositTx(TransactionDecoder.decode(data.depositTx) as DepositTransaction)
     data.txs.forEach((tx: any) => {
@@ -137,14 +165,20 @@ class SegmentNode {
   }
 
   getSignedTransactionWithProof(hash: string) {
-    const signedTx = this.getSignedTransaction(hash)
-    return this.getProof(hash).map((p, i) => new SignedTransactionWithProof(
-        signedTx,
-        i,
-        this.getRoot(),
-        this.timestamp,
-        p,
-        utils.bigNumberify(this.number)))
+    if(this.superRoot != null) {
+      const superRoot: string = this.superRoot
+      const signedTx = this.getSignedTransaction(hash)
+      return this.getProof(hash).map((p, i) => new SignedTransactionWithProof(
+          signedTx,
+          i,
+          superRoot,
+          this.getRoot(),
+          this.timestamp,
+          p,
+          utils.bigNumberify(this.number)))
+    }else{
+      throw new Error("superRoot doesn't setted")
+    }
   }
 
   getExclusionProof(segment: Segment): SumMerkleProof {

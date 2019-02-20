@@ -101,6 +101,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
             from: operator
           });
         block.setBlockTimestamp(ethers.utils.bigNumberify(result.logs[0].args._timestamp.toString()))
+        block.setSuperRoot(result.logs[0].args._superRoot)
       }
       await submit(Scenario1.blocks[0].block)
       await submit(Scenario1.blocks[1].block)
@@ -409,6 +410,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
             from: operator
           });
         block.setBlockTimestamp(ethers.utils.bigNumberify(result.logs[0].args._timestamp.toString()))
+        block.setSuperRoot(result.logs[0].args._superRoot)
       }
       await submit(Scenario3.blocks[0].block)
       await submit(Scenario3.blocks[1].block)
@@ -477,6 +479,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
             from: operator
           });
         block.setBlockTimestamp(ethers.utils.bigNumberify(result.logs[0].args._timestamp.toString()))
+        block.setSuperRoot(result.logs[0].args._superRoot)
       }
       await submit(Scenario2.blocks[0].block)
       await submit(Scenario2.blocks[1].block)
@@ -678,11 +681,13 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
             from: operator
           });
         block.setBlockTimestamp(ethers.utils.bigNumberify(result.logs[0].args._timestamp.toString()))
+        block.setSuperRoot(result.logs[0].args._superRoot)
       }
       await submit(Scenario4.blocks[0].block)
     })
 
     it("should success to exit and finalizeExit ERC20", async () => {
+      console.log(Scenario4.blocks[0].block)
       const tx = Scenario4.blocks[0].block.getSignedTransactionWithProof(
         Scenario4.blocks[0].transactions[0].hash())[0]
       const result = await this.rootChain.exit(

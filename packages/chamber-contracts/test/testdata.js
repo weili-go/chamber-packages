@@ -96,15 +96,6 @@ function scenario1() {
   const tree5 = block5.createTree()
   const tree6 = block6.createTree()
 
-  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())[0]
-  const signedTx32 = block3.getSignedTransactionWithProof(tx32.hash())[0]
-  const signedTx41 = block4.getSignedTransactionWithProof(tx41.hash())[0]
-  const signedTx42 = block4.getSignedTransactionWithProof(tx42.hash())[0]
-  const signedTx51 = block5.getSignedTransactionWithProof(tx51.hash())[0]
-  const signedTx52 = block5.getSignedTransactionWithProof(tx52.hash())[0]
-  const signedTx61 = block6.getSignedTransactionWithProof(tx61.hash())[0]
-  const signedTx62 = block6.getSignedTransactionWithProof(tx62.hash())[0]
-
   return {
     segments: [segment1, segment2, segment3],
     deposits: [depositTx1, depositTx2],
@@ -113,23 +104,19 @@ function scenario1() {
         block: block3,
         tree: tree3,
         transactions: [tx31, tx32],
-        signedTransactions: [signedTx31, signedTx32],
-        operatorSignes: [signedTx31.signedTx.justSign(OperatorPrivateKey)]
+        operatorSignes: [tx31.justSign(OperatorPrivateKey)]
       },{
         block: block4,
         tree: tree4,
-        transactions: [tx41, tx42],
-        signedTransactions: [signedTx41, signedTx42]
+        transactions: [tx41, tx42]
       },{
         block: block5,
         tree: tree5,
-        transactions: [tx51, tx52],
-        signedTransactions: [signedTx51, signedTx52]
+        transactions: [tx51, tx52]
       },{
         block: block6,
         tree: tree6,
-        transactions: [tx61, tx62],
-        signedTransactions: [signedTx61, signedTx62]
+        transactions: [tx61, tx62]
       }
     ]
   }
@@ -165,32 +152,17 @@ function scenario2() {
   const tree3 = block3.createTree()
   const tree4 = block4.createTree()
 
-  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())[1]
-  signedTx31.confirmMerkleProofs(AlicePrivateKey)
-  signedTx31.confirmMerkleProofs(OperatorPrivateKey)
-
-  const signedTx31NotEnough = block3.getSignedTransactionWithProof(tx31.hash())[1]
-  signedTx31NotEnough.confirmMerkleProofs(AlicePrivateKey)
-
-  const signedTx32 = block3.getSignedTransactionWithProof(tx32.hash())[0]
-
-  const signedTx41 = block4.getSignedTransactionWithProof(tx41.hash())[0]
-  const signedTx42 = block4.getSignedTransactionWithProof(tx42.hash())[0]
-
   return {
     segments: [segment1, segment2, segment3, segment4, segment5],
     blocks: [
       {
         block: block3,
         tree: tree3,
-        transactions: [tx31, tx32],
-        signedTransactions: [signedTx31, signedTx32],
-        testTxs: [signedTx31NotEnough]
+        transactions: [tx31, tx32]
       },{
         block: block4,
         tree: tree4,
-        transactions: [tx41, tx42],
-        signedTransactions: [signedTx41, signedTx42]
+        transactions: [tx41, tx42]
       }
     ]
   }
@@ -228,11 +200,6 @@ function scenario3() {
   const tree3 = block3.createTree()
   const tree4 = block4.createTree()
 
-  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())
-  const signedTx32 = block3.getSignedTransactionWithProof(tx32.hash())[0]
-  const signedTx41 = block4.getSignedTransactionWithProof(tx41.hash())
-  const signedTx42 = block4.getSignedTransactionWithProof(tx42.hash())[0]
-
   return {
     segments: [segment1, segment2, segment3, segment4, segment5],
     blocks: [
@@ -240,14 +207,12 @@ function scenario3() {
         block: block3,
         tree: tree3,
         transactions: [tx31, tx32],
-        signedTransactions: [signedTx31, signedTx32],
-        operatorSignes: [signedTx31[1].signedTx.justSign(OperatorPrivateKey)]
+        operatorSignes: [tx31.justSign(OperatorPrivateKey)]
       },{
         block: block4,
         tree: tree4,
         transactions: [tx41, tx42],
-        signedTransactions: [signedTx41, signedTx42],
-        operatorSignes: [signedTx41[1].signedTx.justSign(OperatorPrivateKey)]
+        operatorSignes: [tx41.justSign(OperatorPrivateKey)]
       }
     ]
   }
@@ -271,6 +236,7 @@ function transactions() {
   const blkNum1 = utils.bigNumberify('3')
   const blkNum2 = utils.bigNumberify('5')
   const block = new Block()
+  block.setSuperRoot('')
   block.setBlockNumber(6)
 
   const tx = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
@@ -281,6 +247,7 @@ function transactions() {
   block.appendTx(tx)
   block.appendTx(invalidTx)
   block.appendTx(mergeTx)
+  block.setSuperRoot(constants.HashZero)
   
   const includedTx = block.getSignedTransactionWithProof(tx.hash())[0]
   const includedInvalidTx = block.getSignedTransactionWithProof(invalidTx.hash())[0]
@@ -296,7 +263,9 @@ function transactions() {
   }
 }
 
-
+/**
+ * numTokens is 2
+ */
 function scenario4() {
   const segment1 = new Segment(
     utils.bigNumberify('1'),
@@ -312,7 +281,7 @@ function scenario4() {
   const blkNum2 = utils.bigNumberify('5')
   // transactinos
   const blkNum3 = utils.bigNumberify('6')
-  const block3 = new Block()
+  const block3 = new Block(2)
   block3.setBlockNumber(6)
 
   const depositTx1 = new DepositTransaction(AliceAddress, segment1)
@@ -325,9 +294,6 @@ function scenario4() {
 
   const tree3 = block3.createTree()
 
-  const signedTx31 = block3.getSignedTransactionWithProof(tx31.hash())[0]
-  const signedTx32 = block3.getSignedTransactionWithProof(tx32.hash())[0]
-
   return {
     segments: [segment1, segment2, segment3],
     deposits: [depositTx1, depositTx2],
@@ -335,8 +301,7 @@ function scenario4() {
       {
         block: block3,
         tree: tree3,
-        transactions: [tx31, tx32],
-        signedTransactions: [signedTx31, signedTx32]
+        transactions: [tx31, tx32]
       }
     ]
   }

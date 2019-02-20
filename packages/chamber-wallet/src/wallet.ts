@@ -277,6 +277,7 @@ export class ChamberWallet {
         new SignedTransaction(depositTx),
         0,
         '',
+        '',
         ethers.constants.Zero,
         new SumMerkleProof(1, 0, segment, ''),
         blkNum))
