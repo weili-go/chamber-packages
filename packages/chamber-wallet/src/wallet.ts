@@ -26,6 +26,9 @@ import { Exit, WaitingBlockWrapper } from './models'
 import { Contract } from 'ethers'
 import { BigNumber } from 'ethers/utils';
 import artifact from './assets/RootChain.json'
+if(!artifact.abi) {
+  console.error('ABI not found')
+}
 
 const abi = [
   'event BlockSubmitted(bytes32 _superRoot, bytes32 _root, uint256 _timestamp, uint256 _blkNum)',
