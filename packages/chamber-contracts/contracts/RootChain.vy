@@ -619,9 +619,9 @@ def finalizeExit(
   assert exit.challengeCount == 0
   if exit.hasSig == 0:
     if tokenId == 0:
-      send(exit.owner, as_wei_value(end - start, "wei") + EXIT_BOND)
+      send(exit.owner, as_wei_value(end - start, "gwei") + EXIT_BOND)
     else:
-      ERC20(self.listings[tokenId].tokenAddress).transfer(exit.owner, end - start)
+      ERC20(self.listings[tokenId].tokenAddress).transfer(exit.owner, (end - start) * self.listings[tokenId].decimalOffset)
       send(exit.owner, EXIT_BOND)
   else:
     send(exit.owner, FORCE_INCLUDE_BOND)

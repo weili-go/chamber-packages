@@ -176,7 +176,7 @@ def dispute(
   self.disputes[txHash] = Dispute({
     recipient: msg.sender,
     withdrawableAt: block.timestamp + 1 * 7 * 24 * 60 * 60,
-    amount: _end - _start,
+    amount: as_unitless_number(as_wei_value((_end - _start), "gwei")),
     status: STATE_FIRST_DISPUTED
   })
 
