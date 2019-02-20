@@ -115,8 +115,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     })
 
     it('should success to dispute and finalizeDispute', async () => {
-      const tx = Scenario3.blocks[0].block.getSignedTransactionWithProof(
-        Scenario3.blocks[0].transactions[0].hash())[1]
+      const tx = Scenario3.blocks[0].transactions[0]
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
       await this.fastFinality.dispute(
@@ -144,6 +143,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     });
     
     it('should failed to finalizeDispute', async () => {
+      Scenario3.blocks[0].block.setSuperRoot(constants.ZERO_HASH)
       const tx = Scenario3.blocks[0].block.getSignedTransactionWithProof(
         Scenario3.blocks[0].transactions[0].hash())[1]
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
@@ -186,11 +186,12 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
             from: operator
           });
         block.setBlockTimestamp(utils.bigNumberify(result.logs[0].args._timestamp.toString()))
+        block.setSuperRoot(result.logs[0].args._superRoot)
       }
       await submit(Scenario3.blocks[0].block)
       await submit(Scenario3.blocks[1].block)
 
-      const tx = Scenario3.blocks[0].signedTransactions[0][1]
+      const tx = Scenario3.blocks[0].transactions[0]
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
       await this.fastFinality.dispute(

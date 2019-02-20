@@ -44,6 +44,7 @@ describe('Block', () => {
     block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
+    block.setSuperRoot(block.checkSuperRoot())
     assert.equal(block.createTree().getLeaves().length, 8)
     assert.equal(utils.hexlify(block.createTree().getLeaves()[2].getHash()), '0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563')
     const sptx1 = block.getSignedTransactionWithProof(tx1.hash())[0]
@@ -55,8 +56,10 @@ describe('Block', () => {
 
   it('should create tree for a tx', () => {
     const block = new Block()
+    block.setSuperRoot('superRoot')
     block.setBlockNumber(2)
     block.appendTx(tx1)
+    block.setSuperRoot(block.checkSuperRoot())
     assert.equal(block.createTree().getLeaves().length, 4)
     assert.equal(utils.hexlify(block.createTree().getLeaves()[2].getHash()), '0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563')
     const sptx1 = block.getSignedTransactionWithProof(tx1.hash())[0]
@@ -69,6 +72,7 @@ describe('Block', () => {
     block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
+    block.setSuperRoot(block.checkSuperRoot())
     const segment = new Segment(
       utils.bigNumberify('0'),
       utils.bigNumberify('3000000'),
@@ -84,6 +88,7 @@ describe('Block', () => {
     block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
+    block.setSuperRoot(block.checkSuperRoot())
     const serialized = block.serialize()
     const deserialized = Block.deserialize(serialized)
     assert.equal(deserialized.number, block.number)
@@ -95,6 +100,7 @@ describe('Block', () => {
     block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
+    block.setSuperRoot(block.checkSuperRoot())
     const bobTxs = block.getUserTransactions(BobAddress)
     assert.equal(bobTxs.length, 2)
   })
@@ -104,6 +110,7 @@ describe('Block', () => {
     block.setBlockNumber(2)
     block.appendTx(tx1)
     block.appendTx(tx2)
+    block.setSuperRoot(block.checkSuperRoot())
     const bobTxs = block.getUserTransactionAndProofs(BobAddress)
     assert.equal(bobTxs.length, 2)
   })
@@ -115,8 +122,9 @@ describe('Block', () => {
       block.setBlockNumber(2)
       block.appendTx(tx1)
       block.appendTx(tx2)
+      block.setSuperRoot(block.checkSuperRoot())
       const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]
-      assert.equal(sinedTx.merkleHash(), '0x4d699db26107e8277851bf202b8562cb3b467b0796e71932e0ce005452bd18d6')
+      assert.equal(sinedTx.merkleHash(), '0x30888da2816c91806e3ba9cc609b799fd621ea4184b9a8459d36afb799b187a2')
     });
 
     it('serialize and deserialize', () => {
@@ -124,6 +132,7 @@ describe('Block', () => {
       block.setBlockNumber(2)
       block.appendTx(tx1)
       block.appendTx(tx2)
+      block.setSuperRoot(block.checkSuperRoot())
       const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]
       const deserialized = SignedTransactionWithProof.deserialize(sinedTx.serialize())
       assert.equal(deserialized.merkleHash(), sinedTx.merkleHash())

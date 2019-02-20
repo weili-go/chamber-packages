@@ -54,10 +54,24 @@ export class SignedTransaction {
     return utils.joinSignature(key.signDigest(this.tx.hash()))
   }
 
+  getTxBytes() {
+    return this.toHex()
+  }
+
+  getTxHash() {
+    return this.hash()
+  }
+
+  /**
+   * @deprecated
+   */
   toHex() {
     return this.tx.encode()
   }
 
+  /**
+   * @deprecated
+   */
   hash() {
     return this.tx.hash()
   }
@@ -91,6 +105,7 @@ export class SignedTransactionWithProof {
   signedTx: SignedTransaction
   outputIndex: number
   proof: SumMerkleProof
+  superRoot: Hash
   root: Hash
   timestamp: BigNumber
   blkNum: BigNumber
@@ -99,6 +114,7 @@ export class SignedTransactionWithProof {
   constructor(
     tx: SignedTransaction,
     outputIndex: number,
+    superRoot: Hash,
     root: Hash,
     timestamp: BigNumber,
     proof: SumMerkleProof,
@@ -106,6 +122,7 @@ export class SignedTransactionWithProof {
   ) {
     this.signedTx = tx
     this.outputIndex = outputIndex
+    this.superRoot = superRoot
     this.root = root
     this.timestamp = timestamp
     this.proof = proof
@@ -128,6 +145,14 @@ export class SignedTransactionWithProof {
 
   getTxHash(): Hash {
     return this.getSignedTx().hash()
+  }
+
+  getSuperRoot() {
+    return this.superRoot
+  }
+
+  getRoot() {
+    return this.root
   }
 
   getProof(): SumMerkleProof {
@@ -156,7 +181,7 @@ export class SignedTransactionWithProof {
       utils.hexlify(
         utils.concat([
           utils.arrayify(this.signedTx.hash()),
-          utils.arrayify(this.root)])))
+          utils.arrayify(this.superRoot)])))
   }
 
   confirmMerkleProofs(pkey: string) {
@@ -168,6 +193,7 @@ export class SignedTransactionWithProof {
     return {
       signedTx: this.getSignedTx().serialize(),
       outputIndex: this.outputIndex,
+      superRoot: this.superRoot,
       root: this.root,
       timestamp: this.timestamp.toString(),
       proof: this.proof.serialize(),
@@ -180,6 +206,7 @@ export class SignedTransactionWithProof {
     return new SignedTransactionWithProof(
       SignedTransaction.deserialize(data.signedTx),
       data.outputIndex,
+      data.superRoot,
       data.root,
       utils.bigNumberify(data.timestamp),
       SumMerkleProof.deserialize(data.proof),

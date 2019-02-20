@@ -186,7 +186,7 @@ def checkTransaction(
     assert depositHash == root
   return TransactionVerifier(self.txverifier).verify(
     _txHash,
-    sha3(concat(_txHash, root)),
+    sha3(concat(_txHash, self.childChain[_blkNum])),
     _txBytes,
     _sigs,
     _hasSig,
