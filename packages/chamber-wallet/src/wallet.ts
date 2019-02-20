@@ -328,6 +328,14 @@ export class ChamberWallet {
   /**
    * @ignore
    */
+  private deleteExit(id: string) {
+    this.exitList.delete(id)
+    this.storeMap('exits', this.exitList)
+  }
+
+  /**
+   * @ignore
+   */
   private getExitFromLocal(exitId: string) {
     const serialized = this.exitList.get(exitId)
     if(serialized)
@@ -484,6 +492,8 @@ export class ChamberWallet {
     const receipt = await this.httpProvider.getTransactionReceipt(result.hash)
     if(receipt.logs && receipt.logs[0]) {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
+      // delete exiting UTXO from UTXO list.
+      this.deleteUTXO(tx.getOutput().hash())
       return new ChamberOk(this.handleExit(
         logDesc.values._exitId,
         logDesc.values.exitableAt,
@@ -505,9 +515,11 @@ export class ChamberWallet {
     if(exit == null) {
       return new ChamberResultError(WalletErrorFactory.ExitNotFound())
     }
-    await this.rootChainContract.finalizeExit(
+    const result = await this.rootChainContract.finalizeExit(
       this.exitableRangeManager.getExitableEnd(exit.segment.start, exit.segment.end),
       exitId)
+    await result.wait()
+    this.deleteExit(exit.getId())
     return new ChamberOk(exit)
   }
 
