@@ -10,7 +10,6 @@ const {
   Block,
   DepositTransaction,
   Segment,
-  TransferTransaction,
   SplitTransaction,
   MergeTransaction,
   SwapTransaction,
@@ -46,7 +45,7 @@ const segment5 = Segment.ETH(
   utils.bigNumberify('3200000'))
     
 function createTransfer(privKey, from, seg, blkNum, to) {
-  const tx= new SignedTransaction(new TransferTransaction(from, seg, blkNum, to))
+  const tx= new SignedTransaction(SplitTransaction.Transfer(from, seg, blkNum, to))
   tx.sign(privKey)
   return tx
 }
@@ -136,7 +135,7 @@ function scenario2() {
   const block5 = new Block(10)
   block5.setBlockNumber(10)
 
-  const tx31 = new SignedTransaction(new SwapTransaction(
+  const tx31 = new SignedTransaction(SwapTransaction.SimpleSwap(
     AliceAddress, segment4, blkNum1, OperatorAddress, segment5, blkNum2))
   tx31.sign(AlicePrivateKey)
   tx31.sign(OperatorPrivateKey)

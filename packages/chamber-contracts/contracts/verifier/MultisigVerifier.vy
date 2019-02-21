@@ -80,49 +80,6 @@ def verifySwap(
   _owner: address,
   _tokenId: uint256,
   _start: uint256,
-  _end: uint256
-) -> (bool):
-  from1: address
-  tokenId1: uint256
-  segment1: uint256
-  start1: uint256
-  end1: uint256
-  blkNum1: uint256
-  from2: address
-  tokenId2: uint256
-  segment2: uint256
-  start2: uint256
-  end2: uint256
-  blkNum2: uint256
-  (from1, segment1, blkNum1, from2, segment2, blkNum2) = self.decodeSwap(_txBytes)
-  (tokenId1, start1, end1) = self.parseSegment(segment1)
-  (tokenId2, start2, end2) = self.parseSegment(segment2)
-  check1: bool = self.ecrecoverSig(_txHash, _sigs, 0) == from1
-  check2: bool = self.ecrecoverSig(_txHash, _sigs, 1) == from2
-  check3: bool = self.ecrecoverSig(_merkleHash, _sigs, 2) == from1
-  check4: bool = self.ecrecoverSig(_merkleHash, _sigs, 3) == from2
-  if _owner != ZERO_ADDRESS:
-    if _outputIndex == 0:
-      assert _owner == from2
-    elif _outputIndex == 1:
-      assert _owner == from1
-  if _outputIndex == 0:
-    assert _tokenId == tokenId1 and _start >= start1 and _end <= end1
-  elif _outputIndex == 1:
-    assert _tokenId == tokenId2 and _start >= start2 and _end <= end2
-  return check1 and check2
-
-# not enough signature
-@public
-@constant
-def verifySwapForceInclude(
-  _txHash: bytes32,
-  _merkleHash: bytes32,
-  _txBytes: bytes[496],
-  _sigs: bytes[260],
-  _outputIndex: uint256,
-  _tokenId: uint256,
-  _start: uint256,
   _end: uint256,
   _hasSig: uint256
 ) -> (bool):
@@ -141,17 +98,36 @@ def verifySwapForceInclude(
   (from1, segment1, blkNum1, from2, segment2, blkNum2) = self.decodeSwap(_txBytes)
   (tokenId1, start1, end1) = self.parseSegment(segment1)
   (tokenId2, start2, end2) = self.parseSegment(segment2)
+  offset1: uint256 = extract32(_txBytes, 192 + 16, type=uint256)
+  offset2: uint256 = extract32(_txBytes, 224 + 16, type=uint256)
+  if _owner != ZERO_ADDRESS:
+    if _outputIndex == 0:
+      assert _owner == from2
+    elif _outputIndex == 1:
+      assert _owner == from1
+    elif _outputIndex == 2:
+      assert _owner == from1
+    elif _outputIndex == 3:
+      assert _owner == from2
+  if _outputIndex == 0:
+    assert _tokenId == tokenId1 and _start >= start1 and _end <= offset1
+  elif _outputIndex == 1:
+    assert _tokenId == tokenId2 and _start >= start2 and _end <= offset2
+  elif _outputIndex == 2:
+    assert _tokenId == tokenId1 and _start >= offset1 and _end <= end1
+  elif _outputIndex == 3:
+    assert _tokenId == tokenId2 and _start >= offset2 and _end <= end2
   check1: bool = self.ecrecoverSig(_txHash, _sigs, 0) == from1
   check2: bool = self.ecrecoverSig(_txHash, _sigs, 1) == from2
-  if _outputIndex == 0:
-    assert _tokenId == tokenId1 and _start >= start1 and _end <= end1
-  elif _outputIndex == 1:
-    assert _tokenId == tokenId2 and _start >= start2 and _end <= end2
-  if _hasSig == 1:
+  assert check1 and check2
+  if _hasSig == 0:
+    assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from1 and self.ecrecoverSig(_merkleHash, _sigs, 3) == from2
+  elif _hasSig == 1:
     assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from1
   elif _hasSig == 2:
     assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from2
-  return check1 and check2
+  return True
+
 
 @public
 @constant

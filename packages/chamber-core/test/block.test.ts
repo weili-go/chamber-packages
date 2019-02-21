@@ -3,7 +3,6 @@ import {
   Block,
   Segment,
   TransactionDecoder,
-  TransferTransaction,
   SplitTransaction,
   MergeTransaction,
   SignedTransaction,
@@ -32,8 +31,8 @@ describe('Block', () => {
     utils.bigNumberify('7000000'),
     utils.bigNumberify('8000000'))
 
-  const rawTx1 = new TransferTransaction(AliceAddress, segment1, blkNum, BobAddress)
-  const rawTx2 = new TransferTransaction(AliceAddress, segment3, blkNum, BobAddress)
+  const rawTx1 = SplitTransaction.Transfer(AliceAddress, segment1, blkNum, BobAddress)
+  const rawTx2 = SplitTransaction.Transfer(AliceAddress, segment3, blkNum, BobAddress)
   const tx1 = new SignedTransaction(rawTx1)
   const tx2 = new SignedTransaction(rawTx2)
   tx1.sign(AlicePrivateKey)
@@ -124,7 +123,7 @@ describe('Block', () => {
       block.appendTx(tx2)
       block.setSuperRoot(block.checkSuperRoot())
       const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]
-      assert.equal(sinedTx.merkleHash(), '0x30888da2816c91806e3ba9cc609b799fd621ea4184b9a8459d36afb799b187a2')
+      assert.equal(sinedTx.merkleHash(), '0x787d43503a2b8fb33281f4f9fc0b0840fa576423314c8b6556427d92b5eef6f8')
     });
 
     it('serialize and deserialize', () => {

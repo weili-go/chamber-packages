@@ -231,7 +231,7 @@ class SegmentNode {
     let segments: SegmentNode[] = []
     this.txs.forEach(tx => {
       tx.getSegments().forEach(s => {
-        if(tokenId.eq(s.getTokenId())) {
+        if(tokenId.eq(s.getTokenId()) && s.getAmount().gt(0)) {
           segments.push(new SegmentNode(s, tx.hash()))
         }
       })

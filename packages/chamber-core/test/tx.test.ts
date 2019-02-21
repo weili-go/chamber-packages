@@ -2,7 +2,6 @@ import { describe, it } from "mocha"
 import {
   Segment,
   TransactionDecoder,
-  TransferTransaction,
   SplitTransaction,
   MergeTransaction,
   SwapTransaction,
@@ -36,12 +35,12 @@ describe('Transaction', () => {
   const blkNum2 = utils.bigNumberify('52')
 
   it('encode and decode transfer transaction', () => {
-    const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
+    const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
     const encoded = tx.encode()
-    const decoded: TransferTransaction = TransactionDecoder.decode(encoded) as TransferTransaction
+    const decoded: SplitTransaction = TransactionDecoder.decode(encoded) as SplitTransaction
     //assert.equal(encoded, '0xf601b4f394953b8fb338ef870eda6d74c1dd4769b6c977b8cf831e8480832dc6c0019434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
-    assert.equal(decoded.label.toNumber(), 1);
-    assert.equal(decoded.getOutput().getSegment(0).start.toString(), '2000000');
+    assert.equal(decoded.label.toNumber(), 2);
+    assert.equal(decoded.getOutput(0).getSegment(0).start.toString(), '2000000');
   });
 
   it('encode and decode split transaction', () => {
@@ -67,7 +66,7 @@ describe('Transaction', () => {
   });
 
   it('encode and decode swap transaction', () => {
-    const tx = new SwapTransaction(
+    const tx = SwapTransaction.SimpleSwap(
       AliceAddress, segment1, blkNum1, BobAddress, segment2, blkNum2)
     const encoded = tx.encode()
     const decoded: SwapTransaction = TransactionDecoder.decode(encoded) as SwapTransaction
@@ -78,15 +77,15 @@ describe('Transaction', () => {
   });
 
   it('hash of own state', () => {
-    const tx1 = new TransferTransaction(AliceAddress, segment, blkNum1, BobAddress)
-    const tx2 = new TransferTransaction(BobAddress, segment, blkNum2, AliceAddress)
-    assert.equal(tx1.getOutput().withBlkNum(blkNum2).hash(), tx2.getInput().hash())
+    const tx1 = SplitTransaction.Transfer(AliceAddress, segment, blkNum1, BobAddress)
+    const tx2 = SplitTransaction.Transfer(BobAddress, segment, blkNum2, AliceAddress)
+    assert.equal(tx1.getOutput(0).withBlkNum(blkNum2).hash(), tx2.getInput().hash())
   });
     
   describe('SignedTransaction', () => {
 
     it('serialize and deserialize', () => {
-      const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
+      const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(AlicePrivateKey)
       const serialized = signedTx.serialize()
@@ -96,7 +95,7 @@ describe('Transaction', () => {
     });
 
     it('getSignatures', () => {
-      const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
+      const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(AlicePrivateKey)
       const signature = signedTx.getSignatures()
@@ -104,14 +103,14 @@ describe('Transaction', () => {
     })
 
     it('verify transfer transaction', () => {
-      const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
+      const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(AlicePrivateKey)
       assert.equal(signedTx.verify(), true)
     });
 
     it('failed to verify transfer transaction', () => {
-      const tx = new TransferTransaction(AliceAddress, segment, blkNum, BobAddress)
+      const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(BobPrivateKey)
       assert.equal(signedTx.verify(), false)
@@ -135,7 +134,7 @@ describe('Transaction', () => {
     });
 
     it('verify swap transaction', () => {
-      const tx = new SwapTransaction(
+      const tx = SwapTransaction.SimpleSwap(
         AliceAddress, segment1, blkNum1, BobAddress, segment2, blkNum2)
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(AlicePrivateKey)

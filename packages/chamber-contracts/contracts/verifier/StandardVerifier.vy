@@ -79,54 +79,6 @@ def decodeTransfer(
 def __init__():
   assert True
 
-@public
-@constant
-def verifyTransfer(
-  _txHash: bytes32,
-  _txBytes: bytes[496],
-  _sigs: bytes[260],
-  _outputIndex: uint256,
-  _owner: address,
-  _tokenId: uint256,
-  _start: uint256,
-  _end: uint256
-) -> (bool):
-  # from, start, end, blkNum, to
-  _from: address
-  segment: uint256
-  blkNum: uint256
-  to: address
-  (_from, segment, blkNum, to) = self.decodeTransfer(_txBytes)
-  tokenId: uint256
-  start: uint256
-  end: uint256
-  (tokenId, start, end) = self.parseSegment(segment)
-  if _owner != ZERO_ADDRESS:
-    assert(_owner == to and _outputIndex == 0)
-  return (self.ecrecoverSig(_txHash, _sigs, 0) == _from) and tokenId == _tokenId and (start <= _start) and (_end <= end)
-
-@public
-@constant
-def getTxoHashOfTransfer(
-  _txBytes: bytes[496],
-  _index: uint256,
-  _blkNum: uint256
-) -> (bytes32):
-  # from, start, end, blkNum, to
-  _from: address
-  segment: uint256
-  blkNum: uint256
-  to: address
-  (_from, segment, blkNum, to) = self.decodeTransfer(_txBytes)
-  tokenId: uint256
-  start: uint256
-  end: uint256
-  (tokenId, start, end) = self.parseSegment(segment)
-  if _index >= 10:
-    return self.getOwnState(_from, tokenId, start, end, blkNum)
-  else:
-    return self.getOwnState(to, tokenId, start, end, _blkNum)
-
 # split
 @public
 @constant
@@ -185,8 +137,10 @@ def getTxoHashOfSplit(
   if _index >= 10:
     return self.getOwnState(_from, tokenId, start, end, blkNum)
   elif _index == 0:
+    assert start < offset
     return self.getOwnState(to1, tokenId, start, offset, _blkNum)
   else:
+    assert offset < end
     to2: address = self.decodeAddress(_txBytes, 128 + 16)
     return self.getOwnState(to2, tokenId, offset, end, _blkNum)
 

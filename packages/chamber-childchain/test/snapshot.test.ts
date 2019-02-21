@@ -2,7 +2,7 @@ import { describe, it } from "mocha"
 import { assert } from "chai"
 import { constants, utils, ethers } from "ethers"
 import { Snapshot, ISnapshotDb } from '../src/snapshot'
-import { TransferTransaction, Segment, SignedTransaction } from '@layer2/core'
+import { SplitTransaction, Segment, SignedTransaction } from '@layer2/core'
 
 class MockSnapshotDb implements ISnapshotDb {
   contains(key: string): Promise<boolean> {
@@ -24,7 +24,7 @@ describe('Snapshot', () => {
 
   it('should checkInput', async () => {
     const snapshot = new Snapshot(new MockSnapshotDb())
-    const tx = new TransferTransaction(
+    const tx = SplitTransaction.Transfer(
       AliceAddress,
       Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000)),
       ethers.utils.bigNumberify(5),

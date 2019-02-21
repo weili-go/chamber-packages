@@ -13,7 +13,6 @@ export {
 export {
   DepositTransaction,
   TransactionDecoder,
-  TransferTransaction,
   SplitTransaction,
   MergeTransaction,
   SwapTransaction,
