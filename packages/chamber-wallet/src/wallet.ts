@@ -13,7 +13,6 @@ import {
   SplitTransaction,
   SignedTransaction,
   SignedTransactionWithProof,
-  TransferTransaction,
   Block,
   DepositTransaction,
   Segment,
@@ -547,19 +546,12 @@ export class ChamberWallet {
   /**
    * @ignore
    */
-  private searchUtxo(to: Address, amount: BigNumber): TransferTransaction | SplitTransaction | null {
-    let tx: TransferTransaction | SplitTransaction | null = null
+  private searchUtxo(to: Address, amount: BigNumber): SplitTransaction | null {
+    let tx: SplitTransaction | null = null
     this.getUTXOArray().forEach((_tx) => {
       const output = _tx.getOutput()
       const segment = output.getSegment(0)  
-      if(segment.getAmount().eq(amount)) {
-        tx = new TransferTransaction(
-          this.wallet.address,
-          segment,
-          _tx.blkNum,
-          to
-        )
-      } else if(segment.getAmount().gt(amount)) {
+      if(segment.getAmount().gte(amount)) {
         tx = new SplitTransaction(
           this.wallet.address,
           segment,
