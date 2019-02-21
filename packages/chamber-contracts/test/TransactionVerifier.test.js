@@ -4,7 +4,9 @@ const MultisigVerifier = artifacts.require("MultisigVerifier")
 const EscrowVerifier = artifacts.require("EscrowVerifier")
 const ethers = require('ethers')
 const BigNumber = ethers.utils.BigNumber
-
+const {
+  assertRevert
+} = require('./helpers/assertRevert')
 const {
   transactions
 } = require('./testdata')
@@ -54,7 +56,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
 
     it("should be failed to verified", async () => {
       const invalidTx = transactions.invalidTx
-      const result = await this.transactionVerifier.verify(
+      await assertRevert(this.transactionVerifier.verify(
         invalidTx.getTxHash(),
         invalidTx.merkleHash(),
         invalidTx.getTxBytes(),
@@ -68,13 +70,12 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         0,
         {
           from: alice
-        });
-      assert.equal(result, false)
+        }))
     })
 
     it("should be failed to verified by invalid segment", async () => {
       const tx = transactions.tx
-      const result = await this.transactionVerifier.verify(
+      await assertRevert(this.transactionVerifier.verify(
         tx.getTxHash(),
         tx.merkleHash(),
         tx.getTxBytes(),
@@ -88,8 +89,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         0,
         {
           from: alice
-        });
-      assert.equal(result, false)
+        }))
     })
 
   })

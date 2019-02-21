@@ -8,7 +8,7 @@ import {
   Chain,
   IChainDb
 } from '../src/chain'
-import { TransferTransaction, Segment, SignedTransaction } from '@layer2/core'
+import { SplitTransaction, Segment, SignedTransaction } from '@layer2/core'
 
 class MockSnapshotDb implements ISnapshotDb {
   contains(key: string): Promise<boolean> {
@@ -63,7 +63,7 @@ describe('Chain', () => {
   it('should generateBlock', async () => {
     const snapshot = new Snapshot(new MockSnapshotDb())
     const chain = new Chain(snapshot, new MockChainDb())
-    const tx = new TransferTransaction(
+    const tx = SplitTransaction.Transfer(
       AliceAddress,
       Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000)),
       ethers.utils.bigNumberify(5),
@@ -79,7 +79,7 @@ describe('Chain', () => {
   it('should failed to generateBlock by no input', async () => {
     const snapshot = new Snapshot(new MockNoDataSnapshotDb())
     const chain = new Chain(snapshot, new MockChainDb())
-    const tx = new TransferTransaction(
+    const tx = SplitTransaction.Transfer(
       AliceAddress,
       Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000)),
       ethers.utils.bigNumberify(5),
@@ -96,7 +96,7 @@ describe('Chain', () => {
   it('should success to generateBlock but segment duplecated', async () => {
     const snapshot = new Snapshot(new MockSnapshotDb())
     const chain = new Chain(snapshot, new MockChainDb())
-    const tx = new TransferTransaction(
+    const tx = SplitTransaction.Transfer(
       AliceAddress,
       Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000)),
       ethers.utils.bigNumberify(5),

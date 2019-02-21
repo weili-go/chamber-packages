@@ -90,9 +90,7 @@ export class TransactionDecoder {
     const label = utils.bigNumberify(utils.hexDataSlice(bytes, 0, 8)).toNumber()
     const maxBlkNum = utils.bigNumberify(utils.hexDataSlice(bytes, 8, 16)).toNumber()
     const body = DecoderUtility.decode(utils.hexDataSlice(bytes, 16, 496))
-    if(label === 1) {
-      return TransferTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
-    }else if(label === 2) {
+    if(label === 2) {
       return SplitTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else if(label === 3) {
       return MergeTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
@@ -101,7 +99,7 @@ export class TransactionDecoder {
     }else if(label === 5) {
       return SwapTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else{
-      return TransferTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
+      throw new Error('unknown label')
     }
   }
 }
@@ -216,70 +214,6 @@ export class DepositTransaction extends BaseTransaction {
 
 }
 
-export class TransferTransaction extends BaseTransaction {
-  from: Address
-  segment: Segment
-  blkNum: BigNumber
-  to: Address
-
-  constructor(
-    from: Address,
-    segment: Segment,
-    blkNum: BigNumber,
-    to: Address
-  ) {
-    super(1, [from, segment.toBigNumber(), blkNum, to])
-    this.from = from
-    this.segment = segment
-    this.blkNum = blkNum
-    this.to = to
-  }
-
-  static fromTuple(tuple: RLPItem[]): TransferTransaction {
-    return new TransferTransaction(
-      utils.getAddress(tuple[0]),
-      Segment.fromBigNumber(utils.bigNumberify(tuple[1])),
-      utils.bigNumberify(tuple[2]),
-      utils.getAddress(tuple[3]))
-  }
-
-  static decode(bytes: string): TransferTransaction {
-    return TransferTransaction.fromTuple(DecoderUtility.decode(bytes))
-  }
-
-  getInput(): TransactionOutput {
-    return new OwnState(
-      this.segment,
-      this.from
-    ).withBlkNum(this.blkNum)
-  }
-
-  getInputs(): TransactionOutput[] {
-    return [this.getInput()]
-  }
-
-  getOutput(): TransactionOutput {
-    return new OwnState(
-      this.segment,
-      this.to
-    )
-  }
-
-  getOutputs() {
-    return [this.getOutput()]
-  }
-
-  getSegments(): Segment[] {
-    return [this.segment]
-  }
-
-  verify(signatures: string[]): boolean {
-    return utils.recoverAddress(
-      this.hash(), signatures[0]) == this.from
-  }
-
-}
-
 export class SplitTransaction extends BaseTransaction {
   from: Address
   segment: Segment
@@ -303,6 +237,15 @@ export class SplitTransaction extends BaseTransaction {
     this.to1 = to1
     this.to2 = to2
     this.offset = offset
+  }
+
+  static Transfer(
+    from: Address,
+    segment: Segment,
+    blkNum: BigNumber,
+    to: Address
+  ) {
+    return new SplitTransaction(from, segment, blkNum, to, to, segment.end)
   }
 
   static fromTuple(tuple: RLPItem[]): SplitTransaction {
@@ -466,7 +409,9 @@ export class SwapTransaction extends BaseTransaction {
     blkNum1: BigNumber,
     from2: Address,
     segment2: Segment,
-    blkNum2: BigNumber
+    blkNum2: BigNumber,
+    offset1: BigNumber,
+    offset2: BigNumber
   ) {
     super(5,
       [from1,
@@ -474,13 +419,35 @@ export class SwapTransaction extends BaseTransaction {
         blkNum1,
         from2,
         segment2.toBigNumber(),
-        blkNum2])
+        blkNum2,
+        offset1,
+        offset2])
     this.from1 = from1
     this.from2 = from2
     this.segment1 = segment1
     this.segment2 = segment2
     this.blkNum1 = blkNum1
     this.blkNum2 = blkNum2
+  }
+
+  static SimpleSwap(
+    from1: Address,
+    segment1: Segment,
+    blkNum1: BigNumber,
+    from2: Address,
+    segment2: Segment,
+    blkNum2: BigNumber
+  ) {
+    return new SwapTransaction(
+      from1,
+      segment1,
+      blkNum1,
+      from2,
+      segment2,
+      blkNum2,
+      segment1.end,
+      segment2.end
+    )
   }
 
   static fromTuple(tuple: RLPItem[]): SwapTransaction {
@@ -490,7 +457,9 @@ export class SwapTransaction extends BaseTransaction {
       utils.bigNumberify(tuple[2]),
       utils.getAddress(tuple[3]),
       Segment.fromBigNumber(utils.bigNumberify(tuple[4])),
-      utils.bigNumberify(tuple[5]))
+      utils.bigNumberify(tuple[5]),
+      utils.bigNumberify(tuple[6]),
+      utils.bigNumberify(tuple[7]))
   }
 
   static decode(bytes: string): SwapTransaction {
