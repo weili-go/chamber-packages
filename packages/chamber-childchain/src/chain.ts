@@ -57,6 +57,17 @@ export class Chain {
     }
   }
 
+  async updateConfSig(tx: SignedTransactionWithProof) {
+    const result = await this.getBlock(tx.blkNum)
+    if(result.isOk()) {
+      const block = result.ok()
+      tx.confSigs.map(confSig => {
+        block.appendConfSig(tx.getSignedTx(), confSig)
+      })
+      await this.writeToDb(block)
+    }
+  }
+
   isEmpty() {
     return this.txQueue.length == 0
   }

@@ -15,11 +15,13 @@ import {
   SignedTransactionWithProof,
   Block,
   DepositTransaction,
+  MergeTransaction,
   Segment,
   SumMerkleProof,
   ChamberResult,
   ChamberResultError,
   ChamberOk,
+  MapUtil
 } from '@layer2/core'
 import { WalletErrorFactory } from './error'
 import { Exit, WaitingBlockWrapper } from './models'
@@ -234,16 +236,19 @@ export class ChamberWallet {
 
   async syncChildChain(): Promise<SignedTransactionWithProof[]> {
     const results = await this.loadBlocks()
-    results.map(block => {
+    const tasks = results.map(block => {
       if(block.isOk()) {
-        if(this.updateBlock(block.ok())) {
-          // When success to get block, remove the block from waiting block list
-          this.deleteWaitingBlock(block.ok().number)
-        }
+        const tasks = this.updateBlock(block.ok())
+        // When success to get block, remove the block from waiting block list
+        this.deleteWaitingBlock(block.ok().number)
+        return tasks
       } else {
         console.warn(block.error())
+        return []
       }
     })
+    // send confirmation signatures
+    await Promise.all(tasks)
     return this.getUTXOArray()
   }
 
@@ -256,17 +261,25 @@ export class ChamberWallet {
       const key = tx.getOutput().hash()
       this.storage.addProof(key, block.getBlockNumber(), JSON.stringify(exclusionProof.serialize()))
     })
-    block.getUserTransactionAndProofs(this.wallet.address).map(tx => {
+    const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(tx => {
       tx.signedTx.tx.getInputs().forEach(input => {
         this.deleteUTXO(input.hash())
       })
       if(tx.getOutput().getOwners().indexOf(this.wallet.address) >= 0) {
+        // require confirmation signature?
+        if(tx.requireConfsig()) {
+          tx.confirmMerkleProofs(this.wallet.privateKey)
+        }
         this.addUTXO(tx)
+        // send back to operator
+        if(tx.requireConfsig()) {
+          return this.client.sendConfsig(tx.serialize())
+        }
       }
-    })
+    }).filter(p => !!p)
     this.loadedBlockNumber = block.getBlockNumber()
     this.storage.add('loadedBlockNumber', this.loadedBlockNumber.toString())
-    return true
+    return tasks
   }
 
   /**
@@ -435,26 +448,18 @@ export class ChamberWallet {
    * @ignore
    */
   private storeMap<T>(key: string, map: Map<string, T>) {
-    let obj: any = {}
-    map.forEach((value, key) => {
-      obj[key] = value
-    })
-    this.storage.add(key, JSON.stringify(obj))
+    this.storage.add(key, JSON.stringify(MapUtil.serialize<T>(map)))
   }
 
   /**
    * @ignore
    */
   private loadMap<T>(key: string) {
-    const map = new Map<string, T>()
     try {
-      const obj: any = JSON.parse(this.storage.get(key))
-      for(let key in obj) {
-        map.set(key, obj[key])
-      }
-    } catch(e) {
+      return MapUtil.deserialize<T>(JSON.parse(this.storage.get(key)))
+    } catch (e) {
+      return MapUtil.deserialize<T>({})
     }
-    return map
   }
 
   getAddress() {
@@ -565,6 +570,33 @@ export class ChamberWallet {
     return tx
   }
 
+  /**
+   * @ignore
+   */
+  private searchMergable(): MergeTransaction | null {
+    let tx = null
+    let segmentStartMap = new Map<string, SignedTransactionWithProof>()
+    this.getUTXOArray().forEach((_tx) => {
+      const segment = _tx.getOutput().getSegment(0)
+      const start = segment.start.toString()
+      const end = segment.end.toString()
+      const tx2 = segmentStartMap.get(end)
+      if(tx2) {
+        // _tx and segmentStartMap.get(end) are available for merge transaction
+        tx = new MergeTransaction(
+          this.wallet.address,
+          segment,
+          tx2.getOutput().getSegment(0),
+          this.wallet.address,
+          _tx.blkNum,
+          tx2.blkNum
+        )
+      }
+      segmentStartMap.set(start, _tx)
+    })
+    return tx
+  }
+
   async transfer(
     to: Address,
     amountStr: string
@@ -579,7 +611,14 @@ export class ChamberWallet {
     return await this.client.sendTransaction(signedTx.serialize())
   }
 
-  private getExitableEnd(tokenId: number, end: BigNumber) {
-
+  async merge() {
+    const tx = this.searchMergable()
+    if(tx == null) {
+      return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
+    }
+    const signedTx = new SignedTransaction(tx)
+    signedTx.sign(this.wallet.privateKey)
+    return await this.client.sendTransaction(signedTx.serialize())
   }
+
 }
