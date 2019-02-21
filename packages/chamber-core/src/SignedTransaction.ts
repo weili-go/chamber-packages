@@ -135,6 +135,10 @@ export class SignedTransactionWithProof {
     return this
   }
 
+  requireConfsig() {
+    return this.getSignedTx().getRawTx().requireConfsig()
+  }
+
   getSignedTx(): SignedTransaction {
     return this.signedTx
   }

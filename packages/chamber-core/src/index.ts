@@ -34,3 +34,4 @@ export {
 export * from './utils/error'
 export * from './utils/exitable'
 export * from './utils/result'  
+export * from './utils/MapUtil'

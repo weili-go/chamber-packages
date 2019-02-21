@@ -23,6 +23,7 @@ import {
   Address
 } from './helpers/types'
 import { DepositTransaction, TransactionDecoder } from './tx';
+import { MapUtil } from './utils/MapUtil'
 
 class SegmentNode {
   segment: Segment
@@ -65,6 +66,7 @@ class SegmentNode {
   depositTx?: DepositTransaction
   tree: SumMerkleTree | null
   numTokens: number
+  confSigMap: Map<string, string[]>
 
   constructor(numTokens?: number) {
     this.number = 0
@@ -74,6 +76,7 @@ class SegmentNode {
     this.txs = []
     this.tree = null
     this.numTokens = numTokens || 1
+    this.confSigMap = new Map<string, string[]>()
   }
 
   checkSuperRoot() {
@@ -114,6 +117,15 @@ class SegmentNode {
     this.txs.push(tx)
   }
 
+  appendConfSig(tx: SignedTransaction, confSig: string) {
+    const hash = tx.hash()
+    let confSigs = this.confSigMap.get(hash)
+    if(confSigs && confSigs.indexOf(confSig) < 0) {
+      confSigs.push(confSig)
+      this.confSigMap.set(hash, confSigs)
+    }
+  }
+
   serialize() {
     return {
       number: this.number,
@@ -123,7 +135,8 @@ class SegmentNode {
       root: this.txs.length>0?this.getRoot():null,
       numTokens: this.numTokens,
       superRoot: this.superRoot,
-      timestamp: this.timestamp.toString()
+      timestamp: this.timestamp.toString(),
+      confSigs: MapUtil.serialize<string[]>(this.confSigMap)
     }
   }
 
@@ -137,6 +150,7 @@ class SegmentNode {
     data.txs.forEach((tx: any) => {
       block.appendTx(SignedTransaction.deserialize(tx))
     })
+    block.confSigMap = MapUtil.deserialize<string[]>(data.confSigs)
     return block
   }
 
@@ -168,6 +182,7 @@ class SegmentNode {
     if(this.superRoot != null) {
       const superRoot: string = this.superRoot
       const signedTx = this.getSignedTransaction(hash)
+      const confSigs: string[] | undefined = this.confSigMap.get(hash)
       return this.getProof(hash).map((p, i) => new SignedTransactionWithProof(
           signedTx,
           i,
@@ -175,7 +190,13 @@ class SegmentNode {
           this.getRoot(),
           this.timestamp,
           p,
-          utils.bigNumberify(this.number)))
+          utils.bigNumberify(this.number))).map(tx => {
+            if(confSigs) {
+              return tx.withRawConfSigs(confSigs)
+            } else {
+              return tx
+            }
+          })
     }else{
       throw new Error("superRoot doesn't setted")
     }

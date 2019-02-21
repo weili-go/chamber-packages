@@ -46,5 +46,11 @@ export class PlasmaClient {
     const res = await this.jsonRpcClient.request('sendTransaction', [data])
     return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
+
+  async sendConfsig(data: any): Promise<ChamberResult<boolean>> {
+    const res = await this.jsonRpcClient.request('sendConfsig', [data])
+    return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
+  }
+
   
 }

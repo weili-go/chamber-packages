@@ -73,7 +73,9 @@ export abstract class BaseTransaction {
   abstract getSegments(): Segment[]
 
   abstract verify(signatures: string[]): boolean
-  
+
+  abstract requireConfsig(): boolean
+
 }
 
 /**
@@ -212,6 +214,10 @@ export class DepositTransaction extends BaseTransaction {
     return true
   }
 
+  requireConfsig(): boolean {
+    return false
+  }
+
 }
 
 export class SplitTransaction extends BaseTransaction {
@@ -303,6 +309,10 @@ export class SplitTransaction extends BaseTransaction {
       this.hash(), signatures[0]) == this.from
   }
 
+  requireConfsig(): boolean {
+    return false
+  }
+
 }
 
 export class MergeTransaction extends BaseTransaction {
@@ -391,6 +401,10 @@ export class MergeTransaction extends BaseTransaction {
   verify(signatures: string[]): boolean {
     return utils.recoverAddress(
       this.hash(), signatures[0]) == this.from
+  }
+
+  requireConfsig(): boolean {
+    return true
   }
 
 }
@@ -514,6 +528,10 @@ export class SwapTransaction extends BaseTransaction {
       this.hash(), signatures[0]) == this.from1
       && utils.recoverAddress(
         this.hash(), signatures[1]) == this.from2
+  }
+
+  requireConfsig(): boolean {
+    return true
   }
 
 }
