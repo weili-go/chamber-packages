@@ -425,6 +425,8 @@ export class SwapTransaction extends BaseTransaction {
   segment2: Segment
   blkNum1: BigNumber
   blkNum2: BigNumber
+  offset1: BigNumber
+  offset2: BigNumber
 
   constructor(
     from1: Address,
@@ -451,6 +453,8 @@ export class SwapTransaction extends BaseTransaction {
     this.segment2 = segment2
     this.blkNum1 = blkNum1
     this.blkNum2 = blkNum2
+    this.offset1 = offset1
+    this.offset2 = offset2
   }
 
   static SimpleSwap(
@@ -510,19 +514,30 @@ export class SwapTransaction extends BaseTransaction {
   getOutput(index: number): TransactionOutput {
     if(index == 0) {
       return new OwnState(
-        this.segment1,
+        new Segment(this.segment1.getTokenId(), this.segment1.start, this.offset1),
         this.from2
       )
-    }else {
+    } else if(index == 1) {
       return new OwnState(
-        this.segment2,
+        new Segment(this.segment2.getTokenId(), this.segment2.start, this.offset2),
         this.from1
       )
+    } else if(index == 2) {
+      return new OwnState(
+        new Segment(this.segment1.getTokenId(), this.offset1, this.segment1.end),
+        this.from1
+      )
+    } else {
+      return new OwnState(
+        new Segment(this.segment2.getTokenId(), this.offset2, this.segment2.end),
+        this.from2
+      )
     }
+
   }
 
   getOutputs() {
-    return [this.getOutput(0), this.getOutput(1)]
+    return [this.getOutput(0), this.getOutput(1), this.getOutput(2), this.getOutput(3)]
   }
     
   getSegments(): Segment[] {

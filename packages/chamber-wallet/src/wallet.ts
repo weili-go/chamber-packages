@@ -377,6 +377,13 @@ export class ChamberWallet {
     this.utxos.forEach(value => {
       arr.push(SignedTransactionWithProof.deserialize(JSON.parse(value)))
     })
+    arr.sort((a: SignedTransactionWithProof, b: SignedTransactionWithProof) => {
+      const aa = a.getOutput().getSegment(0).start
+      const bb = b.getOutput().getSegment(0).start
+      if(aa.gt(bb)) return 1
+      else if(aa.lt(bb)) return -1
+      else return 0
+    })
     return arr
   }
 
@@ -570,7 +577,7 @@ export class ChamberWallet {
     })
     return tx
   }
-  
+
   searchMergable(): MergeTransaction | null {
     let tx = null
     let segmentEndMap = new Map<string, SignedTransactionWithProof>()
@@ -696,6 +703,18 @@ export class ChamberWallet {
     } else {
       return new ChamberResultError(WalletErrorFactory.SwapRequestError())
     }
+  }
+
+  async startDefragmentation(handler: (message: string) => void) {
+    handler('start defragmentation')
+    await this.merge()
+    handler('merge phase is finished')
+    await this.swapRequest()
+    handler('swap request phase is finished')
+    await this.swapRequestRespond()
+    handler('swap respond phase is finished')
+    await this.sendSwap()
+    handler('all steps are finished')
   }
 
 }
