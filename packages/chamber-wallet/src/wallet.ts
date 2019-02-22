@@ -570,7 +570,7 @@ export class ChamberWallet {
     })
     return tx
   }
-  
+
   searchMergable(): MergeTransaction | null {
     let tx = null
     let segmentEndMap = new Map<string, SignedTransactionWithProof>()
@@ -696,6 +696,18 @@ export class ChamberWallet {
     } else {
       return new ChamberResultError(WalletErrorFactory.SwapRequestError())
     }
+  }
+
+  async startDefragmentation(handler: (message: string) => void) {
+    handler('start defragmentation')
+    await this.merge()
+    handler('merge phase is finished')
+    await this.swapRequest()
+    handler('swap request phase is finished')
+    await this.swapRequestRespond()
+    handler('swap respond phase is finished')
+    await this.sendSwap()
+    handler('all steps are finished')
   }
 
 }
