@@ -157,9 +157,9 @@ describe('Transaction', () => {
       signedTx.sign(BobPrivateKey)
       assert.equal(signedTx.verify(), true)
       assert.equal(signedTx.getRawTx().getOutput(0).getSegment(0).start.toString(), utils.bigNumberify('5000000').toString())
-      assert.equal(signedTx.getRawTx().getOutput(1).getSegment(0).start.toString(), utils.bigNumberify('6000000').toString())
-      assert.equal(signedTx.getRawTx().getOutput(2).getSegment(0).start.toString(), utils.bigNumberify('5700000').toString())
-      assert.equal(signedTx.getRawTx().getOutput(3).getSegment(0).start.toString(), utils.bigNumberify('7000000').toString())
+      assert.equal(signedTx.getRawTx().getOutput(1).getSegment(0).start.toString(), utils.bigNumberify('5700000').toString())
+      assert.equal(signedTx.getRawTx().getOutput(2).getSegment(0).start.toString(), utils.bigNumberify('6000000').toString())
+      assert.equal(signedTx.getRawTx().getOutputs().length, 3)
     });
 
   })

@@ -289,28 +289,33 @@ export class SplitTransaction extends BaseTransaction {
   }
 
   getOutput(index: number): TransactionOutput {
-    if(index == 0) {
-      return new OwnState(
+    return this.getOutputs()[index]
+  }
+  
+  getOutputs() {
+    let outputs = []
+    if(this.offset.sub(this.segment.start).gt(0)) {
+      outputs.push(new OwnState(
         new Segment(this.segment.tokenId, this.segment.start, this.offset),
         this.to1
-      )
-    }else {
-      return new OwnState(
+      ))
+    }
+    if(this.segment.end.sub(this.offset).gt(0)) {
+      outputs.push(new OwnState(
         new Segment(this.segment.tokenId, this.offset, this.segment.end),
         this.to2
-      )
+      ))
     }
-  }
-
-  getOutputs() {
-    return [this.getOutput(0), this.getOutput(1)]
+    return outputs
   }
 
   getSegments(): Segment[] {
     return [
       new Segment(this.segment.tokenId, this.segment.start, this.offset),
       new Segment(this.segment.tokenId, this.offset, this.segment.end)
-    ]
+    ].filter(seg => {
+      return !seg.getAmount().eq(0)
+    })
   }
 
   verify(signatures: string[]): boolean {
@@ -455,6 +460,18 @@ export class SwapTransaction extends BaseTransaction {
     this.blkNum2 = blkNum2
     this.offset1 = offset1
     this.offset2 = offset2
+    if(this.segment1.getGlobalStart().gte(this.segment2.getGlobalEnd())) {
+      this.segment2 = segment1
+      this.segment1 = segment2
+      this.offset2 = offset1
+      this.offset1 = offset2
+    }
+    if(this.segment1.start.eq(this.offset1)) {
+      throw new Error('segment1.start should not be offset1')
+    }
+    if(this.segment2.start.eq(this.offset2)) {
+      throw new Error('segment2.start should not be offset2')
+    }
   }
 
   static SimpleSwap(
@@ -512,39 +529,41 @@ export class SwapTransaction extends BaseTransaction {
   }
 
   getOutput(index: number): TransactionOutput {
-    if(index == 0) {
-      return new OwnState(
-        new Segment(this.segment1.getTokenId(), this.segment1.start, this.offset1),
-        this.from2
-      )
-    } else if(index == 1) {
-      return new OwnState(
-        new Segment(this.segment2.getTokenId(), this.segment2.start, this.offset2),
-        this.from1
-      )
-    } else if(index == 2) {
-      return new OwnState(
-        new Segment(this.segment1.getTokenId(), this.offset1, this.segment1.end),
-        this.from1
-      )
-    } else {
-      return new OwnState(
-        new Segment(this.segment2.getTokenId(), this.offset2, this.segment2.end),
-        this.from2
-      )
-    }
-
+    return this.getOutputs()[index]
   }
 
   getOutputs() {
-    return [this.getOutput(0), this.getOutput(1), this.getOutput(2), this.getOutput(3)]
+    let outputs = [
+      new OwnState(
+        new Segment(this.segment1.getTokenId(), this.segment1.start, this.offset1),
+        this.from2
+      )]
+    if(this.segment1.end.sub(this.offset1).gt(0)) {
+      outputs.push(new OwnState(
+        new Segment(this.segment1.getTokenId(), this.offset1, this.segment1.end),
+        this.from1
+      ))
+    }
+    outputs.push(new OwnState(
+        new Segment(this.segment2.getTokenId(), this.segment2.start, this.offset2),
+        this.from1))
+    if(this.segment2.end.sub(this.offset2).gt(0)) {
+      outputs.push(new OwnState(
+        new Segment(this.segment2.getTokenId(), this.offset2, this.segment2.end),
+        this.from2))
+      }
+    return outputs    
   }
     
   getSegments(): Segment[] {
     return [
-      this.segment1,
-      this.segment2
-    ]
+      new Segment(this.segment1.getTokenId(), this.segment1.start, this.offset1),
+      new Segment(this.segment1.getTokenId(), this.offset1, this.segment1.end),
+      new Segment(this.segment2.getTokenId(), this.segment2.start, this.offset2),
+      new Segment(this.segment2.getTokenId(), this.offset2, this.segment2.end)
+    ].filter(seg => {
+      return !seg.getAmount().eq(0)
+    })
   }
 
   verify(signatures: string[]): boolean {
