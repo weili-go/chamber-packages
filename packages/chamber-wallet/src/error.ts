@@ -10,5 +10,8 @@ export class WalletErrorFactory {
   static TooLargeAmount() {
     return new ChamberError(1230, 'too large amount')
   }
+  static SwapRequestError() {
+    return new ChamberError(1240, 'swap request error')
+  }
   
 }

@@ -7,7 +7,9 @@ import {
   ChamberResultError,
   ChamberError,
   SignedTransactionWithProof,
-  Block
+  Block,
+  SwapRequest,
+  SignedTransaction
 } from '@layer2/core';
 
 export class PlasmaClient {
@@ -42,8 +44,8 @@ export class PlasmaClient {
     return res.result.map((r: string) => SignedTransactionWithProof.deserialize(r))
   }
 
-  async sendTransaction(data: any): Promise<ChamberResult<boolean>> {
-    const res = await this.jsonRpcClient.request('sendTransaction', [data])
+  async sendTransaction(tx: SignedTransaction): Promise<ChamberResult<boolean>> {
+    const res = await this.jsonRpcClient.request('sendTransaction', [tx.serialize()])
     return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
 
@@ -52,5 +54,24 @@ export class PlasmaClient {
     return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
 
-  
+  async swapRequest(swapRequest: SwapRequest): Promise<ChamberResult<boolean>> {
+    const res = await this.jsonRpcClient.request('swapRequest', [swapRequest.serialize()])
+    return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
+  }
+
+  async swapRequestResponse(data: any): Promise<ChamberResult<boolean>> {
+    const res = await this.jsonRpcClient.request('swapRequestResponse', [data])
+    return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
+  }
+
+  async getSwapRequest(): Promise<ChamberResult<SwapRequest[]>> {
+    const res = await this.jsonRpcClient.request('getSwapRequest', [])
+    return PlasmaClient.deserialize<SwapRequest[]>(res, (result) => result.map((r:any) => SwapRequest.deserialize(r)))
+  }
+
+  async getSwapRequestResponse(owner: string): Promise<ChamberResult<SignedTransaction>> {
+    const res = await this.jsonRpcClient.request('getSwapRequestResponse', [owner])
+    return PlasmaClient.deserialize<SignedTransaction>(res, (result) => SignedTransaction.deserialize(result))
+  }
+
 }
