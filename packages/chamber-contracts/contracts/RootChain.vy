@@ -360,12 +360,6 @@ def submit(_root: bytes32):
   self.childChain[self.currentChildBlock] = _superRoot
   log.BlockSubmitted(_superRoot, _root, block.timestamp, self.currentChildBlock)
 
-# @dev __default__
-@public
-@payable 
-def __default__():
-  assert msg.value >= 0
-
 # @dev deposit
 @public
 @payable
