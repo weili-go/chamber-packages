@@ -461,6 +461,10 @@ export class SwapTransaction extends BaseTransaction {
     this.offset1 = offset1
     this.offset2 = offset2
     if(this.segment1.getGlobalStart().gte(this.segment2.getGlobalEnd())) {
+      this.from2 = from1
+      this.from1 = from2
+      this.blkNum2 = blkNum1
+      this.blkNum1 = blkNum2
       this.segment2 = segment1
       this.segment1 = segment2
       this.offset2 = offset1

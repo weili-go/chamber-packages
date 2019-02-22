@@ -22,7 +22,8 @@ import {
   ChamberResultError,
   ChamberOk,
   MapUtil,
-  SwapRequest
+  SwapRequest,
+  SwapTransaction
 } from '@layer2/core'
 import { WalletErrorFactory } from './error'
 import { Exit, WaitingBlockWrapper } from './models'
@@ -636,6 +637,17 @@ export class ChamberWallet {
     }).map(s => s.getOutput())
   }
 
+  private checkSwapTx(swapTx: SwapTransaction) {
+    const input = swapTx.getInputs().filter(i => i.getOwners().indexOf(this.getAddress()))[0]
+    if(input) {
+      return this.getUTXOArray().filter((_tx) => {
+        return input.hash() == _tx.getOutput().hash()
+      }).length > 0
+    } else {
+      return false
+    }
+  }
+
   async transfer(
     to: Address,
     amountStr: string
@@ -698,17 +710,23 @@ export class ChamberWallet {
     const swapTxResult = await this.client.getSwapRequestResponse(this.getAddress())
     if(swapTxResult.isOk()) {
       const swapTx = swapTxResult.ok()
-      swapTx.sign(this.wallet.privateKey)
-      return await this.client.sendTransaction(swapTx)
-    } else {
-      return new ChamberResultError(WalletErrorFactory.SwapRequestError())
+      if(this.checkSwapTx(swapTx.getRawTx() as SwapTransaction)) {
+        swapTx.sign(this.wallet.privateKey)
+        const result = await this.client.sendTransaction(swapTx)
+        if(result.isOk()) {
+          await this.client.clearSwapRequestResponse(this.getAddress())
+        }
+        return result
+      }
     }
+    return new ChamberResultError(WalletErrorFactory.SwapRequestError())
   }
 
   async startDefragmentation(handler: (message: string) => void) {
     handler('start defragmentation')
-    await this.merge()
+    const result = await this.merge()
     handler('merge phase is finished')
+    if(result.isOk()) return
     await this.swapRequest()
     handler('swap request phase is finished')
     await this.swapRequestRespond()
