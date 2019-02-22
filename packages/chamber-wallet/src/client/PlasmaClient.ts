@@ -49,8 +49,8 @@ export class PlasmaClient {
     return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
 
-  async sendConfsig(data: any): Promise<ChamberResult<boolean>> {
-    const res = await this.jsonRpcClient.request('sendConfsig', [data])
+  async sendConfsig(tx: SignedTransactionWithProof): Promise<ChamberResult<boolean>> {
+    const res = await this.jsonRpcClient.request('sendConfsig', [tx.serialize()])
     return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
 
@@ -59,8 +59,8 @@ export class PlasmaClient {
     return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
 
-  async swapRequestResponse(data: any): Promise<ChamberResult<boolean>> {
-    const res = await this.jsonRpcClient.request('swapRequestResponse', [data])
+  async swapRequestResponse(tx: SignedTransaction): Promise<ChamberResult<boolean>> {
+    const res = await this.jsonRpcClient.request('swapRequestResponse', [tx.serialize()])
     return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
 
