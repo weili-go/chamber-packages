@@ -377,6 +377,13 @@ export class ChamberWallet {
     this.utxos.forEach(value => {
       arr.push(SignedTransactionWithProof.deserialize(JSON.parse(value)))
     })
+    arr.sort((a: SignedTransactionWithProof, b: SignedTransactionWithProof) => {
+      const aa = a.getOutput().getSegment(0).start
+      const bb = b.getOutput().getSegment(0).start
+      if(aa.gt(bb)) return 1
+      else if(aa.lt(bb)) return -1
+      else return 0
+    })
     return arr
   }
 
