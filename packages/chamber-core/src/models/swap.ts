@@ -84,8 +84,6 @@ export class SwapRequest {
         this.segment.end
       )
     } else {
-      throw new Error('segment amount should be bigger than requested amount')
-      /*
       return new SwapTransaction(
         owner,
         segment,
@@ -96,7 +94,6 @@ export class SwapRequest {
         segment.end,
         this.segment.start.add(segment.getAmount()),
       )
-      */
     }
   }
 

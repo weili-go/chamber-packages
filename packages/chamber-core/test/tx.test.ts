@@ -133,13 +133,33 @@ describe('Transaction', () => {
       assert.equal(signedTx.verify(), true)
     });
 
-    it('verify swap transaction', () => {
+    it('verify simple swap transaction', () => {
       const tx = SwapTransaction.SimpleSwap(
         AliceAddress, segment1, blkNum1, BobAddress, segment2, blkNum2)
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(AlicePrivateKey)
       signedTx.sign(BobPrivateKey)
       assert.equal(signedTx.verify(), true)
+    });
+
+    it('verify swap transaction', () => {
+      const tx = new SwapTransaction(
+        AliceAddress,
+        segment1,
+        blkNum1,
+        BobAddress,
+        segment2,
+        blkNum2,
+        utils.bigNumberify('5700000'),
+        utils.bigNumberify('7000000'))
+      const signedTx = new SignedTransaction(tx)
+      signedTx.sign(AlicePrivateKey)
+      signedTx.sign(BobPrivateKey)
+      assert.equal(signedTx.verify(), true)
+      assert.equal(signedTx.getRawTx().getOutput(0).getSegment(0).start.toString(), utils.bigNumberify('5000000').toString())
+      assert.equal(signedTx.getRawTx().getOutput(1).getSegment(0).start.toString(), utils.bigNumberify('6000000').toString())
+      assert.equal(signedTx.getRawTx().getOutput(2).getSegment(0).start.toString(), utils.bigNumberify('5700000').toString())
+      assert.equal(signedTx.getRawTx().getOutput(3).getSegment(0).start.toString(), utils.bigNumberify('7000000').toString())
     });
 
   })
