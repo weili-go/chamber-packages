@@ -21,7 +21,8 @@ import {
   ChamberResult,
   ChamberResultError,
   ChamberOk,
-  MapUtil
+  MapUtil,
+  SwapRequest
 } from '@layer2/core'
 import { WalletErrorFactory } from './error'
 import { Exit, WaitingBlockWrapper } from './models'
@@ -597,6 +598,40 @@ export class ChamberWallet {
     return tx
   }
 
+  /**
+   * @ignore
+   */
+  private makeSwapRequest(): SwapRequest | null {
+    let swapRequest = null
+    this.getUTXOArray().forEach((txNeighbor) => {
+      const neighbor = txNeighbor.getOutput().getSegment(0)
+      const txs = this.searchHole(neighbor)
+      if(txs.length > 0) {
+        const output = txs[0].getOutput()
+        swapRequest = new SwapRequest(
+          output.getOwners()[0],
+          output.getBlkNum(),
+          output.getSegment(0),
+          neighbor)
+      }
+    })
+    return swapRequest
+  }
+
+  private searchHole(neighbor: Segment) {
+    return this.getUTXOArray().filter((_tx) => {
+      const segment = _tx.getOutput().getSegment(0)
+      return neighbor.end.lt(segment.start)
+    })
+  }
+
+  private searchNeighbors(swapRequest: SwapRequest) {
+    return this.getUTXOArray().filter((_tx) => {
+      const segment = _tx.getOutput().getSegment(0)
+      return swapRequest.check(segment)
+    }).map(s => s.getOutput())
+  }
+
   async transfer(
     to: Address,
     amountStr: string
@@ -608,7 +643,7 @@ export class ChamberWallet {
     }
     const signedTx = new SignedTransaction(tx)
     signedTx.sign(this.wallet.privateKey)
-    return await this.client.sendTransaction(signedTx.serialize())
+    return await this.client.sendTransaction(signedTx)
   }
 
   async merge() {
@@ -618,7 +653,50 @@ export class ChamberWallet {
     }
     const signedTx = new SignedTransaction(tx)
     signedTx.sign(this.wallet.privateKey)
-    return await this.client.sendTransaction(signedTx.serialize())
+    return await this.client.sendTransaction(signedTx)
+  }
+
+  async swapRequest() {
+    const swapRequest = this.makeSwapRequest()
+    if(swapRequest) {
+      return this.client.swapRequest(swapRequest)
+    } else {
+      return new ChamberResultError(WalletErrorFactory.SwapRequestError())
+    }
+  }
+
+  async swapRequestRespond() {
+    const swapRequests = await this.client.getSwapRequest()
+    if(swapRequests.isError()) {
+      return new ChamberResultError(WalletErrorFactory.SwapRequestError())
+    }
+    const txs = swapRequests.ok().map((swapRequest) => {
+      const neighbors = this.searchNeighbors(swapRequest)
+      const neighbor = neighbors[0]
+      if(neighbor) {
+        return swapRequest.getSignedSwapTx(neighbor.getOwners()[0], neighbor.getBlkNum(), neighbor.getSegment(0))
+      } else {
+        return null
+      }
+    }).filter(tx => !!tx)
+    const tasks = txs.map(tx => {
+      if(tx) {
+        tx.sign(this.wallet.privateKey)
+      }
+      return this.client.swapRequestResponse(tx)
+    })
+    return await Promise.all(tasks)
+  }
+
+  async sendSwap() {
+    const swapTxResult = await this.client.getSwapRequestResponse(this.getAddress())
+    if(swapTxResult.isOk()) {
+      const swapTx = swapTxResult.ok()
+      swapTx.sign(this.wallet.privateKey)
+      return await this.client.sendTransaction(swapTx)
+    } else {
+      return new ChamberResultError(WalletErrorFactory.SwapRequestError())
+    }
   }
 
 }

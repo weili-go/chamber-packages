@@ -109,6 +109,7 @@ export class TransactionDecoder {
 export interface TransactionOutput {
   withBlkNum(blkNum: BigNumber): TransactionOutput
   getOwners(): Address[]
+  getBlkNum(): BigNumber
   getSegment(index: number): Segment
   hash(): Hash
 }
@@ -134,6 +135,14 @@ export class OwnState implements TransactionOutput {
 
   setBlkNum(blkNum: BigNumber) {
     this.blkNum = blkNum
+  }
+
+  getBlkNum() {
+    if(this.blkNum) {
+      return this.blkNum
+    } else {
+      throw new Error('blkNum should not be null to getBlkNum')
+    }
   }
 
   getOwners() {
