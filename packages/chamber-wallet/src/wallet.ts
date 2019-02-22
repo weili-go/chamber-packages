@@ -274,7 +274,7 @@ export class ChamberWallet {
         this.addUTXO(tx)
         // send back to operator
         if(tx.requireConfsig()) {
-          return this.client.sendConfsig(tx.serialize())
+          return this.client.sendConfsig(tx)
         }
       }
     }).filter(p => !!p)
@@ -682,9 +682,11 @@ export class ChamberWallet {
     const tasks = txs.map(tx => {
       if(tx) {
         tx.sign(this.wallet.privateKey)
+        return this.client.swapRequestResponse(tx)
+      } else {
+        return Promise.resolve(new ChamberResultError<boolean>(WalletErrorFactory.SwapRequestError()))
       }
-      return this.client.swapRequestResponse(tx)
-    })
+    }).filter(p => !!p)
     return await Promise.all(tasks)
   }
 

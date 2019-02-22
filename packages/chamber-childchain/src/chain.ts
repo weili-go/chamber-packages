@@ -12,6 +12,7 @@ import {
 } from '@layer2/core'
 import { ChainErrorFactory } from './error'
 import { BigNumber } from 'ethers/utils';
+import { SwapManager } from './SwapManager';
 
 export interface IChainDb {
   contains(key: string): Promise<boolean>
@@ -27,6 +28,7 @@ export class Chain {
   txQueue: SignedTransaction[]
   txFilter: TxFilter
   numTokens: number
+  swapManager: SwapManager
 
   constructor(
     snapshot: Snapshot,
@@ -38,10 +40,15 @@ export class Chain {
     this.txQueue = []
     this.txFilter = new TxFilter()
     this.numTokens = 1
+    this.swapManager = new SwapManager()
   }
 
   setNumTokens(numTokens: number) {
     this.numTokens = numTokens
+  }
+
+  getSwapManager() {
+    return this.swapManager
   }
 
   appendTx(tx: SignedTransaction): ChamberResult<boolean> {

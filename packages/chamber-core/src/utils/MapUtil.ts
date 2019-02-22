@@ -6,7 +6,7 @@ export class MapUtil {
     map.forEach((value, key) => {
       obj[key] = value
     })
-    return JSON.stringify(obj)
+    return obj
   }
 
   static deserialize<T>(serialized: any) {
