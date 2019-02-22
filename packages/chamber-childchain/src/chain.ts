@@ -13,6 +13,7 @@ import {
 import { ChainErrorFactory } from './error'
 import { BigNumber } from 'ethers/utils';
 import { SwapManager } from './SwapManager';
+import { ethers } from 'ethers';
 
 export interface IChainDb {
   contains(key: string): Promise<boolean>
@@ -170,5 +171,32 @@ export class Chain {
     const str = await this.db.get('block.' + blkNum.toString())
     return Block.deserialize(JSON.parse(str))
   }
+
+  async syncBlocks() {
+    await this.syncBlocksPart(ethers.utils.bigNumberify(3), false)
+  }
+
+  private async syncBlocksPart(blkNum: BigNumber, prevDoesExist: boolean) {
+    const doesExist = await this.syncBlock(blkNum)
+    // deposit block or submit block is exists
+    if(prevDoesExist || doesExist) {
+      await this.syncBlocksPart(blkNum.add(1), doesExist)
+    }
+  }
+
+  private async syncBlock(blkNum: BigNumber) {
+    const blockResult = await this.getBlock(blkNum)
+    if(blockResult.isOk()) {
+      const block = blockResult.ok()
+      const tasks = block.txs.map(async tx => {
+        await this.snapshot.checkInput(tx)
+        await this.snapshot.applyTx(tx, blkNum)
+      })
+      await Promise.all(tasks)
+      return true
+    } else {
+      return false
+    }
+  } 
 
 }
