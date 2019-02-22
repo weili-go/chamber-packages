@@ -570,30 +570,27 @@ export class ChamberWallet {
     })
     return tx
   }
-
-  /**
-   * @ignore
-   */
-  private searchMergable(): MergeTransaction | null {
+  
+  searchMergable(): MergeTransaction | null {
     let tx = null
-    let segmentStartMap = new Map<string, SignedTransactionWithProof>()
+    let segmentEndMap = new Map<string, SignedTransactionWithProof>()
     this.getUTXOArray().forEach((_tx) => {
       const segment = _tx.getOutput().getSegment(0)
       const start = segment.start.toString()
       const end = segment.end.toString()
-      const tx2 = segmentStartMap.get(end)
+      const tx2 = segmentEndMap.get(start)
       if(tx2) {
-        // _tx and segmentStartMap.get(end) are available for merge transaction
+        // _tx and segmentStartMap.get(start) are available for merge transaction
         tx = new MergeTransaction(
           this.wallet.address,
-          segment,
           tx2.getOutput().getSegment(0),
+          segment,
           this.wallet.address,
-          _tx.blkNum,
-          tx2.blkNum
+          tx2.blkNum,
+          _tx.blkNum
         )
       }
-      segmentStartMap.set(start, _tx)
+      segmentEndMap.set(end, _tx)
     })
     return tx
   }
