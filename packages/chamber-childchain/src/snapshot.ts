@@ -4,6 +4,8 @@ import {
 import { BigNumber } from 'ethers/utils';
 
 export interface ISnapshotDb {
+  getRoot(): string
+  setRoot(root: string): void
   contains(key: string): Promise<boolean>
   insertId(key: string): Promise<boolean>
   deleteId(key: string): Promise<boolean>
@@ -14,6 +16,14 @@ export class Snapshot {
 
   constructor(db: ISnapshotDb) {
     this.db = db
+  }
+
+  getRoot() {
+    return this.db.getRoot()
+  }
+  
+  setRoot(root: string) {
+    this.db.setRoot(root)
   }
 
   /**
