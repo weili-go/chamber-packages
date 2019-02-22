@@ -5,6 +5,10 @@ import { Snapshot, ISnapshotDb } from '../src/snapshot'
 import { SplitTransaction, Segment, SignedTransaction } from '@layer2/core'
 
 class MockSnapshotDb implements ISnapshotDb {
+  getRoot() {
+    return ''
+  }
+  setRoot(root: string) {}
   contains(key: string): Promise<boolean> {
     return Promise.resolve(true)
   }

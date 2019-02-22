@@ -98,6 +98,7 @@ export class Chain {
     // write to DB
     const root = block.getRoot()
     await this.writeWaitingBlock(root, block)
+    await this.writeSnapshot()
     return new ChamberOk(root)
   }
 
@@ -116,6 +117,7 @@ export class Chain {
     block.setSuperRoot(superRoot)
     this.blockHeight = blkNum.toNumber()
     await this.writeToDb(block)
+    await this.writeSnapshot()
   }
 
   async handleDeposit(depositor: string, tokenId: BigNumber, start: BigNumber, end: BigNumber, blkNum: BigNumber) {
@@ -170,6 +172,15 @@ export class Chain {
   async readFromDb(blkNum: BigNumber) {
     const str = await this.db.get('block.' + blkNum.toString())
     return Block.deserialize(JSON.parse(str))
+  }
+
+  async writeSnapshot() {
+    await this.db.insert('snapshot', this.snapshot.getRoot())
+  }
+
+  async readSnapshot() {
+    const root = await this.db.get('snapshot')
+    this.snapshot.setRoot(root)
   }
 
   async syncBlocks() {
