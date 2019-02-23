@@ -22,6 +22,10 @@ export class SwapManager {
     this.responds.set(from2, swapTx)
   }
 
+  clearRespond(owner: string) {
+    this.responds.delete(owner)
+  }
+  
   getRequests() {
     return this.requests
   }

@@ -74,4 +74,9 @@ export class PlasmaClient {
     return PlasmaClient.deserialize<SignedTransaction>(res, (result) => SignedTransaction.deserialize(result))
   }
 
+  async clearSwapRequestResponse(owner: string): Promise<ChamberResult<boolean>> {
+    const res = await this.jsonRpcClient.request('clearSwapRequestResponse', [owner])
+    return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
+  }
+
 }
