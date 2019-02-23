@@ -31,7 +31,7 @@ describe('SwapRequest', () => {
       segment3,
       segment1)
     assert.isTrue(swapRequest.check(segment2))
-  });
+  })
 
   it('getSignedSwapTx', () => {
     const swapRequest = new SwapRequest(
@@ -44,7 +44,8 @@ describe('SwapRequest', () => {
       blkNum,
       segment2)
     const swapTx: SwapTransaction = tx.getRawTx() as SwapTransaction
-    assert.equal(swapTx.getOutput(0).getOwners()[0], AliceAddress);
-  });
+    assert.equal(swapTx.getInput(0).getOwners()[0], AliceAddress)
+    assert.equal(swapTx.getOutput(0).getOwners()[0], BobAddress)
+  })
 
 })
