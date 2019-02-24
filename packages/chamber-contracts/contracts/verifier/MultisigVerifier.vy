@@ -110,13 +110,13 @@ def verifySwap(
     elif _outputIndex == 3:
       assert _owner == from2
   if _outputIndex == 0:
-    assert _tokenId == tokenId1 and _start >= start1 and _end <= offset1
+    assert _tokenId == tokenId1 and _start >= start1 and _end <= start1 + offset1
   elif _outputIndex == 1:
-    assert _tokenId == tokenId2 and _start >= start2 and _end <= offset2
+    assert _tokenId == tokenId2 and _start >= start2 and _end <= start2 + offset2
   elif _outputIndex == 2:
-    assert _tokenId == tokenId1 and _start >= offset1 and _end <= end1
+    assert _tokenId == tokenId1 and _start >= start1 + offset1 and _end <= end1
   elif _outputIndex == 3:
-    assert _tokenId == tokenId2 and _start >= offset2 and _end <= end2
+    assert _tokenId == tokenId2 and _start >= start2 + offset2 and _end <= end2
   check1: bool = self.ecrecoverSig(_txHash, _sigs, 0) == from1
   check2: bool = self.ecrecoverSig(_txHash, _sigs, 1) == from2
   assert check1 and check2
@@ -151,15 +151,22 @@ def getTxoHashOfSwap(
   (from1, segment1, blkNum1, from2, segment2, blkNum2) = self.decodeSwap(_txBytes)
   (tokenId1, start1, end1) = self.parseSegment(segment1)
   (tokenId2, start2, end2) = self.parseSegment(segment2)
+  offset1: uint256 = extract32(_txBytes, 192 + 16, type=uint256)
+  offset2: uint256 = extract32(_txBytes, 224 + 16, type=uint256)
   if _index == 10:
     return self.getOwnState(from1, tokenId1, start1, end1, blkNum1)
   elif _index == 11:
     return self.getOwnState(from2, tokenId2, start2, end2, blkNum2)
   elif _index == 0:
-    return self.getOwnState(from2, tokenId1, start1, end1, blkNum1)
+    return self.getOwnState(from2, tokenId1, start1, start1 + offset1, _blkNum)
+  elif _index == 1:
+    return self.getOwnState(from1, tokenId2, start1 + offset1, end2, _blkNum)
+  elif _index == 2:
+    return self.getOwnState(from1, tokenId2, start2, start2 + offset2, _blkNum)
+  elif _index == 3:
+    return self.getOwnState(from2, tokenId2, start2 + offset2, end2, _blkNum)
   else:
-    return self.getOwnState(from1, tokenId2, start2, end2, blkNum2)
-  return sha3("swap")
+    return sha3("swap")
 
 # multisig
 @public

@@ -118,6 +118,30 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
 
   })
 
+  describe("SwapTransaction", () => {
+
+    it("should getTxoHash", async () => {
+      const tx = transactions.swapTx
+      const result2 = await this.transactionVerifier.getTxoHash(
+        tx.getTxBytes(),
+        2,
+        0,
+        {
+          from: alice
+        });
+      const result3 = await this.transactionVerifier.getTxoHash(
+        tx.getTxBytes(),
+        3,
+        0,
+        {
+          from: alice
+        });
+      assert.equal(result2, tx.getRawTx().getOutput(2).withBlkNum(ethers.constants.Zero).hash())
+      assert.equal(result3, tx.getRawTx().getOutput(3).withBlkNum(ethers.constants.Zero).hash())
+      })
+
+  })
+
   describe("parseSegment", () => {
 
     it("should be parsed", async () => {

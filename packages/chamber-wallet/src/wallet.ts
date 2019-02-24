@@ -638,7 +638,7 @@ export class ChamberWallet {
   }
 
   private checkSwapTx(swapTx: SwapTransaction) {
-    const input = swapTx.getInputs().filter(i => i.getOwners().indexOf(this.getAddress()))[0]
+    const input = swapTx.getInputs().filter(i => i.getOwners().indexOf(this.getAddress()) >= 0)[0]
     if(input) {
       return this.getUTXOArray().filter((_tx) => {
         return input.hash() == _tx.getOutput().hash()

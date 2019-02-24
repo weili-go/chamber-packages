@@ -183,20 +183,27 @@ class SegmentNode {
       const superRoot: string = this.superRoot
       const signedTx = this.getSignedTransaction(hash)
       const confSigs: string[] | undefined = this.confSigMap.get(hash)
-      return this.getProof(hash).map((p, i) => new SignedTransactionWithProof(
+      const proofs = this.getProof(hash)
+      const outputMaps = signedTx.getSegments().map((s, i) => {return {"s":s, "i":i}}).filter(a => {
+        return !a.s.getAmount().eq(0)
+      }).map(a => a.i)
+      return proofs.map((p, i) => {
+        // outputMaps[i] is output index
+        return new SignedTransactionWithProof(
           signedTx,
-          i,
+          outputMaps[i],
           superRoot,
           this.getRoot(),
           this.timestamp,
           p,
-          utils.bigNumberify(this.number))).map(tx => {
-            if(confSigs) {
-              return tx.withRawConfSigs(confSigs)
-            } else {
-              return tx
-            }
-          })
+          utils.bigNumberify(this.number))
+      }).map(tx => {
+        if(confSigs) {
+          return tx.withRawConfSigs(confSigs)
+        } else {
+          return tx
+        }
+      })
     }else{
       throw new Error("superRoot doesn't setted")
     }

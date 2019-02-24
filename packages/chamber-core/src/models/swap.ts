@@ -52,6 +52,12 @@ export class SwapRequest {
       Segment.deserialize(data.neighbor))
   }
 
+  /**
+   * 
+   * @param segment 
+   * segment - neightbor
+   * or neightbor - segment
+   */
   check(
     segment: Segment
   ) {
@@ -67,12 +73,26 @@ export class SwapRequest {
     return new SignedTransaction(tx)
   }
 
+  /**
+   * 
+   * @param owner 
+   * @param blkNum 
+   * @param segment 
+   * neighbor - segment - this.segment
+   * case: segment >= this.segment
+   *   segment:offset and this.segment
+   * case: segment < this.segment
+   * neighbor - segment - this.segment
+   *   segment and this.segment:offset
+   */
   private getSwapTx(
     owner: Address,
     blkNum: BigNumber,
     segment: Segment
   ) {
     if(segment.getAmount().gte(this.segment.getAmount())) {
+      // case: segment >= this.segment
+      // swap segment:left and this.segment
       return new SwapTransaction(
         owner,
         segment,
@@ -80,10 +100,12 @@ export class SwapRequest {
         this.getOwner(),
         this.segment,
         this.getBlkNum(),
-        segment.start.add(this.segment.getAmount()),
-        this.segment.end
+        this.segment.getAmount(),
+        this.segment.getAmount()
       )
     } else {
+      // case: segment < this.segment
+      // swap segment and left:this.segment
       return new SwapTransaction(
         owner,
         segment,
@@ -91,8 +113,8 @@ export class SwapRequest {
         this.getOwner(),
         this.segment,
         this.getBlkNum(),
-        segment.end,
-        this.segment.start.add(segment.getAmount()),
+        segment.getAmount(),
+        segment.getAmount()
       )
     }
   }
