@@ -1,5 +1,5 @@
 import { Segment } from '../segment';
-import { SwapTransaction } from '../tx';
+import { SwapTransaction, TransactionOutput } from '../tx';
 import { Address } from '../helpers/types';
 import * as ethers from 'ethers'
 import BigNumber = ethers.utils.BigNumber
@@ -9,18 +9,22 @@ export class SwapRequest {
   owner: Address
   blkNum: BigNumber
   segment: Segment
+  neightborBlkNum: BigNumber
   neighbor: Segment
+  target?: TransactionOutput
 
   constructor(
     owner: Address,
     blkNum: BigNumber,
     segment: Segment,
+    neightborBlkNum: BigNumber,
     neighbor: Segment
   ) {
     this.owner = owner
     this.blkNum = blkNum
     this.segment = segment
     this.neighbor = neighbor
+    this.neightborBlkNum = neightborBlkNum
   }
 
   getOwner() {
@@ -35,11 +39,16 @@ export class SwapRequest {
     return this.neighbor
   }
 
+  getNeighborBlkNum() {
+    return this.neightborBlkNum
+  }
+
   serialize() {
     return {
       owner: this.owner,
       blkNum: this.blkNum.toString(),
       segment: this.segment.serialize(),
+      neightborBlkNum: this.neightborBlkNum.toString(),
       neighbor: this.neighbor.serialize()
     }
   }
@@ -49,6 +58,7 @@ export class SwapRequest {
       data.owner,
       ethers.utils.bigNumberify(data.blkNum),
       Segment.deserialize(data.segment),
+      ethers.utils.bigNumberify(data.neightborBlkNum),
       Segment.deserialize(data.neighbor))
   }
 
@@ -64,13 +74,17 @@ export class SwapRequest {
     return this.neighbor.end.eq(segment.start) || this.neighbor.start.eq(segment.end)
   }
 
-  getSignedSwapTx(
-    owner: Address,
-    blkNum: BigNumber,
-    segment: Segment
-  ) {
-    const tx = this.getSwapTx(owner, blkNum, segment)
-    return new SignedTransaction(tx)
+  setTarget(target: TransactionOutput) {
+    this.target = target
+  }
+
+  getSignedSwapTx() {
+    if(this.target) {
+      const tx = this.getSwapTx(this.target.getOwners()[0], this.target.getBlkNum(), this.target.getSegment(0))
+      return new SignedTransaction(tx)
+    } else {
+      throw new Error('target not setted')
+    }
   }
 
   /**
@@ -101,21 +115,29 @@ export class SwapRequest {
         this.segment,
         this.getBlkNum(),
         this.segment.getAmount(),
-        this.segment.getAmount()
-      )
-    } else {
+        this.segment.getAmount())
+    } else if(this.neighbor.getAmount().gte(segment.getAmount())) {
       // case: segment < this.segment
-      // swap segment and left:this.segment
+      // swap this.neighbor:left segment
       return new SwapTransaction(
         owner,
         segment,
         blkNum,
         this.getOwner(),
-        this.segment,
+        this.neighbor,
         this.getBlkNum(),
         segment.getAmount(),
-        segment.getAmount()
-      )
+        segment.getAmount())
+    } else {
+      return new SwapTransaction(
+        owner,
+        segment,
+        blkNum,
+        this.getOwner(),
+        this.neighbor,
+        this.getNeighborBlkNum(),
+        this.neighbor.getAmount(),
+        this.neighbor.getAmount())
     }
   }
 

@@ -3,7 +3,7 @@ import { SwapRequest } from "../../src/models/swap"
 import { Segment } from "../../src/segment"
 import { assert } from "chai"
 import { constants, utils } from "ethers"
-import { SwapTransaction } from '../../src/tx'
+import { OwnState, SwapTransaction } from '../../src/tx'
 import {
   AlicePrivateKey,
   BobPrivateKey
@@ -29,6 +29,7 @@ describe('SwapRequest', () => {
       AliceAddress,
       blkNum,
       segment3,
+      blkNum,
       segment1)
     assert.isTrue(swapRequest.check(segment2))
   })
@@ -38,11 +39,12 @@ describe('SwapRequest', () => {
       AliceAddress,
       blkNum,
       segment1,
-      segment3)
-    const tx = swapRequest.getSignedSwapTx(
-      BobAddress,
       blkNum,
-      segment2)
+      segment3)
+    swapRequest.setTarget(new OwnState(
+      segment2,
+      BobAddress).withBlkNum(blkNum))
+    const tx = swapRequest.getSignedSwapTx()
     const swapTx: SwapTransaction = tx.getRawTx() as SwapTransaction
     assert.equal(swapTx.getInput(0).getOwners()[0], AliceAddress)
     assert.equal(swapTx.getOutput(0).getOwners()[0], BobAddress)

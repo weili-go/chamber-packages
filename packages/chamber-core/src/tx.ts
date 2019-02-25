@@ -74,6 +74,8 @@ export abstract class BaseTransaction {
 
   abstract verify(signatures: string[]): boolean
 
+  abstract normalizeSigs(signatures: string[], hash?: string): string[]
+
   abstract requireConfsig(): boolean
 
 }
@@ -223,6 +225,10 @@ export class DepositTransaction extends BaseTransaction {
     return true
   }
 
+  normalizeSigs(signatures: string[], hash?: string): string[] {
+    return signatures
+  }
+
   requireConfsig(): boolean {
     return false
   }
@@ -314,6 +320,10 @@ export class SplitTransaction extends BaseTransaction {
   verify(signatures: string[]): boolean {
     return utils.recoverAddress(
       this.hash(), signatures[0]) == this.from
+  }
+
+  normalizeSigs(signatures: string[], hash?: string): string[] {
+    return signatures
   }
 
   requireConfsig(): boolean {
@@ -408,6 +418,10 @@ export class MergeTransaction extends BaseTransaction {
   verify(signatures: string[]): boolean {
     return utils.recoverAddress(
       this.hash(), signatures[0]) == this.from
+  }
+
+  normalizeSigs(signatures: string[], hash?: string): string[] {
+    return signatures
   }
 
   requireConfsig(): boolean {
@@ -559,6 +573,16 @@ export class SwapTransaction extends BaseTransaction {
       this.hash(), signatures[0]) == this.from1
       && utils.recoverAddress(
         this.hash(), signatures[1]) == this.from2
+  }
+
+  normalizeSigs(signatures: string[], hash?: string): string[] {
+    if(signatures.length == 2) {
+      if(utils.recoverAddress(
+        hash?hash:this.hash(), signatures[0]) == this.from2) {
+          return signatures.reverse()
+        }
+    }
+    return signatures
   }
 
   requireConfsig(): boolean {

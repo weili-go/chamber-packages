@@ -59,8 +59,8 @@ export class PlasmaClient {
     return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
 
-  async swapRequestResponse(tx: SignedTransaction): Promise<ChamberResult<boolean>> {
-    const res = await this.jsonRpcClient.request('swapRequestResponse', [tx.serialize()])
+  async swapRequestResponse(owner: string, tx: SignedTransaction): Promise<ChamberResult<boolean>> {
+    const res = await this.jsonRpcClient.request('swapRequestResponse', [owner, tx.serialize()])
     return PlasmaClient.deserialize<boolean>(res, (result) => result as boolean)
   }
 
