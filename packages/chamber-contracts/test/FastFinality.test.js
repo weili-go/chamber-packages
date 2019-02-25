@@ -19,11 +19,13 @@ const {
 const BigNumber = utils.BigNumber
 
 const {
-  constants
+  constants,
+  DepositTransaction
 } = require('@layer2/core')
 
 const {
-  Scenario3
+  Scenario3,
+  testAddresses
 } = require('./testdata')
 
 require('chai')
@@ -98,6 +100,10 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
   describe('dispute', () => {
 
+    const prevBlkNum = utils.bigNumberify(5)
+    const prevOutput = new DepositTransaction(testAddresses.AliceAddress, Scenario3.segments[0])
+                            .getOutput().withBlkNum(prevBlkNum)
+
     beforeEach(async () => {
       const result = await this.fastFinality.depositAndMintToken(
         8 * 7 * 24 * 60 * 60,
@@ -119,13 +125,15 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
       await this.fastFinality.dispute(
+        prevOutput.getBytes(),
+        prevBlkNum,
         tx.getTxBytes(),
         tx.getSignatures(),
         operatorSig,
         1,
         tokenId,
-        Scenario3.segments[2].start,
-        Scenario3.segments[2].end,
+        Scenario3.segments[0].start,
+        Scenario3.segments[0].end,
         {
           value: BOND,
           from: bob
@@ -149,6 +157,8 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
       await this.fastFinality.dispute(
+        prevOutput.getBytes(),
+        prevBlkNum,
         tx.getTxBytes(),
         tx.getSignatures(),
         operatorSig,
@@ -177,6 +187,9 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     const STATE_FIRST_DISPUTED = 1;
     const STATE_CHALLENGED = 2;
     const STATE_SECOND_DISPUTED = 3;
+    const prevBlkNum = utils.bigNumberify(5)
+    const prevOutput = new DepositTransaction(testAddresses.AliceAddress, Scenario3.segments[0])
+                            .getOutput().withBlkNum(prevBlkNum)
 
     beforeEach(async () => {
       const submit = async (block) => {
@@ -195,6 +208,8 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
       await this.fastFinality.dispute(
+        prevOutput.getBytes(),
+        prevBlkNum,
         tx.getTxBytes(),
         tx.getSignatures(),
         operatorSig,
@@ -260,6 +275,8 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
           from: operator
         })
       await this.fastFinality.secondDispute(
+        prevOutput.getBytes(),
+        prevBlkNum,
         tx.getTxBytes(),
         secondDisputeTx.getTxBytes(),
         secondDisputeTx.getProofAsHex(),

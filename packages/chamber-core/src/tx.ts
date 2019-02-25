@@ -114,6 +114,7 @@ export interface TransactionOutput {
   getBlkNum(): BigNumber
   getSegment(index: number): Segment
   hash(): Hash
+  getBytes(): string
 }
 
 export class OwnState implements TransactionOutput {
@@ -155,9 +156,19 @@ export class OwnState implements TransactionOutput {
     return this.segment
   }
 
+  getBytes() {
+    return this.joinHex([
+      utils.keccak256(utils.toUtf8Bytes('own')),
+      utils.hexZeroPad(utils.hexlify(this.owner), 32),
+      utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
+      utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
+      utils.hexZeroPad(utils.hexlify(this.segment.end), 32)
+    ])
+  }
+
   hash(): Hash {
     if(this.blkNum) {
-      return utils.keccak256(join([
+      return utils.keccak256(this.joinHex([
         utils.hexlify(utils.toUtf8Bytes('own')),
         utils.hexZeroPad(utils.hexlify(this.owner), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
@@ -168,10 +179,12 @@ export class OwnState implements TransactionOutput {
     }else{
       throw new Error('blkNum should not be null to get hash')
     }
-    function join(a: string[]) {
-      return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
-    }
   }
+
+  private joinHex(a: string[]) {
+    return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
+  }
+
 
 }
 

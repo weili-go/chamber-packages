@@ -37,29 +37,34 @@ def parseSegment(
   end: uint256 = bitwise_and(segment, MASK8BYTES)
   return (tokenId, start, end)
 
-@private
+@public
 @constant
-def getOwnState(
+def encodeExitState(
   owner: address,
   tokenId: uint256,
   start: uint256,
-  end: uint256,
-  blkNum: uint256
-) -> (bytes32):
-  return sha3(
-      concat("own",
-        convert(owner, bytes32),
-        convert(tokenId, bytes32),
-        convert(start, bytes32),
-        convert(end, bytes32),
-        convert(blkNum, bytes32)
-      )
-    )
+  end: uint256
+) -> (bytes[256]):
+  return concat(
+    sha3("own"),
+    convert(owner, bytes32),
+    convert(tokenId, bytes32),
+    convert(start, bytes32),
+    convert(end, bytes32)
+  )
 
-@private
+@public
 @constant
-def decodeAddress(txBytes: bytes[496], offset: int128) -> address:
-  return extract32(txBytes, offset, type=address)
+def decodeExitState(
+  stateBytes: bytes[256]
+) -> (address, uint256, uint256, uint256):
+  assert sha3("own") == extract32(stateBytes, 0, type=bytes32)
+  return (
+    extract32(stateBytes, 32*1, type=address),
+    extract32(stateBytes, 32*2, type=uint256),
+    extract32(stateBytes, 32*3, type=uint256),
+    extract32(stateBytes, 32*4, type=uint256)
+  )
 
 # @dev decodeTransfer
 @private
@@ -82,7 +87,7 @@ def __init__():
 # split
 @public
 @constant
-def verifySplit(
+def verifyTransfer(
   _txHash: bytes32,
   _txBytes: bytes[496],
   _sigs: bytes[260],
@@ -91,58 +96,54 @@ def verifySplit(
   _tokenId: uint256,
   _start: uint256,
   _end: uint256
-) -> (bool):
+) -> (bytes[256]):
   # from, start, end, blkNum, to1, to2, offset
   _from: address
   segment: uint256
   blkNum: uint256
-  to1: address
-  (_from, segment, blkNum, to1) = self.decodeTransfer(_txBytes)
+  to: address
+  (_from, segment, blkNum, to) = self.decodeTransfer(_txBytes)
   tokenId: uint256
   start: uint256
   end: uint256
   (tokenId, start, end) = self.parseSegment(segment)
-  to2: address = self.decodeAddress(_txBytes, 128 + 16)
-  offset: uint256 = extract32(_txBytes, 160 + 16, type=uint256)
   if _owner != ZERO_ADDRESS:
     if _outputIndex == 0:
-      assert(_owner == to1)
-    else:
-      assert(_owner == to2)
+      assert(_owner == to)
   assert _tokenId == tokenId
   if _outputIndex == 0:
-    assert (_start >= start) and (_end <= offset)
-  else:
-    assert (_start >= offset) and (_end <= end)
-  return (self.ecrecoverSig(_txHash, _sigs, 0) == _from)
+    assert (_start >= start) and (_end <= end)
+  assert (self.ecrecoverSig(_txHash, _sigs, 0) == _from)
+  return self.encodeExitState(to, tokenId, start, end)
 
 @public
 @constant
-def getTxoHashOfSplit(
+def checkSpentOfTransfer(
+  _exitStateBytes: bytes[256],
   _txBytes: bytes[496],
-  _index: uint256,
-  _blkNum: uint256
-) -> (bytes32):
+  _exitBlkNum: uint256
+) -> (bool):
+  exitOwner: address
+  exitTokenId: uint256
+  exitStart: uint256
+  exitEnd: uint256
+  exitState: bytes[64]
+  (exitOwner, exitTokenId, exitStart, exitEnd) = self.decodeExitState(_exitStateBytes)
   # from, start, end, blkNum, to1, to2, offset
   _from: address
   segment: uint256
   blkNum: uint256
-  to1: address
-  (_from, segment, blkNum, to1) = self.decodeTransfer(_txBytes)
+  to: address
+  (_from, segment, blkNum, to) = self.decodeTransfer(_txBytes)
   tokenId: uint256
   start: uint256
   end: uint256
   (tokenId, start, end) = self.parseSegment(segment)
-  offset: uint256 = extract32(_txBytes, 160 + 16, type=uint256)
-  if _index >= 10:
-    return self.getOwnState(_from, tokenId, start, end, blkNum)
-  elif _index == 0:
-    assert start < offset
-    return self.getOwnState(to1, tokenId, start, offset, _blkNum)
-  else:
-    assert offset < end
-    to2: address = self.decodeAddress(_txBytes, 128 + 16)
-    return self.getOwnState(to2, tokenId, offset, end, _blkNum)
+  assert exitOwner == _from
+  assert exitTokenId == tokenId
+  assert exitStart <= start and end <= exitEnd
+  assert blkNum == _exitBlkNum
+  return True
 
 # merge
 @public
@@ -157,7 +158,7 @@ def verifyMerge(
   _tokenId: uint256,
   _start: uint256,
   _end: uint256
-) -> (bool):
+) -> (bytes[256]):
   # from, start, offset, end, blkNum1, blkNum2, to
   _from: address
   segment: uint256
@@ -172,15 +173,22 @@ def verifyMerge(
     assert(_owner == to)
   assert _tokenId == tokenId and (_start >= start) and (_end <= end)
   assert self.ecrecoverSig(_merkleHash, _sigs, 1) == _from
-  return (self.ecrecoverSig(_txHash, _sigs, 0) == _from)
+  assert self.ecrecoverSig(_txHash, _sigs, 0) == _from
+  return self.encodeExitState(to, tokenId, start, end)
 
 @public
 @constant
-def getTxoHashOfMerge(
+def checkSpentOfMerge(
+  _exitStateBytes: bytes[256],
   _txBytes: bytes[496],
   _index: uint256,
-  _blkNum: uint256
-) -> (bytes32):
+  _exitBlkNum: uint256
+) -> (bool):
+  exitOwner: address
+  exitTokenId: uint256
+  exitStart: uint256
+  exitEnd: uint256
+  (exitOwner, exitTokenId, exitStart, exitEnd) = self.decodeExitState(_exitStateBytes)
   # from, start, offset, end, blkNum1, blkNum2, to
   _from: address
   segment: uint256
@@ -191,11 +199,16 @@ def getTxoHashOfMerge(
   start: uint256
   end: uint256
   (tokenId, start, end) = self.parseSegment(segment)
-  blkNum1: uint256 = extract32(_txBytes, 128 + 16, type=uint256)
-  blkNum2: uint256 = extract32(_txBytes, 160 + 16, type=uint256)
-  if _index == 10:
-    return self.getOwnState(_from, tokenId, start, offset, blkNum1)
-  elif _index == 11:
-    return self.getOwnState(_from, tokenId, offset, end, blkNum2)
+  assert exitOwner == _from
+  assert exitTokenId == tokenId
+  if _index == 0:
+    blkNum1: uint256 = extract32(_txBytes, 128 + 16, type=uint256)
+    assert exitStart <= start and offset <= exitEnd
+    assert blkNum1 == _exitBlkNum
+  elif _index == 1:
+    blkNum2: uint256 = extract32(_txBytes, 160 + 16, type=uint256)
+    assert exitStart <= offset and end <= exitEnd
+    assert blkNum2 == _exitBlkNum
   else:
-    return self.getOwnState(to, tokenId, start, end, _blkNum)
+    assert False
+  return True

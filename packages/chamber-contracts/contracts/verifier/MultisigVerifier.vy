@@ -25,7 +25,7 @@ def ecrecoverSig(_txHash: bytes32, _sig: bytes[260], index: int128) -> address:
     return ecrecover(_txHash, convert(v, uint256), r, s)
   return ZERO_ADDRESS
 
-@private
+@public
 @constant
 def parseSegment(
   segment: uint256
@@ -35,24 +35,34 @@ def parseSegment(
   end: uint256 = bitwise_and(segment, MASK8BYTES)
   return (tokenId, start, end)
 
-@private
+@public
 @constant
-def getOwnState(
+def encodeExitState(
   owner: address,
   tokenId: uint256,
   start: uint256,
-  end: uint256,
-  blkNum: uint256
-) -> (bytes32):
-  return sha3(
-      concat("own",
-        convert(owner, bytes32),
-        convert(tokenId, bytes32),
-        convert(start, bytes32),
-        convert(end, bytes32),
-        convert(blkNum, bytes32)
-      )
-    )
+  end: uint256
+) -> (bytes[256]):
+  return concat(
+    sha3("own"),
+    convert(owner, bytes32),
+    convert(tokenId, bytes32),
+    convert(start, bytes32),
+    convert(end, bytes32)
+  )
+
+@public
+@constant
+def decodeExitState(
+  stateBytes: bytes[256]
+) -> (address, uint256, uint256, uint256):
+  assert sha3("own") == extract32(stateBytes, 0, type=bytes32)
+  return (
+    extract32(stateBytes, 32*1, type=address),
+    extract32(stateBytes, 32*2, type=uint256),
+    extract32(stateBytes, 32*3, type=uint256),
+    extract32(stateBytes, 32*4, type=uint256)
+  )
 
 @private
 @constant
@@ -82,7 +92,7 @@ def verifySwap(
   _start: uint256,
   _end: uint256,
   _hasSig: uint256
-) -> (bool):
+) -> (bytes[256]):
   from1: address
   tokenId1: uint256
   segment1: uint256
@@ -98,25 +108,15 @@ def verifySwap(
   (from1, segment1, blkNum1, from2, segment2, blkNum2) = self.decodeSwap(_txBytes)
   (tokenId1, start1, end1) = self.parseSegment(segment1)
   (tokenId2, start2, end2) = self.parseSegment(segment2)
-  offset1: uint256 = extract32(_txBytes, 192 + 16, type=uint256)
-  offset2: uint256 = extract32(_txBytes, 224 + 16, type=uint256)
   if _owner != ZERO_ADDRESS:
     if _outputIndex == 0:
       assert _owner == from2
     elif _outputIndex == 1:
       assert _owner == from1
-    elif _outputIndex == 2:
-      assert _owner == from1
-    elif _outputIndex == 3:
-      assert _owner == from2
   if _outputIndex == 0:
-    assert _tokenId == tokenId1 and _start >= start1 and _end <= start1 + offset1
+    assert _tokenId == tokenId1 and _start >= start1 and _end <= end1
   elif _outputIndex == 1:
-    assert _tokenId == tokenId2 and _start >= start2 and _end <= start2 + offset2
-  elif _outputIndex == 2:
-    assert _tokenId == tokenId1 and _start >= start1 + offset1 and _end <= end1
-  elif _outputIndex == 3:
-    assert _tokenId == tokenId2 and _start >= start2 + offset2 and _end <= end2
+    assert _tokenId == tokenId2 and _start >= start2 and _end <= end2
   check1: bool = self.ecrecoverSig(_txHash, _sigs, 0) == from1
   check2: bool = self.ecrecoverSig(_txHash, _sigs, 1) == from2
   assert check1 and check2
@@ -126,16 +126,24 @@ def verifySwap(
     assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from1
   elif _hasSig == 2:
     assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from2
-  return True
-
+  if _outputIndex == 0:
+    return self.encodeExitState(from1, tokenId1, start1, end1)
+  elif _outputIndex == 1:
+    return self.encodeExitState(from2, tokenId2, start2, end2)
 
 @public
 @constant
-def getTxoHashOfSwap(
+def checkSpentOfSwap(
+  _exitStateBytes: bytes[256],
   _txBytes: bytes[496],
   _index: uint256,
-  _blkNum: uint256
-) -> (bytes32):
+  _exitBlkNum: uint256
+) -> (bool):
+  exitOwner: address
+  exitTokenId: uint256
+  exitStart: uint256
+  exitEnd: uint256
+  (exitOwner, exitTokenId, exitStart, exitEnd) = self.decodeExitState(_exitStateBytes)
   from1: address
   tokenId1: uint256
   segment1: uint256
@@ -151,45 +159,16 @@ def getTxoHashOfSwap(
   (from1, segment1, blkNum1, from2, segment2, blkNum2) = self.decodeSwap(_txBytes)
   (tokenId1, start1, end1) = self.parseSegment(segment1)
   (tokenId2, start2, end2) = self.parseSegment(segment2)
-  offset1: uint256 = extract32(_txBytes, 192 + 16, type=uint256)
-  offset2: uint256 = extract32(_txBytes, 224 + 16, type=uint256)
-  if _index == 10:
-    return self.getOwnState(from1, tokenId1, start1, end1, blkNum1)
-  elif _index == 11:
-    return self.getOwnState(from2, tokenId2, start2, end2, blkNum2)
-  elif _index == 0:
-    return self.getOwnState(from2, tokenId1, start1, start1 + offset1, _blkNum)
+  if _index == 0:
+    assert exitOwner == from1
+    assert exitTokenId == tokenId1
+    assert exitStart <= start1 and end1 <= exitEnd
+    assert blkNum1 == _exitBlkNum
   elif _index == 1:
-    return self.getOwnState(from1, tokenId2, start1 + offset1, end2, _blkNum)
-  elif _index == 2:
-    return self.getOwnState(from1, tokenId2, start2, start2 + offset2, _blkNum)
-  elif _index == 3:
-    return self.getOwnState(from2, tokenId2, start2 + offset2, end2, _blkNum)
+    assert exitOwner == from2
+    assert exitTokenId == tokenId2
+    assert exitStart <= start2 and end2 <= exitEnd
+    assert blkNum2 == _exitBlkNum
   else:
-    return sha3("swap")
-
-# multisig
-@public
-@constant
-def verifyMultisig2(
-  _txHash: bytes32,
-  _tBytes: bytes[496],
-  _sigs: bytes[260],
-  _outputIndex: uint256,
-  _owner: address,
-  _start: uint256,
-  _end: uint256
-) -> (bool):
-  # label, maxBlkNum, lockstate, nextstate, from1, start1, end1, blkNum1, from2, start2, end2, blkNum2
-  tList = RLPList(_tBytes, [
-    uint256, uint256, bytes, bytes, address, uint256, uint256, uint256, address, uint256, uint256, uint256])
+    assert False
   return True
-
-@public
-@constant
-def getTxoHashOfMultisig2(
-  _tBytes: bytes[496],
-  _index: uint256,
-  _blkNum: uint256
-) -> (bytes32):
-  return sha3("multisig2")

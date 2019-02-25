@@ -242,25 +242,10 @@ function transactions() {
   const invalidTx = createTransfer(OperatorPrivateKey, AliceAddress, segment2, blkNum2, BobAddress)
   const mergeTx = new SignedTransaction(new MergeTransaction(AliceAddress, segment4, segment5, BobAddress, blkNum1, blkNum2))
   mergeTx.sign(AlicePrivateKey)
-  const swapTx = new SignedTransaction(new SwapTransaction(
-    AliceAddress,
-    Segment.ETH(
-      utils.bigNumberify('5000000'),
-      utils.bigNumberify('5100000')),
-    blkNum1,
-    OperatorAddress,
-    Segment.ETH(
-      utils.bigNumberify('5100000'),
-      utils.bigNumberify('5200000')),
-    blkNum2,
-    utils.bigNumberify('40000'),
-    utils.bigNumberify('60000')))
 
-  
   block.appendTx(tx)
   block.appendTx(invalidTx)
   block.appendTx(mergeTx)
-  block.appendTx(swapTx)
   block.setSuperRoot(constants.HashZero)
   
   const includedTx = block.getSignedTransactionWithProof(tx.hash())[0]
@@ -273,8 +258,7 @@ function transactions() {
     segment45: segment45,
     tx: includedTx,
     invalidTx: includedInvalidTx,
-    mergeTx: includedMergeTx,
-    swapTx: swapTx
+    mergeTx: includedMergeTx
   }
 }
 
@@ -327,5 +311,6 @@ module.exports = {
   Scenario3: scenario3(),
   Scenario4: scenario4(),
   transactions: transactions(),
-  testKeys: {AlicePrivateKey, BobPrivateKey, OperatorPrivateKey}
+  testKeys: {AlicePrivateKey, BobPrivateKey, OperatorPrivateKey},
+  testAddresses: {AliceAddress, OperatorAddress}
 }

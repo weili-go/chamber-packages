@@ -167,9 +167,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario1.blocks[1].transactions[0].hash())[0]
       await this.rootChain.challenge(
         exitId,
-        tx.getTxBytes(),
-        8 * 100 + 10,
-        -1,
+        tx.getStateBytes(),
+        8 * 100 + 0,
         Scenario1.segments[0].toBigNumber(),
         challengeTx.getTxBytes(),
         challengeTx.getProofAsHex(),
@@ -267,9 +266,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario1.blocks[1].transactions[0].hash())[0]
       await this.rootChain.challenge(
         exitId2,
-        challengeTx.getTxBytes(),
-        8 * 100 + 10,
-        -1,
+        challengeTx.getStateBytes(),
+        8 * 100 + 0,
         Scenario1.segments[0].toBigNumber(),
         respondTx.getTxBytes(),
         respondTx.getProofAsHex(),
@@ -323,9 +321,8 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario1.blocks[0].transactions[0].hash())[0]
       await this.rootChain.challenge(
         exitId2,
-        depositTx.encode(),
-        6 * 100 + 10,
-        -1,
+        depositTx.getOutput().withBlkNum(ethers.utils.bigNumberify(6)).getBytes(),
+        6 * 100 + 0,
         Scenario1.segments[0].toBigNumber(),
         respondTx.getTxBytes(),
         respondTx.getProofAsHex(),
@@ -492,8 +489,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario2.blocks[1].transactions[1].hash())[0]
       const forceIncludeTx = Scenario2.blocks[0].block.getSignedTransactionWithProof(
         Scenario2.blocks[0].transactions[0].hash())[1]
-      tx1.confirmMerkleProofs(testKeys.AlicePrivateKey)
-      tx1.confirmMerkleProofs(testKeys.OperatorPrivateKey)
       forceIncludeTx.confirmMerkleProofs(testKeys.AlicePrivateKey)
 
       await this.rootChain.exit(
@@ -559,8 +554,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario2.blocks[0].transactions[0].hash())[1]
       const fullForceIncludeTx = Scenario2.blocks[0].block.getSignedTransactionWithProof(
         Scenario2.blocks[0].transactions[0].hash())[1]
-      tx1.confirmMerkleProofs(testKeys.AlicePrivateKey)
-      tx1.confirmMerkleProofs(testKeys.OperatorPrivateKey)
       forceIncludeTx.confirmMerkleProofs(testKeys.AlicePrivateKey)
       fullForceIncludeTx.confirmMerkleProofs(testKeys.AlicePrivateKey)
       fullForceIncludeTx.confirmMerkleProofs(testKeys.OperatorPrivateKey)

@@ -8,6 +8,7 @@ struct Exit:
   owner: address
   exitableAt: uint256
   txHash: bytes32
+  stateHash: bytes32
   extendedExitableAt: uint256
   utxoPos: uint256
   priority: uint256
@@ -46,12 +47,13 @@ contract TransactionVerifier():
     _start: uint256,
     _end: uint256,
     _timestamp: uint256
-  ) -> bool: constant
-  def getTxoHash(
+  ) -> bytes[256]: constant
+  def checkSpent(
+    _exitStateBytes: bytes[256],
     _txBytes: bytes[496],
     _index: uint256,
     _blkNum: uint256
-  ) -> bytes32: constant
+  ) -> bool: constant
   def doesRequireConfsig(
     _txBytes: bytes[496]
   ) -> bool: constant
@@ -166,7 +168,7 @@ def checkTransaction(
   _hasSig: uint256,
   _outputIndex: uint256,
   _owner: address
-) -> bool:
+) -> bytes[256]:
   root: bytes32
   blockTimestamp: uint256
   if _blkNum % 2 == 0:
@@ -427,7 +429,7 @@ def exit(
   start: uint256
   end: uint256
   (tokenId, start, end) = self.parseSegment(_segment)
-  self.checkTransaction(
+  exitStateBytes: bytes[256] = self.checkTransaction(
     tokenId,
     start,
     end,
@@ -446,6 +448,7 @@ def exit(
     owner: msg.sender,
     exitableAt: exitableAt,
     txHash: txHash,
+    stateHash: sha3(exitStateBytes),
     extendedExitableAt: 0,
     utxoPos: _utxoPos,
     priority: priority,
@@ -460,14 +463,11 @@ def exit(
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx
-# @param _eInputPos if _eInputPos < 0 then it's spent challenge,
-#     if _eInputPos >= 0 then it's double spend challenge and _eInputPos is input index
 @public
 def challenge(
   _exitId: uint256,
-  _exitTxBytes: bytes[496],
+  _exitStateBytes: bytes[256],
   _utxoPos: uint256,
-  _eInputPos: int128,
   _segment: uint256,
   _txBytes: bytes[496],
   _proof: bytes[512],
@@ -484,7 +484,8 @@ def challenge(
   exitBlkNum: uint256 = exit.utxoPos / 100
   exitIndex: uint256 = exit.utxoPos - exitBlkNum * 100
   (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
-  assert exit.txHash == sha3(_exitTxBytes)
+  # assert exit.txHash == sha3(_exitTxBytes)
+  assert exit.stateHash == sha3(_exitStateBytes)
   assert exit.exitableAt > as_unitless_number(block.timestamp)
   txHash: bytes32 = sha3(_txBytes)
   # check removed transaction sha3(_txBytes)
@@ -502,36 +503,21 @@ def challenge(
     0,
     ZERO_ADDRESS
   )
-  if _eInputPos < 0:
-    # spent challenge
-    # get output hash
-    spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
-      _exitTxBytes,
-      exitIndex,
-      exitBlkNum)
-    assert blkNum > exitBlkNum
-    lowerExit: uint256 = self.relations[_exitId]
-    if self.exits[lowerExit].owner != ZERO_ADDRESS:
-      self.exits[lowerExit].challengeCount -= 1
-      if as_unitless_number(block.timestamp) > self.exits[lowerExit].exitableAt - EXTEND_PERIOD_SECONDS:
-        self.exits[lowerExit].extendedExitableAt = as_unitless_number(block.timestamp) + EXTEND_PERIOD_SECONDS
-    if not TransactionVerifier(self.txverifier).doesRequireConfsig(_txBytes):
-      self.challenges[txHash] = Challenge({
-        blkNum: exitBlkNum,
-        isAvailable: True
-      })
-  else:
-    # double spent challenge
-    # get input hash
-    spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
-      _exitTxBytes,
-      convert(_eInputPos + 10, uint256),
-      exitBlkNum)
-    assert blkNum < exitBlkNum
-  assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_txBytes, txoIndex, blkNum)
+  assert blkNum > exitBlkNum
+  lowerExit: uint256 = self.relations[_exitId]
+  if self.exits[lowerExit].owner != ZERO_ADDRESS:
+    self.exits[lowerExit].challengeCount -= 1
+    if as_unitless_number(block.timestamp) > self.exits[lowerExit].exitableAt - EXTEND_PERIOD_SECONDS:
+      self.exits[lowerExit].extendedExitableAt = as_unitless_number(block.timestamp) + EXTEND_PERIOD_SECONDS
+  if not TransactionVerifier(self.txverifier).doesRequireConfsig(_txBytes):
+    self.challenges[txHash] = Challenge({
+      blkNum: exitBlkNum,
+      isAvailable: True
+    })
+  assert TransactionVerifier(self.txverifier).checkSpent(_exitStateBytes, _txBytes, txoIndex, exitBlkNum)
   # break exit procedure
   if exit.hasSig > 0:
-    self.removed[sha3(_exitTxBytes)] = False
+    self.removed[exit.txHash] = False
   self.exits[_exitId].owner = ZERO_ADDRESS
   clear(self.exits[_exitId])
   send(msg.sender, EXIT_BOND)
@@ -545,7 +531,12 @@ def requestHigherPriorityExit(
 ):
   parent: Exit = self.exits[_parentExitId]
   exit: Exit = self.exits[_exitId]
-  assert parent.priority < exit.priority
+  if parent.priority == exit.priority:
+    # in case of double spent, parent.priority == exit.priority
+    # parent.blkNum < exit.blkNum
+    assert parent.utxoPos < exit.utxoPos
+  else:
+    assert parent.priority < exit.priority
   assert self.relations[_parentExitId] == 0
   self.checkSegment(parent.segment, exit.segment)
   self.exits[_exitId].challengeCount += 1
