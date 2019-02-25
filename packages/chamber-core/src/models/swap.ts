@@ -81,7 +81,8 @@ export class SwapRequest {
   getSignedSwapTx() {
     if(this.target) {
       const tx = this.getSwapTx(this.target.getOwners()[0], this.target.getBlkNum(), this.target.getSegment(0))
-      return new SignedTransaction(tx)
+      if(tx)
+        return new SignedTransaction(tx)
     } else {
       throw new Error('target not setted')
     }
@@ -129,15 +130,7 @@ export class SwapRequest {
         segment.getAmount(),
         segment.getAmount())
     } else {
-      return new SwapTransaction(
-        owner,
-        segment,
-        blkNum,
-        this.getOwner(),
-        this.neighbor,
-        this.getNeighborBlkNum(),
-        this.neighbor.getAmount(),
-        this.neighbor.getAmount())
+      return null
     }
   }
 

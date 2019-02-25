@@ -45,9 +45,12 @@ describe('SwapRequest', () => {
       segment2,
       BobAddress).withBlkNum(blkNum))
     const tx = swapRequest.getSignedSwapTx()
-    const swapTx: SwapTransaction = tx.getRawTx() as SwapTransaction
-    assert.equal(swapTx.getInput(0).getOwners()[0], AliceAddress)
-    assert.equal(swapTx.getOutput(0).getOwners()[0], BobAddress)
+    assert.notEqual(tx, undefined)
+    if(tx) {
+      const swapTx: SwapTransaction = tx.getRawTx() as SwapTransaction
+      assert.equal(swapTx.getInput(0).getOwners()[0], AliceAddress)
+      assert.equal(swapTx.getOutput(0).getOwners()[0], BobAddress)
+    }
   })
 
 })

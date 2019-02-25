@@ -513,7 +513,7 @@ export class ChamberWallet {
 
   async exit(tx: SignedTransactionWithProof): Promise<ChamberResult<Exit>> {
     const result = await this.rootChainContract.exit(
-      tx.blkNum.mul(100),
+      tx.blkNum.mul(100).add(tx.outputIndex),
       tx.getOutput().getSegment(0).toBigNumber(),
       tx.getTxBytes(),
       tx.getProofAsHex(),
@@ -701,11 +701,12 @@ export class ChamberWallet {
     .map(swapRequest => {
       if(swapRequest) {
         const tx = swapRequest.getSignedSwapTx()
-        tx.sign(this.wallet.privateKey)
-        return this.client.swapRequestResponse(swapRequest.getOwner(), tx)
-      } else {
-        return Promise.resolve(new ChamberResultError<boolean>(WalletErrorFactory.SwapRequestError()))
+        if(tx) {
+          tx.sign(this.wallet.privateKey)
+          return this.client.swapRequestResponse(swapRequest.getOwner(), tx)
+        }
       }
+      return Promise.resolve(new ChamberResultError<boolean>(WalletErrorFactory.SwapRequestError()))
     }).filter(p => !!p)
     return await Promise.all(tasks)
   }
