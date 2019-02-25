@@ -568,12 +568,9 @@ export class ChamberWallet {
       if(segment.getAmount().gte(amount)) {
         tx = new SplitTransaction(
           this.wallet.address,
-          segment,
+          new Segment(segment.getTokenId(), segment.start, segment.start.add(amount)),
           _tx.blkNum,
-          to,
-          this.wallet.address,
-          segment.start.add(amount)
-        )
+          to)
       }
     })
     return tx

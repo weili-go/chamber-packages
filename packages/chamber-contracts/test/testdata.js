@@ -184,10 +184,10 @@ function scenario3() {
   const block5 = new Block(10)
   block5.setBlockNumber(10)
 
-  const tx31 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, BobAddress, utils.bigNumberify('500000')))
+  const tx31 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, BobAddress))
   tx31.sign(AlicePrivateKey)
   const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
-  const tx41 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, OperatorAddress, utils.bigNumberify('500000')))
+  const tx41 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, OperatorAddress))
   tx41.sign(AlicePrivateKey)
   const tx42 = createTransfer(OperatorPrivateKey, OperatorAddress, segment5, blkNum3, OperatorAddress)
   

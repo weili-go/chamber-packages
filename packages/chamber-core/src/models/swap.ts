@@ -110,13 +110,11 @@ export class SwapRequest {
       // swap segment:left and this.segment
       return new SwapTransaction(
         owner,
-        segment,
+        new Segment(segment.getTokenId(), segment.start, segment.start.add(this.segment.getAmount())),
         blkNum,
         this.getOwner(),
         this.segment,
-        this.getBlkNum(),
-        this.segment.getAmount(),
-        this.segment.getAmount())
+        this.getBlkNum())
     } else if(this.neighbor.getAmount().gte(segment.getAmount())) {
       // case: segment < this.segment
       // swap this.neighbor:left segment
@@ -125,10 +123,8 @@ export class SwapRequest {
         segment,
         blkNum,
         this.getOwner(),
-        this.neighbor,
-        this.getBlkNum(),
-        segment.getAmount(),
-        segment.getAmount())
+        new Segment(this.neighbor.getTokenId(), this.neighbor.start, this.neighbor.start.add(segment.getAmount())),
+        this.getBlkNum())
     } else {
       return null
     }

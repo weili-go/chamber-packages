@@ -153,7 +153,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     it('should failed to finalizeDispute', async () => {
       Scenario3.blocks[0].block.setSuperRoot(constants.ZERO_HASH)
       const tx = Scenario3.blocks[0].block.getSignedTransactionWithProof(
-        Scenario3.blocks[0].transactions[0].hash())[1]
+        Scenario3.blocks[0].transactions[0].hash())[0]
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
       await this.fastFinality.dispute(
@@ -225,15 +225,15 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
     it('should be success to challenge', async () => {
       const tx = Scenario3.blocks[0].block.getSignedTransactionWithProof(
-        Scenario3.blocks[0].transactions[0].hash())[1]
+        Scenario3.blocks[0].transactions[0].hash())[0]
       await this.fastFinality.challenge(
         tx.getTxBytes(),
         tx.getProofAsHex(),
         tx.getSignatures(),
         2 * 100 + 1,
         tokenId,
-        Scenario3.segments[2].start,
-        Scenario3.segments[2].end,
+        Scenario3.segments[0].start,
+        Scenario3.segments[0].end,
         {
           from: operator,
           gas: '500000'
@@ -242,7 +242,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
     it('should be failed to challenge', async () => {
       const invalidTx = Scenario3.blocks[1].block.getSignedTransactionWithProof(
-        Scenario3.blocks[1].transactions[0].hash())[1]
+        Scenario3.blocks[1].transactions[0].hash())[0]
       
       await assertRevert(this.fastFinality.challenge(
         invalidTx.getTxBytes(),
@@ -250,8 +250,8 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         invalidTx.getSignatures(),
         2 * 100 + 1,
         tokenId,
-        Scenario3.segments[2].start,
-        Scenario3.segments[2].end,
+        Scenario3.segments[1].start,
+        Scenario3.segments[1].end,
         {
           from: operator,
           gas: '500000'
@@ -260,17 +260,17 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
     it('should be success to secondDispute', async () => {
       const tx = Scenario3.blocks[0].block.getSignedTransactionWithProof(
-        Scenario3.blocks[0].transactions[0].hash())[1]
+        Scenario3.blocks[0].transactions[0].hash())[0]
       const secondDisputeTx = Scenario3.blocks[1].block.getSignedTransactionWithProof(
-        Scenario3.blocks[1].transactions[0].hash())[1]
+        Scenario3.blocks[1].transactions[0].hash())[0]
       await this.fastFinality.challenge(
         tx.getTxBytes(),
         tx.getProofAsHex(),
         tx.getSignatures(),
         2 * 100 + 1,
         tokenId,
-        Scenario3.segments[2].start,
-        Scenario3.segments[2].end,
+        Scenario3.segments[0].start,
+        Scenario3.segments[0].end,
         {
           from: operator
         })
@@ -283,8 +283,8 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         secondDisputeTx.getSignatures(),
         4 * 100 + 1,
         tokenId,
-        Scenario3.segments[2].start,
-        Scenario3.segments[2].end,
+        Scenario3.segments[0].start,
+        Scenario3.segments[0].end,
         {
           from: operator
         });
