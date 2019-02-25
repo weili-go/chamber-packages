@@ -150,8 +150,8 @@ describe('Transaction', () => {
         BobAddress,
         segment2,
         blkNum2,
-        utils.bigNumberify('5700000'),
-        utils.bigNumberify('7000000'))
+        utils.bigNumberify('700000'),
+        utils.bigNumberify('1000000'))
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(AlicePrivateKey)
       signedTx.sign(BobPrivateKey)
@@ -159,7 +159,7 @@ describe('Transaction', () => {
       assert.equal(signedTx.getRawTx().getOutput(0).getSegment(0).start.toString(), utils.bigNumberify('5000000').toString())
       assert.equal(signedTx.getRawTx().getOutput(1).getSegment(0).start.toString(), utils.bigNumberify('5700000').toString())
       assert.equal(signedTx.getRawTx().getOutput(2).getSegment(0).start.toString(), utils.bigNumberify('6000000').toString())
-      assert.equal(signedTx.getRawTx().getOutputs().length, 3)
+      assert.equal(signedTx.getRawTx().getOutputs().length, 4)
     });
 
   })

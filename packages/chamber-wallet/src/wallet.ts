@@ -617,6 +617,7 @@ export class ChamberWallet {
           output.getOwners()[0],
           output.getBlkNum(),
           output.getSegment(0),
+          txNeighbor.getOutput().getBlkNum(),
           neighbor)
       }
     })
@@ -638,7 +639,7 @@ export class ChamberWallet {
   }
 
   private checkSwapTx(swapTx: SwapTransaction) {
-    const input = swapTx.getInputs().filter(i => i.getOwners().indexOf(this.getAddress()))[0]
+    const input = swapTx.getInputs().filter(i => i.getOwners().indexOf(this.getAddress()) >= 0)[0]
     if(input) {
       return this.getUTXOArray().filter((_tx) => {
         return input.hash() == _tx.getOutput().hash()
@@ -682,23 +683,26 @@ export class ChamberWallet {
   }
 
   async swapRequestRespond() {
-    const swapRequests = await this.client.getSwapRequest()
+    let swapRequests = await this.client.getSwapRequest()
     if(swapRequests.isError()) {
       return new ChamberResultError(WalletErrorFactory.SwapRequestError())
     }
-    const txs = swapRequests.ok().map((swapRequest) => {
+    const tasks = swapRequests.ok().map((swapRequest) => {
       const neighbors = this.searchNeighbors(swapRequest)
       const neighbor = neighbors[0]
       if(neighbor) {
-        return swapRequest.getSignedSwapTx(neighbor.getOwners()[0], neighbor.getBlkNum(), neighbor.getSegment(0))
+        swapRequest.setTarget(neighbor)
+        return swapRequest
       } else {
         return null
       }
-    }).filter(tx => !!tx)
-    const tasks = txs.map(tx => {
-      if(tx) {
+    })
+    .filter(swapRequest => !!swapRequest)
+    .map(swapRequest => {
+      if(swapRequest) {
+        const tx = swapRequest.getSignedSwapTx()
         tx.sign(this.wallet.privateKey)
-        return this.client.swapRequestResponse(tx)
+        return this.client.swapRequestResponse(swapRequest.getOwner(), tx)
       } else {
         return Promise.resolve(new ChamberResultError<boolean>(WalletErrorFactory.SwapRequestError()))
       }

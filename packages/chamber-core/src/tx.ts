@@ -74,6 +74,8 @@ export abstract class BaseTransaction {
 
   abstract verify(signatures: string[]): boolean
 
+  abstract normalizeSigs(signatures: string[], hash?: string): string[]
+
   abstract requireConfsig(): boolean
 
 }
@@ -223,6 +225,10 @@ export class DepositTransaction extends BaseTransaction {
     return true
   }
 
+  normalizeSigs(signatures: string[], hash?: string): string[] {
+    return signatures
+  }
+
   requireConfsig(): boolean {
     return false
   }
@@ -293,34 +299,31 @@ export class SplitTransaction extends BaseTransaction {
   }
   
   getOutputs() {
-    let outputs = []
-    if(this.offset.sub(this.segment.start).gt(0)) {
-      outputs.push(new OwnState(
+    return [
+      new OwnState(
         new Segment(this.segment.tokenId, this.segment.start, this.offset),
         this.to1
-      ))
-    }
-    if(this.segment.end.sub(this.offset).gt(0)) {
-      outputs.push(new OwnState(
+      ),
+      new OwnState(
         new Segment(this.segment.tokenId, this.offset, this.segment.end),
         this.to2
-      ))
-    }
-    return outputs
+      )]
   }
 
   getSegments(): Segment[] {
     return [
       new Segment(this.segment.tokenId, this.segment.start, this.offset),
       new Segment(this.segment.tokenId, this.offset, this.segment.end)
-    ].filter(seg => {
-      return !seg.getAmount().eq(0)
-    })
+    ]
   }
 
   verify(signatures: string[]): boolean {
     return utils.recoverAddress(
       this.hash(), signatures[0]) == this.from
+  }
+
+  normalizeSigs(signatures: string[], hash?: string): string[] {
+    return signatures
   }
 
   requireConfsig(): boolean {
@@ -417,6 +420,10 @@ export class MergeTransaction extends BaseTransaction {
       this.hash(), signatures[0]) == this.from
   }
 
+  normalizeSigs(signatures: string[], hash?: string): string[] {
+    return signatures
+  }
+
   requireConfsig(): boolean {
     return true
   }
@@ -470,11 +477,11 @@ export class SwapTransaction extends BaseTransaction {
       this.offset2 = offset1
       this.offset1 = offset2
     }
-    if(this.segment1.start.eq(this.offset1)) {
-      throw new Error('segment1.start should not be offset1')
+    if(this.segment1.getAmount().mul(2).lt(this.offset1.abs())) {
+      throw new Error('offset1 should be smaller than segment1')
     }
-    if(this.segment2.start.eq(this.offset2)) {
-      throw new Error('segment2.start should not be offset2')
+    if(this.segment2.getAmount().mul(2).lt(this.offset2.abs())) {
+      throw new Error('offset2 should be smaller than segment2')
     }
   }
 
@@ -493,8 +500,8 @@ export class SwapTransaction extends BaseTransaction {
       from2,
       segment2,
       blkNum2,
-      segment1.end,
-      segment2.end
+      segment1.getAmount(),
+      segment2.getAmount()
     )
   }
 
@@ -537,37 +544,28 @@ export class SwapTransaction extends BaseTransaction {
   }
 
   getOutputs() {
-    let outputs = [
+    return [
       new OwnState(
-        new Segment(this.segment1.getTokenId(), this.segment1.start, this.offset1),
-        this.from2
-      )]
-    if(this.segment1.end.sub(this.offset1).gt(0)) {
-      outputs.push(new OwnState(
-        new Segment(this.segment1.getTokenId(), this.offset1, this.segment1.end),
-        this.from1
-      ))
-    }
-    outputs.push(new OwnState(
-        new Segment(this.segment2.getTokenId(), this.segment2.start, this.offset2),
-        this.from1))
-    if(this.segment2.end.sub(this.offset2).gt(0)) {
-      outputs.push(new OwnState(
-        new Segment(this.segment2.getTokenId(), this.offset2, this.segment2.end),
-        this.from2))
-      }
-    return outputs    
+        new Segment(this.segment1.getTokenId(), this.segment1.start, this.segment1.start.add(this.offset1)),
+        this.from2),
+      new OwnState(
+        new Segment(this.segment1.getTokenId(), this.segment1.start.add(this.offset1), this.segment1.end),
+        this.from1),
+      new OwnState(
+        new Segment(this.segment2.getTokenId(), this.segment2.start, this.segment2.start.add(this.offset2)),
+        this.from1),
+      new OwnState(
+        new Segment(this.segment2.getTokenId(), this.segment2.start.add(this.offset2), this.segment2.end),
+        this.from2)]
   }
     
   getSegments(): Segment[] {
     return [
-      new Segment(this.segment1.getTokenId(), this.segment1.start, this.offset1),
-      new Segment(this.segment1.getTokenId(), this.offset1, this.segment1.end),
-      new Segment(this.segment2.getTokenId(), this.segment2.start, this.offset2),
-      new Segment(this.segment2.getTokenId(), this.offset2, this.segment2.end)
-    ].filter(seg => {
-      return !seg.getAmount().eq(0)
-    })
+      new Segment(this.segment1.getTokenId(), this.segment1.start, this.segment1.start.add(this.offset1)),
+      new Segment(this.segment1.getTokenId(), this.segment1.start.add(this.offset1), this.segment1.end),
+      new Segment(this.segment2.getTokenId(), this.segment2.start, this.segment2.start.add(this.offset2)),
+      new Segment(this.segment2.getTokenId(), this.segment2.start.add(this.offset2), this.segment2.end)
+    ]
   }
 
   verify(signatures: string[]): boolean {
@@ -575,6 +573,16 @@ export class SwapTransaction extends BaseTransaction {
       this.hash(), signatures[0]) == this.from1
       && utils.recoverAddress(
         this.hash(), signatures[1]) == this.from2
+  }
+
+  normalizeSigs(signatures: string[], hash?: string): string[] {
+    if(signatures.length == 2) {
+      if(utils.recoverAddress(
+        hash?hash:this.hash(), signatures[0]) == this.from2) {
+          return signatures.reverse()
+        }
+    }
+    return signatures
   }
 
   requireConfsig(): boolean {

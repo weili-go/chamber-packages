@@ -2,7 +2,8 @@ import { utils } from "ethers"
 import {
   BaseTransaction,
   TransactionDecoder,
-  TransactionOutput
+  TransactionOutput,
+  SwapTransaction
 } from './tx'
 import {
   HexString,
@@ -47,6 +48,7 @@ export class SignedTransaction {
    */
   sign(pkey: string) {
     this.signatures.push(this.justSign(pkey))
+    this.signatures = this.getRawTx().normalizeSigs(this.signatures)
   }
 
   justSign(pkey: string) {
@@ -190,7 +192,9 @@ export class SignedTransactionWithProof {
 
   confirmMerkleProofs(pkey: string) {
     const key = new utils.SigningKey(pkey)
-    this.confSigs.push(utils.joinSignature(key.signDigest(this.merkleHash())))
+    const merkleHash = this.merkleHash()
+    this.confSigs.push(utils.joinSignature(key.signDigest(merkleHash)))
+    this.confSigs = this.getSignedTx().getRawTx().normalizeSigs(this.confSigs, merkleHash)
   }
 
   serialize() {

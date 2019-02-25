@@ -17,9 +17,8 @@ export class SwapManager {
     }
   }
 
-  respondRequestSwap(swapTx: SignedTransaction) {
-    const from2 = swapTx.getRawTx().getInput(1).getOwners()[0]
-    this.responds.set(from2, swapTx)
+  respondRequestSwap(owner: string, swapTx: SignedTransaction) {
+    this.responds.set(owner, swapTx)
   }
 
   clearRespond(owner: string) {
