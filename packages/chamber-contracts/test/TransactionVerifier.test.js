@@ -163,7 +163,6 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         {
           from: alice
         });
-        /*
       const result3 = await this.transactionVerifier.checkSpent(
         exitState2.getBytes(),
         swapTx.getTxBytes(),
@@ -171,9 +170,9 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         blkNum5,
         {
           from: alice
-        });*/
+        });
       assert.equal(result2, true)
-//      assert.equal(result3, true)
+      assert.equal(result3, true)
     })
 
   })
