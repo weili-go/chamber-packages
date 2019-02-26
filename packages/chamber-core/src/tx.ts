@@ -565,6 +565,17 @@ export class SwapTransaction extends BaseTransaction {
     return [this.getInput(0), this.getInput(1)]
   }
 
+  getInputByOwner(owner: Address): TransactionOutput | null {
+    const inputs = this.getInputs()
+    if(inputs[0].getOwners().indexOf(owner) >= 0) {
+      return inputs[0]
+    } else if(inputs[1].getOwners().indexOf(owner) >= 0) {
+      return inputs[1]
+    } else {
+      return null
+    }
+  }
+
   getOutput(index: number): TransactionOutput {
     return this.getOutputs()[index]
   }
