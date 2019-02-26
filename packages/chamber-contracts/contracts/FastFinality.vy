@@ -177,7 +177,7 @@ def dispute(
     _start,
     _end,
     0)
-  # assert TransactionVerifier(self.txverifier).checkSpent(_exitStateBytes, _txBytes, 0, _prevBlkNum)
+  assert TransactionVerifier(self.txverifier).checkSpent(_exitStateBytes, _txBytes, 0, _prevBlkNum)
   self.disputes[txHash] = Dispute({
     recipient: msg.sender,
     withdrawableAt: block.timestamp + 1 * 7 * 24 * 60 * 60,
