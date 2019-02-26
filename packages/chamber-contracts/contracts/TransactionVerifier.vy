@@ -196,9 +196,7 @@ def verify(
   elif label == 4:
     return self.verifyDepositTx(_txBytes, _owner, _tokenId, _start, _end)
   elif label == 5:
-    a: bytes[256]
-    return a
-    #return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _hasSig)
+    return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _hasSig)
   elif label >= 20:
     return EscrowVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _timestamp)
   else:
