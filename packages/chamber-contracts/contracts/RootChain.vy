@@ -10,7 +10,7 @@ struct Exit:
   txHash: bytes32
   stateHash: bytes32
   extendedExitableAt: uint256
-  utxoPos: uint256
+  blkNum: uint256
   priority: uint256
   segment: uint256
   hasSig: uint256
@@ -453,7 +453,7 @@ def exit(
     txHash: txHash,
     stateHash: sha3(exitStateBytes),
     extendedExitableAt: 0,
-    utxoPos: _utxoPos,
+    blkNum: blkNum,
     priority: priority,
     segment: _segment,
     challengeCount: 0,
@@ -483,8 +483,7 @@ def challenge(
   start: uint256
   end: uint256
   exit: Exit = self.exits[_exitId]
-  exitBlkNum: uint256 = exit.utxoPos / 100
-  exitIndex: uint256 = exit.utxoPos - exitBlkNum * 100
+  exitBlkNum: uint256 = exit.blkNum
   (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
   # assert exit.txHash == sha3(_exitTxBytes)
   txHash: bytes32 = sha3(_txBytes)
@@ -495,7 +494,7 @@ def challenge(
   else:
     # double spent challenge
     assert self.childs[_exitId] == _childExitId
-    assert exitBlkNum < blkNum and blkNum < (self.exits[_childExitId].utxoPos / 100)
+    assert exitBlkNum < blkNum and blkNum < self.exits[_childExitId].blkNum
   assert exit.exitableAt > as_unitless_number(block.timestamp)
   # check removed transaction sha3(_txBytes)
   assert not self.removed[txHash]
@@ -549,17 +548,11 @@ def requestHigherPriorityExit(
 ):
   parent: Exit = self.exits[_parentExitId]
   exit: Exit = self.exits[_exitId]
-  if parent.priority == exit.priority:
-    # in case of double spent, parent.priority == exit.priority
-    # parent.blkNum < exit.blkNum
-    assert parent.utxoPos < exit.utxoPos
-  else:
-    assert parent.priority < exit.priority
+  assert parent.priority < exit.priority
   assert self.relations[_parentExitId] == 0
   self.checkSegment(parent.segment, exit.segment)
   self.exits[_exitId].challengeCount += 1
   self.relations[_parentExitId] = _exitId
-
 
 @public
 def includeSignature(
