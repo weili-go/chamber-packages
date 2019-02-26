@@ -498,7 +498,6 @@ export class ChamberWallet {
   getBalance() {
     let balance = ethers.utils.bigNumberify(0)
     this.getUTXOArray().forEach((tx) => {
-      console.log('getBalance: ', tx.getOutput().getSegment(0))
       balance = balance.add(tx.getOutput().getSegment(0).getAmount())
     })
     return balance
@@ -582,7 +581,6 @@ export class ChamberWallet {
     this.getUTXOArray().forEach((_tx) => {
       const output = _tx.getOutput()
       const segment = output.getSegment(0)
-      console.log('searchUtxo:', segment)
       if(segment.getAmount().gte(amount)) {
         tx = new SplitTransaction(
           this.wallet.address,
