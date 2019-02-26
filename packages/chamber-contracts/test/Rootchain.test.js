@@ -19,8 +19,11 @@ const ethers = require('ethers')
 const BigNumber = ethers.utils.BigNumber
 
 const {
+  Block,
   constants,
-  Segment
+  Segment,
+  SignedTransaction,
+  SwapTransaction
 } = require('@layer2/core')
 
 const {
@@ -28,7 +31,8 @@ const {
   Scenario2,
   Scenario3,
   Scenario4,
-  testKeys
+  testKeys,
+  testAddresses
 } = require('./testdata')
 
 require('chai')
@@ -167,9 +171,9 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario1.blocks[1].transactions[0].hash())[0]
       await this.rootChain.challenge(
         exitId,
-        tx.getTxBytes(),
-        8 * 100 + 10,
-        -1,
+        exitId,
+        tx.getStateBytes(),
+        8 * 100 + 0,
         Scenario1.segments[0].toBigNumber(),
         challengeTx.getTxBytes(),
         challengeTx.getProofAsHex(),
@@ -267,9 +271,9 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario1.blocks[1].transactions[0].hash())[0]
       await this.rootChain.challenge(
         exitId2,
-        challengeTx.getTxBytes(),
-        8 * 100 + 10,
-        -1,
+        exitId2,
+        challengeTx.getStateBytes(),
+        8 * 100 + 0,
         Scenario1.segments[0].toBigNumber(),
         respondTx.getTxBytes(),
         respondTx.getProofAsHex(),
@@ -323,9 +327,9 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario1.blocks[0].transactions[0].hash())[0]
       await this.rootChain.challenge(
         exitId2,
-        depositTx.encode(),
-        6 * 100 + 10,
-        -1,
+        exitId2,
+        depositTx.getOutput().withBlkNum(ethers.utils.bigNumberify(6)).getBytes(),
+        6 * 100 + 0,
         Scenario1.segments[0].toBigNumber(),
         respondTx.getTxBytes(),
         respondTx.getProofAsHex(),
@@ -388,20 +392,41 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   });
 
-  describe("SplitTransaction", () => {
+  describe("SwapTransaction", () => {
 
-    const exitableEnd = ethers.utils.bigNumberify('4000000')
+    const exitableEnd = ethers.utils.bigNumberify('2000000')
+    // deposits
+    const blkNum1 = ethers.utils.bigNumberify('3')
+    const blkNum2 = ethers.utils.bigNumberify('5')
+    const segment1 = Segment.ETH(
+      ethers.utils.bigNumberify('0'),
+      ethers.utils.bigNumberify('1000000'))
+    const segment2 = Segment.ETH(
+      ethers.utils.bigNumberify('1000000'),
+      ethers.utils.bigNumberify('2000000'))
+    const block3 = new Block()
+    const swapTx = new SignedTransaction(SwapTransaction.SimpleSwap(
+      testAddresses.AliceAddress,
+      segment1,
+      blkNum1,
+      testAddresses.OperatorAddress,
+      segment2,
+      blkNum2))
+    swapTx.sign(testKeys.AlicePrivateKey)
+    swapTx.sign(testKeys.OperatorPrivateKey)
+    block3.setBlockNumber(6)
+    block3.appendTx(swapTx)
 
     beforeEach(async () => {
       await this.rootChain.deposit(
         {
           from: alice,
-          value: '2000000000000000'
+          value: '1000000000000000'
         });
       await this.rootChain.deposit(
         {
-          from: bob,
-          value: '2000000000000000'
+          from: operator,
+          value: '1000000000000000'
         });
       const submit = async (block) => {
         const result = await this.rootChain.submit(
@@ -412,50 +437,59 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         block.setBlockTimestamp(ethers.utils.bigNumberify(result.logs[0].args._timestamp.toString()))
         block.setSuperRoot(result.logs[0].args._superRoot)
       }
-      await submit(Scenario3.blocks[0].block)
-      await submit(Scenario3.blocks[1].block)
+      await submit(block3)
     })
 
-    it("should success to exits diffirent UTXO with same transaction", async () => {
-      const tx0 = Scenario3.blocks[0].block.getSignedTransactionWithProof(
-        Scenario3.blocks[0].transactions[0].hash())[0]
-      const tx1 = Scenario3.blocks[0].block.getSignedTransactionWithProof(
-        Scenario3.blocks[0].transactions[0].hash())[1]
+    it("should success to exit two UTXO from same transaction", async () => {
+      const txs = block3.getSignedTransactionWithProof(swapTx.hash())
+      const tx1 = txs[0]
+      const tx2 = txs[1]
+      tx1.confirmMerkleProofs(testKeys.AlicePrivateKey)
+      tx1.confirmMerkleProofs(testKeys.OperatorPrivateKey)
+      tx2.confirmMerkleProofs(testKeys.AlicePrivateKey)
+      tx2.confirmMerkleProofs(testKeys.OperatorPrivateKey)
+
       const result1 = await this.rootChain.exit(
-        6 * 100,
-        Segment.ETH(ethers.utils.bigNumberify('0'), ethers.utils.bigNumberify('500000')).toBigNumber(),
-        tx0.getTxBytes(),
-        tx0.getProofAsHex(),
-        tx0.getSignatures(),
-        0,
-        {
-          from: alice,
-          value: BOND
-        });
-      const result2 = await this.rootChain.exit(
-        6 * 100 + 1,
-        Segment.ETH(ethers.utils.bigNumberify('500000'), ethers.utils.bigNumberify('1000000')).toBigNumber(),
+        6 * 100 + 0,
+        segment1.toBigNumber(),
         tx1.getTxBytes(),
         tx1.getProofAsHex(),
         tx1.getSignatures(),
         0,
         {
-          from: bob,
+          from: operator,
           value: BOND
         });
-      const exitId = result2.receipt.logs[0].args._exitId
-      assert.equal(result1.logs[0].event, 'ExitStarted')
-      assert.equal(result2.logs[0].event, 'ExitStarted')
+      const result2 = await this.rootChain.exit(
+        6 * 100 + 1,
+        segment2.toBigNumber(),
+        tx2.getTxBytes(),
+        tx2.getProofAsHex(),
+        tx2.getSignatures(),
+        0,
+        {
+          from: alice,
+          value: BOND
+        });
+      const exitId1 = result1.receipt.logs[0].args._exitId
+      const exitId2 = result2.receipt.logs[0].args._exitId
       // 6 weeks after
       await increaseTime(duration.weeks(6));
       await this.rootChain.finalizeExit(
         exitableEnd,
-        exitId,
+        exitId1,
         {
-          from: bob
-        });
+          from: operator
+        })
+      await this.rootChain.finalizeExit(
+        exitableEnd,
+        exitId2,
+        {
+          from: alice
+        })
     })
   })
+
 
   describe("forceIncludeRequest", () => {
 
@@ -492,8 +526,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario2.blocks[1].transactions[1].hash())[0]
       const forceIncludeTx = Scenario2.blocks[0].block.getSignedTransactionWithProof(
         Scenario2.blocks[0].transactions[0].hash())[1]
-      tx1.confirmMerkleProofs(testKeys.AlicePrivateKey)
-      tx1.confirmMerkleProofs(testKeys.OperatorPrivateKey)
       forceIncludeTx.confirmMerkleProofs(testKeys.AlicePrivateKey)
 
       await this.rootChain.exit(
@@ -559,8 +591,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         Scenario2.blocks[0].transactions[0].hash())[1]
       const fullForceIncludeTx = Scenario2.blocks[0].block.getSignedTransactionWithProof(
         Scenario2.blocks[0].transactions[0].hash())[1]
-      tx1.confirmMerkleProofs(testKeys.AlicePrivateKey)
-      tx1.confirmMerkleProofs(testKeys.OperatorPrivateKey)
       forceIncludeTx.confirmMerkleProofs(testKeys.AlicePrivateKey)
       fullForceIncludeTx.confirmMerkleProofs(testKeys.AlicePrivateKey)
       fullForceIncludeTx.confirmMerkleProofs(testKeys.OperatorPrivateKey)

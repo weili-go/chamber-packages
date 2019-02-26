@@ -108,12 +108,27 @@ export class TransactionDecoder {
   }
 }
 
+export class TransactionOutputDeserializer {
+
+  static deserialize(data: any[]): TransactionOutput {
+    if(data[0] == 'own') {
+      return OwnState.deserialize(data)
+    } else {
+      throw new Error('unknown state')
+    }
+  }
+}
+
 export interface TransactionOutput {
   withBlkNum(blkNum: BigNumber): TransactionOutput
   getOwners(): Address[]
   getBlkNum(): BigNumber
   getSegment(index: number): Segment
   hash(): Hash
+  getBytes(): string
+  serialize(): any
+  checkSpent(txo: TransactionOutput): boolean
+  subSpent(txo: TransactionOutput): TransactionOutput[]
 }
 
 export class OwnState implements TransactionOutput {
@@ -155,9 +170,32 @@ export class OwnState implements TransactionOutput {
     return this.segment
   }
 
+  serialize() {
+    return [
+      'own',
+      this.getOwners()[0],
+      this.getSegment(0),
+      this.getBlkNum()
+    ]
+  }
+
+  static deserialize(data: any[]) {
+    return new OwnState(data[2], data[1]).withBlkNum(data[3])
+  }
+
+  getBytes() {
+    return this.joinHex([
+      utils.keccak256(utils.toUtf8Bytes('own')),
+      utils.hexZeroPad(utils.hexlify(this.owner), 32),
+      utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
+      utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
+      utils.hexZeroPad(utils.hexlify(this.segment.end), 32)
+    ])
+  }
+
   hash(): Hash {
     if(this.blkNum) {
-      return utils.keccak256(join([
+      return utils.keccak256(this.joinHex([
         utils.hexlify(utils.toUtf8Bytes('own')),
         utils.hexZeroPad(utils.hexlify(this.owner), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
@@ -168,10 +206,30 @@ export class OwnState implements TransactionOutput {
     }else{
       throw new Error('blkNum should not be null to get hash')
     }
-    function join(a: string[]) {
-      return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
+  }
+
+  checkSpent(txo: TransactionOutput): boolean {
+    if(txo instanceof OwnState
+      && txo.getBlkNum().eq(this.getBlkNum())
+      && txo.getOwners()[0] == this.getOwners()[0]
+      && this.getSegment(0).isContain(txo.getSegment(0))) {
+      return true
+    } else {
+      return false
     }
   }
+
+  subSpent(txo: TransactionOutput): TransactionOutput[] {
+    const newSegments = this.getSegment(0).sub(txo.getSegment(0))
+    return newSegments.map(s => {
+      return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())
+    })
+  }
+
+  private joinHex(a: string[]) {
+    return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
+  }
+
 
 }
 
@@ -239,25 +297,19 @@ export class SplitTransaction extends BaseTransaction {
   from: Address
   segment: Segment
   blkNum: BigNumber
-  to1: Address
-  to2: Address
-  offset: BigNumber
+  to: Address
 
   constructor(
     from: Address,
     segment: Segment,
     blkNum: BigNumber,
-    to1: Address,
-    to2: Address,
-    offset: BigNumber,
+    to: Address
   ) {
-    super(2, [from, segment.toBigNumber(), blkNum, to1, to2, offset])
+    super(2, [from, segment.toBigNumber(), blkNum, to])
     this.from = from
     this.segment = segment
     this.blkNum = blkNum
-    this.to1 = to1
-    this.to2 = to2
-    this.offset = offset
+    this.to = to
   }
 
   static Transfer(
@@ -266,7 +318,7 @@ export class SplitTransaction extends BaseTransaction {
     blkNum: BigNumber,
     to: Address
   ) {
-    return new SplitTransaction(from, segment, blkNum, to, to, segment.end)
+    return new SplitTransaction(from, segment, blkNum, to)
   }
 
   static fromTuple(tuple: RLPItem[]): SplitTransaction {
@@ -274,9 +326,7 @@ export class SplitTransaction extends BaseTransaction {
       utils.getAddress(tuple[0]),
       Segment.fromBigNumber(utils.bigNumberify(tuple[1])),
       utils.bigNumberify(tuple[2]),
-      utils.getAddress(tuple[3]),
-      utils.getAddress(tuple[4]),
-      utils.bigNumberify(tuple[5]))
+      utils.getAddress(tuple[3]))
   }
 
   static decode(bytes: string): SplitTransaction {
@@ -301,20 +351,13 @@ export class SplitTransaction extends BaseTransaction {
   getOutputs() {
     return [
       new OwnState(
-        new Segment(this.segment.tokenId, this.segment.start, this.offset),
-        this.to1
-      ),
-      new OwnState(
-        new Segment(this.segment.tokenId, this.offset, this.segment.end),
-        this.to2
+        this.segment,
+        this.to
       )]
   }
 
   getSegments(): Segment[] {
-    return [
-      new Segment(this.segment.tokenId, this.segment.start, this.offset),
-      new Segment(this.segment.tokenId, this.offset, this.segment.end)
-    ]
+    return [this.segment]
   }
 
   verify(signatures: string[]): boolean {
@@ -437,8 +480,6 @@ export class SwapTransaction extends BaseTransaction {
   segment2: Segment
   blkNum1: BigNumber
   blkNum2: BigNumber
-  offset1: BigNumber
-  offset2: BigNumber
 
   constructor(
     from1: Address,
@@ -446,9 +487,7 @@ export class SwapTransaction extends BaseTransaction {
     blkNum1: BigNumber,
     from2: Address,
     segment2: Segment,
-    blkNum2: BigNumber,
-    offset1: BigNumber,
-    offset2: BigNumber
+    blkNum2: BigNumber
   ) {
     super(5,
       [from1,
@@ -456,17 +495,13 @@ export class SwapTransaction extends BaseTransaction {
         blkNum1,
         from2,
         segment2.toBigNumber(),
-        blkNum2,
-        offset1,
-        offset2])
+        blkNum2])
     this.from1 = from1
     this.from2 = from2
     this.segment1 = segment1
     this.segment2 = segment2
     this.blkNum1 = blkNum1
     this.blkNum2 = blkNum2
-    this.offset1 = offset1
-    this.offset2 = offset2
     if(this.segment1.getGlobalStart().gte(this.segment2.getGlobalEnd())) {
       this.from2 = from1
       this.from1 = from2
@@ -474,14 +509,6 @@ export class SwapTransaction extends BaseTransaction {
       this.blkNum1 = blkNum2
       this.segment2 = segment1
       this.segment1 = segment2
-      this.offset2 = offset1
-      this.offset1 = offset2
-    }
-    if(this.segment1.getAmount().mul(2).lt(this.offset1.abs())) {
-      throw new Error('offset1 should be smaller than segment1')
-    }
-    if(this.segment2.getAmount().mul(2).lt(this.offset2.abs())) {
-      throw new Error('offset2 should be smaller than segment2')
     }
   }
 
@@ -499,9 +526,7 @@ export class SwapTransaction extends BaseTransaction {
       blkNum1,
       from2,
       segment2,
-      blkNum2,
-      segment1.getAmount(),
-      segment2.getAmount()
+      blkNum2
     )
   }
 
@@ -512,9 +537,7 @@ export class SwapTransaction extends BaseTransaction {
       utils.bigNumberify(tuple[2]),
       utils.getAddress(tuple[3]),
       Segment.fromBigNumber(utils.bigNumberify(tuple[4])),
-      utils.bigNumberify(tuple[5]),
-      utils.bigNumberify(tuple[6]),
-      utils.bigNumberify(tuple[7]))
+      utils.bigNumberify(tuple[5]))
   }
 
   static decode(bytes: string): SwapTransaction {
@@ -546,26 +569,15 @@ export class SwapTransaction extends BaseTransaction {
   getOutputs() {
     return [
       new OwnState(
-        new Segment(this.segment1.getTokenId(), this.segment1.start, this.segment1.start.add(this.offset1)),
+        this.segment1,
         this.from2),
       new OwnState(
-        new Segment(this.segment1.getTokenId(), this.segment1.start.add(this.offset1), this.segment1.end),
-        this.from1),
-      new OwnState(
-        new Segment(this.segment2.getTokenId(), this.segment2.start, this.segment2.start.add(this.offset2)),
-        this.from1),
-      new OwnState(
-        new Segment(this.segment2.getTokenId(), this.segment2.start.add(this.offset2), this.segment2.end),
-        this.from2)]
+        this.segment2,
+        this.from1)]
   }
     
   getSegments(): Segment[] {
-    return [
-      new Segment(this.segment1.getTokenId(), this.segment1.start, this.segment1.start.add(this.offset1)),
-      new Segment(this.segment1.getTokenId(), this.segment1.start.add(this.offset1), this.segment1.end),
-      new Segment(this.segment2.getTokenId(), this.segment2.start, this.segment2.start.add(this.offset2)),
-      new Segment(this.segment2.getTokenId(), this.segment2.start.add(this.offset2), this.segment2.end)
-    ]
+    return [this.segment1, this.segment2]
   }
 
   verify(signatures: string[]): boolean {

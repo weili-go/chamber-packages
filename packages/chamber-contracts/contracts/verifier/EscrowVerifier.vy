@@ -38,47 +38,79 @@ def parseSegment(
 
 @private
 @constant
-def getOwnState(
+def encodeExitState(
   owner: address,
   tokenId: uint256,
   start: uint256,
-  end: uint256,
-  blkNum: uint256
-) -> (bytes32):
-  return sha3(
-      concat("own",
-        convert(owner, bytes32),
-        convert(tokenId, bytes32),
-        convert(start, bytes32),
-        convert(end, bytes32),
-        convert(blkNum, bytes32)
-      )
-    )
+  end: uint256
+) -> (bytes[256]):
+  return concat(
+    sha3("own"),
+    convert(owner, bytes32),
+    convert(tokenId, bytes32),
+    convert(start, bytes32),
+    convert(end, bytes32)
+  )
 
 @private
 @constant
-def getLockState(
+def decodeExitState(
+  stateBytes: bytes[256]
+) -> (uint256, uint256, uint256):
+  assert sha3("own") == extract32(stateBytes, 0, type=bytes32)
+  return (
+    #owner
+    extract32(stateBytes, 32*2, type=uint256),
+    extract32(stateBytes, 32*3, type=uint256),
+    extract32(stateBytes, 32*4, type=uint256)
+  )
+
+@private
+@constant
+def getLockStateHash(
+  owner: address,
+  ttp: address,
+  to: address,
+  timeout: uint256
+) -> (bytes32):
+  return sha3(concat(
+    convert(owner, bytes32),
+    convert(ttp, bytes32),
+    convert(to, bytes32),
+    convert(timeout, bytes32)
+  ))
+
+@private
+@constant
+def encodeLockState(
   owner: address,
   ttp: address,
   to: address,
   tokenId: uint256,
   start: uint256,
   end: uint256,
-  blkNum: uint256,
   timeout: uint256
-) -> (bytes32):
-  return sha3(
-      concat("escrow",
-        convert(owner, bytes32),
-        convert(ttp, bytes32),
-        convert(to, bytes32),
-        convert(tokenId, bytes32),
-        convert(start, bytes32),
-        convert(end, bytes32),
-        convert(blkNum, bytes32),
-        convert(timeout, bytes32)
-      )
-    )
+) -> (bytes[256]):
+  return concat(
+    sha3("escrow"),
+    convert(tokenId, bytes32),
+    convert(start, bytes32),
+    convert(end, bytes32),
+    self.getLockStateHash(owner, ttp, to, timeout)
+  )
+
+@private
+@constant
+def decodeLockState(
+  stateBytes: bytes[256]
+) -> (uint256, uint256, uint256, bytes32):
+  assert sha3("escrow") == extract32(stateBytes, 0, type=bytes32)
+  return (
+    extract32(stateBytes, 32*1, type=uint256),
+    extract32(stateBytes, 32*2, type=uint256),
+    extract32(stateBytes, 32*3, type=uint256),
+    extract32(stateBytes, 32*4, type=bytes32)
+  )
 
 @private
 @constant
@@ -94,7 +126,6 @@ def decodeEscrow(
     extract32(_txBytes, 128 + 16, type=address),
     extract32(_txBytes, 160 + 16, type=uint256))
 
-
 @public
 @constant
 def verify(
@@ -109,7 +140,7 @@ def verify(
   _start: uint256,
   _end: uint256,
   _timestamp: uint256
-) -> (bool):
+) -> (bytes[256]):
   _from: address
   segment: uint256
   tokenId: uint256
@@ -126,27 +157,35 @@ def verify(
     # lock escrow
     if _owner != ZERO_ADDRESS:
       assert((_owner == _from or _owner == ttp or _owner == to) and _outputIndex == 0)
-    return (self.ecrecoverSig(_txHash, _sigs) == _from)
+    assert (self.ecrecoverSig(_txHash, _sigs) == _from)
+    return self.encodeLockState(_from, ttp, to, tokenId, start, end, timeout)
   elif _label == 22:
     # unlock escrow
     if _owner != ZERO_ADDRESS:
       assert(_owner == to and _outputIndex == 0)
-    return (self.ecrecoverSig(_txHash, _sigs) == ttp)
+    assert (self.ecrecoverSig(_txHash, _sigs) == ttp)
+    return self.encodeExitState(to, tokenId, start, end)
   elif _label == 23:
     # timeout escrow
     if _owner != ZERO_ADDRESS:
       assert(_owner == _from and _outputIndex == 0)
     assert timeout >= _timestamp
-    return (self.ecrecoverSig(_txHash, _sigs) == _from)
+    assert (self.ecrecoverSig(_txHash, _sigs) == _from)
+    return self.encodeExitState(_from, tokenId, start, end)
 
 @public
 @constant
-def getTxoHashOfLockEscrow(
+def checkSpent(
   _label: uint256,
+  _exitStateBytes: bytes[256],
   _txBytes: bytes[496],
   _index: uint256,
-  _blkNum: uint256
-) -> (bytes32):
+  _exitBlkNum: uint256
+) -> (bool):
+  exitTokenId: uint256
+  exitStart: uint256
+  exitEnd: uint256
+  exitStateHash: bytes32
   _from: address
   segment: uint256
   tokenId: uint256
@@ -158,22 +197,26 @@ def getTxoHashOfLockEscrow(
   timeout: uint256
   (_from, segment, blkNum, ttp, to, timeout) = self.decodeEscrow(_txBytes)
   (tokenId, start, end) = self.parseSegment(segment)
+  lockStateHash: bytes32 = self.getLockStateHash(_from, ttp, to, timeout)
   if _label == 21:
-    # lock escrow
-    if _index == 10:
-      return self.getOwnState(_from, tokenId, start, end, blkNum)
-    elif _index == 0:
-      return self.getLockState(_from, ttp, to, tokenId, start, end, _blkNum, timeout)
+    (exitTokenId, exitStart, exitEnd) = self.decodeExitState(_exitStateBytes)
+    assert exitTokenId == tokenId
+    assert exitStart <= start and end <= exitEnd
+    assert _exitBlkNum == blkNum
+    return True
   elif _label == 22:
-    # unlock escrow
-    if _index == 10:
-      return self.getLockState(_from, ttp, to, tokenId, start, end, blkNum, timeout)
-    elif _index == 0:
-      return self.getOwnState(to, tokenId, start, end, _blkNum)
+    (exitTokenId, exitStart, exitEnd, exitStateHash) = self.decodeLockState(_exitStateBytes)
+    assert exitStateHash == lockStateHash
+    assert exitTokenId == tokenId
+    assert exitStart == start and end == exitEnd
+    assert _exitBlkNum == blkNum
+    return True
   elif _label == 23:
-    # timeout escrow
-    if _index == 10:
-      return self.getLockState(_from, ttp, to, tokenId, start, end, blkNum, timeout)
-    elif _index == 0:
-      return self.getOwnState(_from, tokenId, start, end, _blkNum)
-  return sha3("escrow")
+    (exitTokenId, exitStart, exitEnd, exitStateHash) = self.decodeLockState(_exitStateBytes)
+    assert exitStateHash == lockStateHash
+    assert exitTokenId == tokenId
+    assert exitStart == start and end == exitEnd
+    assert _exitBlkNum == blkNum
+    return True
+  else:
+    assert False

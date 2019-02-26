@@ -2,14 +2,21 @@ const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
 const MultisigVerifier = artifacts.require("MultisigVerifier")
 const EscrowVerifier = artifacts.require("EscrowVerifier")
-const ethers = require('ethers')
-const BigNumber = ethers.utils.BigNumber
+const { constants, utils } = require('ethers')
+const BigNumber = utils.BigNumber
 const {
   assertRevert
 } = require('./helpers/assertRevert')
 const {
-  transactions
+  transactions,
+  testAddresses
 } = require('./testdata')
+const {
+  OwnState,
+  Segment,
+  SignedTransaction,
+  SwapTransaction
+} = require('@layer2/core')
 
 require('chai')
   .use(require('chai-as-promised'))
@@ -43,15 +50,15 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         tx.getSignatures(),
         0,
         0,
-        ethers.constants.AddressZero,
-        ethers.constants.Zero,
+        constants.AddressZero,
+        constants.Zero,
         transactions.segments[0].start,
         transactions.segments[0].end,
         0,
         {
           from: alice
         });
-      assert.equal(result, true)
+      assert.equal(result, tx.getStateBytes())
     })
 
     it("should be failed to verified", async () => {
@@ -63,8 +70,8 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         invalidTx.getSignatures(),
         0,
         0,
-        ethers.constants.AddressZero,
-        ethers.constants.Zero,
+        constants.AddressZero,
+        constants.Zero,
         transactions.segments[0].start,
         transactions.segments[0].end,
         0,
@@ -82,8 +89,8 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         tx.getSignatures(),
         0,
         0,
-        ethers.constants.AddressZero,
-        ethers.constants.Zero,
+        constants.AddressZero,
+        constants.Zero,
         transactions.segments[1].start,
         transactions.segments[1].end,
         0,
@@ -105,40 +112,69 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         tx.getSignatures(),
         0,
         0,
-        ethers.constants.AddressZero,
-        ethers.constants.Zero,
+        constants.AddressZero,
+        constants.Zero,
         transactions.segment45.start,
         transactions.segment45.end,
         0,
         {
           from: alice
         });
-      assert.equal(result, true)
+      assert.equal(result, tx.getStateBytes())
     })
 
   })
 
   describe("SwapTransaction", () => {
+    const blkNum3 = utils.bigNumberify('3')
+    const blkNum5 = utils.bigNumberify('5')
 
-    it("should getTxoHash", async () => {
-      const tx = transactions.swapTx
-      const result2 = await this.transactionVerifier.getTxoHash(
-        tx.getTxBytes(),
-        2,
+    const swapTx = new SignedTransaction(new SwapTransaction(
+      testAddresses.AliceAddress,
+      Segment.ETH(
+        utils.bigNumberify('5000000'),
+        utils.bigNumberify('5100000')),
+      blkNum3,
+      testAddresses.OperatorAddress,
+      Segment.ETH(
+        utils.bigNumberify('5100000'),
+        utils.bigNumberify('5200000')),
+      blkNum5,
+      utils.bigNumberify('40000'),
+      utils.bigNumberify('60000')))
+    
+    it("should checkSpent", async () => {
+      const exitState1 = new OwnState(
+        Segment.ETH(
+          utils.bigNumberify('5000000'),
+          utils.bigNumberify('5100000')),
+        alice)
+      const exitState2 = new OwnState(
+        Segment.ETH(
+          utils.bigNumberify('5100000'),
+          utils.bigNumberify('5200000')),
+        operator)
+  
+      const result2 = await this.transactionVerifier.checkSpent(
+        exitState1.getBytes(),
+        swapTx.getTxBytes(),
         0,
+        blkNum3,
         {
           from: alice
         });
-      const result3 = await this.transactionVerifier.getTxoHash(
-        tx.getTxBytes(),
-        3,
-        0,
+        /*
+      const result3 = await this.transactionVerifier.checkSpent(
+        exitState2.getBytes(),
+        swapTx.getTxBytes(),
+        1,
+        blkNum5,
         {
           from: alice
-        });
-      assert.equal(result2, tx.getRawTx().getOutput(2).withBlkNum(ethers.constants.Zero).hash())
-      assert.equal(result3, tx.getRawTx().getOutput(3).withBlkNum(ethers.constants.Zero).hash())
-      })
+        });*/
+      assert.equal(result2, true)
+//      assert.equal(result3, true)
+    })
 
   })
 

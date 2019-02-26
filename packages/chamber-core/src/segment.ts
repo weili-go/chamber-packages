@@ -129,4 +129,24 @@ export class Segment {
     )
   }
 
+  isContain(segment: Segment) {
+    return this.getTokenId().eq(segment.getTokenId())
+    && this.start.lte(segment.start)
+    && this.end.gte(segment.end)
+  }
+
+  sub(segment: Segment) {
+    const s1 = new Segment(
+      this.tokenId,
+      this.start,
+      segment.start
+    )
+    const s2 = new Segment(
+      this.tokenId,
+      segment.end,
+      this.end
+    )
+    return [s1, s2].filter(s => !s.getAmount().eq(0))
+  }
+
 }

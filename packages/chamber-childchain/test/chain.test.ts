@@ -8,7 +8,7 @@ import {
   Chain,
   IChainDb
 } from '../src/chain'
-import { SplitTransaction, Segment, SignedTransaction } from '@layer2/core'
+import { SplitTransaction, Segment, SignedTransaction, DepositTransaction } from '@layer2/core'
 
 class MockSnapshotDb implements ISnapshotDb {
   getRoot() {
@@ -69,11 +69,13 @@ describe('Chain', () => {
   })
 
   it('should generateBlock', async () => {
-    const snapshot = new Snapshot(new MockSnapshotDb())
-    const chain = new Chain(snapshot, new MockChainDb())
+    const chain = new Chain(new MockChainDb())
+    const segment = Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000))
+    const depositTx = new DepositTransaction(AliceAddress, segment)
+    chain.segmentChecker.insertDepositTx(depositTx, ethers.utils.bigNumberify(5))
     const tx = SplitTransaction.Transfer(
       AliceAddress,
-      Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000)),
+      segment,
       ethers.utils.bigNumberify(5),
       BobAddress
     )
@@ -85,8 +87,7 @@ describe('Chain', () => {
   })
 
   it('should failed to generateBlock by no input', async () => {
-    const snapshot = new Snapshot(new MockNoDataSnapshotDb())
-    const chain = new Chain(snapshot, new MockChainDb())
+    const chain = new Chain(new MockChainDb())
     const tx = SplitTransaction.Transfer(
       AliceAddress,
       Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000)),
@@ -102,11 +103,14 @@ describe('Chain', () => {
   })
 
   it('should success to generateBlock but segment duplecated', async () => {
-    const snapshot = new Snapshot(new MockSnapshotDb())
-    const chain = new Chain(snapshot, new MockChainDb())
+    const chain = new Chain(new MockChainDb())
+    const segment = Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000))
+    const depositTx = new DepositTransaction(AliceAddress, segment)
+    chain.segmentChecker.insertDepositTx(depositTx, ethers.utils.bigNumberify(5))
+    
     const tx = SplitTransaction.Transfer(
       AliceAddress,
-      Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000)),
+      segment,
       ethers.utils.bigNumberify(5),
       BobAddress
     )

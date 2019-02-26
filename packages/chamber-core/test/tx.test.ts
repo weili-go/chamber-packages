@@ -23,7 +23,9 @@ describe('Transaction', () => {
     utils.bigNumberify('2000000'),
     utils.bigNumberify('3000000'))
   const blkNum = utils.bigNumberify('1')
-  const offset = utils.bigNumberify('2600000')
+  const splitSegment = Segment.ETH(
+    utils.bigNumberify('2000000'),
+    utils.bigNumberify('2600000'))
 
   const segment1 = Segment.ETH(
     utils.bigNumberify('5000000'),
@@ -45,12 +47,13 @@ describe('Transaction', () => {
 
   it('encode and decode split transaction', () => {
     const tx = new SplitTransaction(
-      AliceAddress, segment, blkNum, AliceAddress, BobAddress, offset)
+      AliceAddress, splitSegment, blkNum, BobAddress)
     const encoded = tx.encode()
     const decoded: SplitTransaction = TransactionDecoder.decode(encoded) as SplitTransaction
     //assert.equal(encoded, '0xf85102b84ef84c94953b8fb338ef870eda6d74c1dd4769b6c977b8cf831e8480832dc6c00194953b8fb338ef870eda6d74c1dd4769b6c977b8cf9434fdeadc2b69fd24f3043a89f9231f10f1284a4a8327ac40');
-    assert.equal(decoded.getOutput(1).getSegment(0).start.toString(), '2600000')
-    assert.equal(decoded.getInput().getSegment(0).start.toString(), '2000000')
+    const outputSegment = decoded.getOutput(0).getSegment(0)
+    assert.equal(outputSegment.start.toString(), '2000000')
+    assert.equal(outputSegment.end.toString(), '2600000')
     assert.equal(tx.hash(), decoded.hash())
 
   });
@@ -118,7 +121,7 @@ describe('Transaction', () => {
 
     it('verify split transaction', () => {
       const tx = new SplitTransaction(
-        AliceAddress, segment, blkNum, AliceAddress, BobAddress, offset)
+        AliceAddress, splitSegment, blkNum, BobAddress)
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(AlicePrivateKey)
       assert.equal(signedTx.verify(), true)
@@ -143,23 +146,30 @@ describe('Transaction', () => {
     });
 
     it('verify swap transaction', () => {
+      const swapSegment1 = Segment.ETH(
+        utils.bigNumberify('5000000'),
+        utils.bigNumberify('5700000'))
+      const swapSegment2 = Segment.ETH(
+        utils.bigNumberify('6000000'),
+        utils.bigNumberify('7000000'))
       const tx = new SwapTransaction(
         AliceAddress,
-        segment1,
+        swapSegment1,
         blkNum1,
         BobAddress,
-        segment2,
-        blkNum2,
-        utils.bigNumberify('700000'),
-        utils.bigNumberify('1000000'))
+        swapSegment2,
+        blkNum2)
       const signedTx = new SignedTransaction(tx)
       signedTx.sign(AlicePrivateKey)
       signedTx.sign(BobPrivateKey)
       assert.equal(signedTx.verify(), true)
-      assert.equal(signedTx.getRawTx().getOutput(0).getSegment(0).start.toString(), utils.bigNumberify('5000000').toString())
-      assert.equal(signedTx.getRawTx().getOutput(1).getSegment(0).start.toString(), utils.bigNumberify('5700000').toString())
-      assert.equal(signedTx.getRawTx().getOutput(2).getSegment(0).start.toString(), utils.bigNumberify('6000000').toString())
-      assert.equal(signedTx.getRawTx().getOutputs().length, 4)
+      const outputSegment1 = signedTx.getRawTx().getOutput(0).getSegment(0)
+      const outputSegment2 = signedTx.getRawTx().getOutput(1).getSegment(0)
+      assert.equal(outputSegment1.start.toString(), utils.bigNumberify('5000000').toString())
+      assert.equal(outputSegment1.end.toString(), utils.bigNumberify('5700000').toString())
+      assert.equal(outputSegment2.start.toString(), utils.bigNumberify('6000000').toString())
+      assert.equal(outputSegment2.end.toString(), utils.bigNumberify('7000000').toString())
+      assert.equal(signedTx.getRawTx().getOutputs().length, 2)
     });
 
   })

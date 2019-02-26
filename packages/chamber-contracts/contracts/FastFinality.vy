@@ -7,6 +7,7 @@ struct Dispute:
   withdrawableAt: timestamp
   amount: uint256
   status: uint256
+  stateHash: bytes32
 
 contract ERC721:
   def setup(): modifying
@@ -20,20 +21,20 @@ contract RootChain():
     _start: uint256,
     _end: uint256,
     _txHash: bytes32,
-    _txBytes: bytes[1024],
+    _txBytes: bytes[496],
     _blkNum: uint256,
     _proof: bytes[512],
     _sigs: bytes[260],
     _hasSig: uint256,
     _outputIndex: uint256,
     _owner: address
-  ) -> bool: constant
+  ) -> bytes[256]: constant
 
 contract TransactionVerifier():
   def verify(
     _txHash: bytes32,
     _merkleHash: bytes32,
-    _txBytes: bytes[1024],
+    _txBytes: bytes[496],
     _sigs: bytes[260],
     _hasSig: uint256,
     _outputIndex: uint256,
@@ -42,12 +43,13 @@ contract TransactionVerifier():
     _start: uint256,
     _end: uint256,
     _timestamp: uint256
-  ) -> bool: constant
-  def getTxoHash(
-    _txBytes: bytes[1024],
+  ) -> bytes[256]: constant
+  def checkSpent(
+    _exitStateBytes: bytes[256],
+    _txBytes: bytes[496],
     _index: uint256,
     _blkNum: uint256
-  ) -> bytes32: constant
+  ) -> bool: constant
 
 FFTokenMinted: event({_merchantId: uint256, _amount: wei_value, _expiredAt: uint256})
 FFTokenBurned: event({_merchantId: uint256})
@@ -148,7 +150,9 @@ def withdrawAndBurnToken(
 @public
 @payable
 def dispute(
-  _txBytes: bytes[1024],
+  _exitStateBytes: bytes[256],
+  _prevBlkNum: uint256,
+  _txBytes: bytes[496],
   _sigs: bytes[260],
   _operatorSigs: bytes[65],
   _index: uint256,
@@ -161,7 +165,7 @@ def dispute(
   txHash: bytes32 = sha3(_txBytes)
   assert self.disputes[txHash].status == 0 and self.disputes[txHash].withdrawableAt == 0
   assert self.operator == self.ecrecoverSig(txHash, _operatorSigs)
-  assert TransactionVerifier(self.txverifier).verify(
+  TransactionVerifier(self.txverifier).verify(
     txHash,
     txHash, # dummy
     _txBytes,
@@ -173,17 +177,19 @@ def dispute(
     _start,
     _end,
     0)
+  # assert TransactionVerifier(self.txverifier).checkSpent(_exitStateBytes, _txBytes, 0, _prevBlkNum)
   self.disputes[txHash] = Dispute({
     recipient: msg.sender,
     withdrawableAt: block.timestamp + 1 * 7 * 24 * 60 * 60,
     amount: as_unitless_number(as_wei_value((_end - _start), "gwei")),
-    status: STATE_FIRST_DISPUTED
+    status: STATE_FIRST_DISPUTED,
+    stateHash: sha3(_exitStateBytes)
   })
 
 # @dev challenge
 @public
 def challenge(
-  _txBytes: bytes[1024],
+  _txBytes: bytes[496],
   _proof: bytes[512],
   _sigs: bytes[260],
   _pos: uint256,
@@ -212,8 +218,10 @@ def challenge(
 # @dev secondDispute
 @public
 def secondDispute(
-  _disputeTxBytes: bytes[1024],
-  _txBytes: bytes[1024],
+  _stateBytes: bytes[256],
+  _prevBlkNum: uint256,
+  _disputeTxBytes: bytes[496],
+  _txBytes: bytes[496],
   _proof: bytes[512],
   _sigs: bytes[260],
   _pos: uint256,
@@ -224,7 +232,7 @@ def secondDispute(
   txHash: bytes32 = sha3(_txBytes)
   blkNum: uint256 = _pos / 100
   index: uint256 = _pos - blkNum * 100
-  assert RootChain(self.rootchain).checkTransaction(
+  RootChain(self.rootchain).checkTransaction(
     _tokenId,
     _start,
     _end,
@@ -236,17 +244,15 @@ def secondDispute(
     0,
     index,
     ZERO_ADDRESS)
-  inputDisputeTx: bytes32 = TransactionVerifier(self.txverifier).getTxoHash(
-    _disputeTxBytes,
-    10,
-    0 # dummy
-  )
-  assert inputDisputeTx == TransactionVerifier(self.txverifier).getTxoHash(
+  disputeId: bytes32 = sha3(_disputeTxBytes)
+  assert self.disputes[disputeId].stateHash == sha3(_stateBytes)
+  assert TransactionVerifier(self.txverifier).checkSpent(
+    _stateBytes,
     _txBytes,
-    10,
-    0 # dummy
+    0,
+    _prevBlkNum
   )
-  self.disputes[sha3(_disputeTxBytes)].status = STATE_SECOND_DISPUTED
+  self.disputes[disputeId].status = STATE_SECOND_DISPUTED
 
 # @dev finalizeDispute
 @public

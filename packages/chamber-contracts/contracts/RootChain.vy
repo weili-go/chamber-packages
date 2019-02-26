@@ -8,8 +8,9 @@ struct Exit:
   owner: address
   exitableAt: uint256
   txHash: bytes32
+  stateHash: bytes32
   extendedExitableAt: uint256
-  utxoPos: uint256
+  blkNum: uint256
   priority: uint256
   segment: uint256
   hasSig: uint256
@@ -18,6 +19,7 @@ struct Exit:
 struct Challenge:
   blkNum: uint256
   isAvailable: bool
+  exitId: uint256
 
 struct exitableRange:
   start: uint256
@@ -46,12 +48,13 @@ contract TransactionVerifier():
     _start: uint256,
     _end: uint256,
     _timestamp: uint256
-  ) -> bool: constant
-  def getTxoHash(
+  ) -> bytes[256]: constant
+  def checkSpent(
+    _exitStateBytes: bytes[256],
     _txBytes: bytes[496],
     _index: uint256,
     _blkNum: uint256
-  ) -> bytes32: constant
+  ) -> bool: constant
   def doesRequireConfsig(
     _txBytes: bytes[496]
   ) -> bool: constant
@@ -90,6 +93,7 @@ exitNonce: public(uint256)
 exitable: public(map(uint256, map(uint256, exitableRange)))
 exits: map(uint256, Exit)
 challenges: map(bytes32, Challenge)
+childs: map(uint256, uint256)
 relations: map(uint256, uint256)
 removed: map(bytes32, bool)
 
@@ -166,7 +170,7 @@ def checkTransaction(
   _hasSig: uint256,
   _outputIndex: uint256,
   _owner: address
-) -> bool:
+) -> bytes[256]:
   root: bytes32
   blockTimestamp: uint256
   if _blkNum % 2 == 0:
@@ -421,13 +425,15 @@ def exit(
   outputIndex: uint256 = _utxoPos - blkNum * 100
   priority: uint256 = blkNum
   txHash: bytes32 = sha3(_txBytes)
+  exitId: uint256 = self.exitNonce
   if self.challenges[txHash].isAvailable and self.challenges[txHash].blkNum < priority:
     priority = self.challenges[txHash].blkNum
+    self.childs[self.challenges[txHash].exitId] = exitId
   tokenId: uint256
   start: uint256
   end: uint256
   (tokenId, start, end) = self.parseSegment(_segment)
-  self.checkTransaction(
+  exitStateBytes: bytes[256] = self.checkTransaction(
     tokenId,
     start,
     end,
@@ -440,14 +446,14 @@ def exit(
     outputIndex,
     ZERO_ADDRESS
   )
-  exitId: uint256 = self.exitNonce
   self.exitNonce += 1
   self.exits[exitId] = Exit({
     owner: msg.sender,
     exitableAt: exitableAt,
     txHash: txHash,
+    stateHash: sha3(exitStateBytes),
     extendedExitableAt: 0,
-    utxoPos: _utxoPos,
+    blkNum: blkNum,
     priority: priority,
     segment: _segment,
     challengeCount: 0,
@@ -460,14 +466,12 @@ def exit(
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx
-# @param _eInputPos if _eInputPos < 0 then it's spent challenge,
-#     if _eInputPos >= 0 then it's double spend challenge and _eInputPos is input index
 @public
 def challenge(
   _exitId: uint256,
-  _exitTxBytes: bytes[496],
+  _childExitId: uint256,
+  _exitStateBytes: bytes[256],
   _utxoPos: uint256,
-  _eInputPos: int128,
   _segment: uint256,
   _txBytes: bytes[496],
   _proof: bytes[512],
@@ -475,18 +479,23 @@ def challenge(
 ):
   blkNum: uint256 = _utxoPos / 100
   txoIndex: uint256 = _utxoPos - blkNum * 100
-  root: bytes32 = self.childChain[blkNum]
-  spentTxoHash: bytes32
   tokenId: uint256
   start: uint256
   end: uint256
   exit: Exit = self.exits[_exitId]
-  exitBlkNum: uint256 = exit.utxoPos / 100
-  exitIndex: uint256 = exit.utxoPos - exitBlkNum * 100
+  exitBlkNum: uint256 = exit.blkNum
   (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
-  assert exit.txHash == sha3(_exitTxBytes)
-  assert exit.exitableAt > as_unitless_number(block.timestamp)
+  # assert exit.txHash == sha3(_exitTxBytes)
   txHash: bytes32 = sha3(_txBytes)
+  assert exit.stateHash == sha3(_exitStateBytes)
+  if _exitId == _childExitId:
+    # spent challenge
+    assert exitBlkNum < blkNum
+  else:
+    # double spent challenge
+    assert self.childs[_exitId] == _childExitId
+    assert exitBlkNum < blkNum and blkNum < self.exits[_childExitId].blkNum
+  assert exit.exitableAt > as_unitless_number(block.timestamp)
   # check removed transaction sha3(_txBytes)
   assert not self.removed[txHash]
   self.checkTransaction(
@@ -502,14 +511,7 @@ def challenge(
     0,
     ZERO_ADDRESS
   )
-  if _eInputPos < 0:
-    # spent challenge
-    # get output hash
-    spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
-      _exitTxBytes,
-      exitIndex,
-      exitBlkNum)
-    assert blkNum > exitBlkNum
+  if _exitId == _childExitId:
     lowerExit: uint256 = self.relations[_exitId]
     if self.exits[lowerExit].owner != ZERO_ADDRESS:
       self.exits[lowerExit].challengeCount -= 1
@@ -518,22 +520,23 @@ def challenge(
     if not TransactionVerifier(self.txverifier).doesRequireConfsig(_txBytes):
       self.challenges[txHash] = Challenge({
         blkNum: exitBlkNum,
-        isAvailable: True
+        isAvailable: True,
+        exitId: _exitId
       })
-  else:
-    # double spent challenge
-    # get input hash
-    spentTxoHash = TransactionVerifier(self.txverifier).getTxoHash(
-      _exitTxBytes,
-      convert(_eInputPos + 10, uint256),
-      exitBlkNum)
-    assert blkNum < exitBlkNum
-  assert spentTxoHash == TransactionVerifier(self.txverifier).getTxoHash(_txBytes, txoIndex, blkNum)
+  assert TransactionVerifier(self.txverifier).checkSpent(
+    _exitStateBytes,
+    _txBytes,
+    txoIndex,
+    exitBlkNum)
   # break exit procedure
   if exit.hasSig > 0:
-    self.removed[sha3(_exitTxBytes)] = False
-  self.exits[_exitId].owner = ZERO_ADDRESS
-  clear(self.exits[_exitId])
+    self.removed[exit.txHash] = False
+  if _exitId == _childExitId:
+    self.exits[_exitId].owner = ZERO_ADDRESS
+    clear(self.exits[_exitId])
+  else:
+    self.exits[_childExitId].owner = ZERO_ADDRESS
+    clear(self.exits[_childExitId])
   send(msg.sender, EXIT_BOND)
   log.Challenged(_exitId)
 
@@ -564,7 +567,6 @@ def includeSignature(
   outputIndex: uint256 = _utxoPos - blkNum * 100
   txHash: bytes32 = sha3(_txBytes)
   exit: Exit = self.exits[_exitId]
-  root: bytes32 = self.childChain[blkNum]
   tokenId: uint256
   start: uint256
   end: uint256

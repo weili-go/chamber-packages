@@ -10,13 +10,7 @@ export {
 export {
   Block,
 } from './block'
-export {
-  DepositTransaction,
-  TransactionDecoder,
-  SplitTransaction,
-  MergeTransaction,
-  SwapTransaction,
-} from './tx'
+export * from './tx'
 export {
   SignedTransaction,
   SignedTransactionWithProof

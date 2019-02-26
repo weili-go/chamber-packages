@@ -184,10 +184,10 @@ function scenario3() {
   const block5 = new Block(10)
   block5.setBlockNumber(10)
 
-  const tx31 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, BobAddress, utils.bigNumberify('500000')))
+  const tx31 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, BobAddress))
   tx31.sign(AlicePrivateKey)
   const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
-  const tx41 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, AliceAddress, OperatorAddress, utils.bigNumberify('500000')))
+  const tx41 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, OperatorAddress))
   tx41.sign(AlicePrivateKey)
   const tx42 = createTransfer(OperatorPrivateKey, OperatorAddress, segment5, blkNum3, OperatorAddress)
   
@@ -242,25 +242,10 @@ function transactions() {
   const invalidTx = createTransfer(OperatorPrivateKey, AliceAddress, segment2, blkNum2, BobAddress)
   const mergeTx = new SignedTransaction(new MergeTransaction(AliceAddress, segment4, segment5, BobAddress, blkNum1, blkNum2))
   mergeTx.sign(AlicePrivateKey)
-  const swapTx = new SignedTransaction(new SwapTransaction(
-    AliceAddress,
-    Segment.ETH(
-      utils.bigNumberify('5000000'),
-      utils.bigNumberify('5100000')),
-    blkNum1,
-    OperatorAddress,
-    Segment.ETH(
-      utils.bigNumberify('5100000'),
-      utils.bigNumberify('5200000')),
-    blkNum2,
-    utils.bigNumberify('40000'),
-    utils.bigNumberify('60000')))
 
-  
   block.appendTx(tx)
   block.appendTx(invalidTx)
   block.appendTx(mergeTx)
-  block.appendTx(swapTx)
   block.setSuperRoot(constants.HashZero)
   
   const includedTx = block.getSignedTransactionWithProof(tx.hash())[0]
@@ -273,8 +258,7 @@ function transactions() {
     segment45: segment45,
     tx: includedTx,
     invalidTx: includedInvalidTx,
-    mergeTx: includedMergeTx,
-    swapTx: swapTx
+    mergeTx: includedMergeTx
   }
 }
 
@@ -327,5 +311,6 @@ module.exports = {
   Scenario3: scenario3(),
   Scenario4: scenario4(),
   transactions: transactions(),
-  testKeys: {AlicePrivateKey, BobPrivateKey, OperatorPrivateKey}
+  testKeys: {AlicePrivateKey, BobPrivateKey, OperatorPrivateKey},
+  testAddresses: {AliceAddress, OperatorAddress}
 }
