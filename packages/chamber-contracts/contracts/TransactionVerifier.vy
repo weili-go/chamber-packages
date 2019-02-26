@@ -82,7 +82,8 @@ VerifierAdded: event({verifierId: uint256, verifierAddress: address})
 
 stdverifier: address
 multisigverifier: address
-escrowverifier: address
+
+operator: address
 
 verifiers: map(uint256, address)
 verifierNonce: uint256
@@ -173,14 +174,15 @@ def verifyDepositTx(
 
 # @dev Constructor
 @public
-def __init__(_stdverifier: address, _multisig: address, _escrow: address):
+def __init__(_stdverifier: address, _multisig: address):
+  self.operator = msg.sender
   self.stdverifier = _stdverifier
   self.multisigverifier = _multisig
-  self.escrowverifier = _escrow
-  self.verifierNonce = 50
+  self.verifierNonce = 2
 
 @public
 def addVerifier(verifierAddress: address):
+  assert msg.sender == self.operator
   verifierId: uint256 = self.verifierNonce
   self.verifiers[verifierId] = verifierAddress
   self.verifierNonce += 1
@@ -213,10 +215,8 @@ def verify(
     return self.verifyDepositTx(_txBytes, _owner, _tokenId, _start, _end)
   elif label == 5:
     return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _hasSig)
-  elif 20 <= label and label < 30:
-    return CustomVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _timestamp)
   else:
-    verifierAddress: address = self.verifiers[label]
+    verifierAddress: address = self.verifiers[label / 10]
     return CustomVerifier(verifierAddress).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _timestamp)
 
 # @dev get hash of input state of the transaction
@@ -237,10 +237,8 @@ def checkSpent(
     return StandardVerifier(self.stdverifier).checkSpentOfMerge(_exitStateBytes, _txBytes, _index, _blkNum)
   elif label == 5:
     return MultisigVerifier(self.multisigverifier).checkSpentOfSwap(_exitStateBytes, _txBytes, _index, _blkNum)
-  elif 20 <= label and label < 30:
-    return CustomVerifier(self.escrowverifier).checkSpent(label, _exitStateBytes, _txBytes, _index, _blkNum)
   else:
-    verifierAddress: address = self.verifiers[label]
+    verifierAddress: address = self.verifiers[label / 10]
     return CustomVerifier(verifierAddress).checkSpent(label, _exitStateBytes, _txBytes, _index, _blkNum)
   return False
 
@@ -264,9 +262,7 @@ def doesRequireConfsig(
     return True
   elif label == 10:
     return True
-  elif 20 <= label and label < 30:
-    return True
   else:
-    verifierAddress: address = self.verifiers[label]
+    verifierAddress: address = self.verifiers[label / 10]
     return CustomVerifier(verifierAddress).doesRequireConfsig(label)
   return False

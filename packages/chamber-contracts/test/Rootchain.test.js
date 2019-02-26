@@ -12,7 +12,6 @@ const RootChain = artifacts.require("RootChain")
 const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
 const MultisigVerifier = artifacts.require("MultisigVerifier")
-const EscrowVerifier = artifacts.require("EscrowVerifier")
 const ERC721 = artifacts.require("ERC721")
 const TestPlasmaToken = artifacts.require("TestPlasmaToken")
 const ethers = require('ethers')
@@ -48,11 +47,9 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
     this.erc721 = await ERC721.new()
     this.standardVerifier = await StandardVerifier.new({ from: operator })
     this.multisigVerifier = await MultisigVerifier.new({ from: operator })
-    this.escrowVerifier = await EscrowVerifier.new({ from: operator })
     this.transactionVerifier = await TransactionVerifier.new(
       this.standardVerifier.address,
       this.multisigVerifier.address,
-      this.escrowVerifier.address,
       {
         from: operator
       })

@@ -15,7 +15,8 @@ const {
   OwnState,
   Segment,
   SignedTransaction,
-  SwapTransaction
+  SwapTransaction,
+  EscrowTransaction
 } = require('@layer2/core')
 
 require('chai')
@@ -29,11 +30,10 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
     const standardVerifier = await StandardVerifier.new({ from: operator })
     this.standardVerifier = standardVerifier
     const multisigVerifier = await MultisigVerifier.new({ from: operator })
-    const escrowVerifier = await EscrowVerifier.new({ from: operator })
+    this.escrowVerifier = await EscrowVerifier.new({ from: operator })
     this.transactionVerifier = await TransactionVerifier.new(
       standardVerifier.address,
       multisigVerifier.address,
-      escrowVerifier.address,
       {
         from: operator
       })
@@ -173,6 +173,42 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         });
       assert.equal(result2, true)
       assert.equal(result3, true)
+    })
+
+  })
+
+  describe("addVerifier", () => {
+
+    const blkNum = utils.bigNumberify('3')
+    const segment = Segment.ETH(
+      utils.bigNumberify('5000000'),
+      utils.bigNumberify('5100000'))
+
+    const escrowTx = new SignedTransaction(new EscrowTransaction(
+      testAddresses.AliceAddress,
+      segment,
+      blkNum,
+      testAddresses.OperatorAddress,
+      testAddresses.BobAddress,
+      utils.bigNumberify('12000000')))
+
+    it("should be addVerifier", async () => {
+      await this.transactionVerifier.addVerifier(
+        this.escrowVerifier.address,
+        {
+          from: operator
+        });
+
+      const exitState = new OwnState(segment, alice)
+      const result = await this.transactionVerifier.checkSpent(
+        exitState.getBytes(),
+        escrowTx.getTxBytes(),
+        0,
+        blkNum,
+        {
+          from: alice
+        });
+      assert.equal(result, true)
     })
 
   })
