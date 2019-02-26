@@ -1,4 +1,3 @@
-import { Snapshot } from './snapshot';
 import { TxFilter } from './txfilter'
 import {
   ChamberResult,
