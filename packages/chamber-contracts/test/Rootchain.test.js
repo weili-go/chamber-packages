@@ -125,7 +125,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           value: BOND
         });
       // gas cost of exit is 282823
-      console.log('gasCost', gasCost)
+      console.log('exit gasCost: ', gasCost)
       const result = await this.rootChain.exit(
         6 * 100,
         Scenario1.segments[0].toBigNumber(),
@@ -141,6 +141,13 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       assert.equal(result.logs[0].event, 'ExitStarted')
       // 6 weeks after
       await increaseTime(duration.weeks(6));
+      const finalizeExitGasCost = await this.rootChain.finalizeExit.estimateGas(
+        exitableEnd,
+        exitId,
+        {
+          from: bob
+        });
+      console.log('finalizeExit gas cost: ', finalizeExitGasCost)
       await this.rootChain.finalizeExit(
         exitableEnd,
         exitId,

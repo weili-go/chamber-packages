@@ -94,7 +94,7 @@ exitable: public(map(uint256, map(uint256, exitableRange)))
 exits: map(uint256, Exit)
 challenges: map(bytes32, Challenge)
 childs: map(uint256, uint256)
-relations: map(uint256, uint256)
+lowerExits: map(uint256, uint256)
 removed: map(bytes32, bool)
 
 # total deposit amount per token type
@@ -512,7 +512,7 @@ def challenge(
     ZERO_ADDRESS
   )
   if _exitId == _childExitId:
-    lowerExit: uint256 = self.relations[_exitId]
+    lowerExit: uint256 = self.lowerExits[_exitId]
     if self.exits[lowerExit].owner != ZERO_ADDRESS:
       self.exits[lowerExit].challengeCount -= 1
       if as_unitless_number(block.timestamp) > self.exits[lowerExit].exitableAt - EXTEND_PERIOD_SECONDS:
@@ -543,16 +543,16 @@ def challenge(
 # @dev requestHigherPriorityExit
 @public
 def requestHigherPriorityExit(
-  _parentExitId: uint256,
-  _exitId: uint256
+  _higherPriorityExitId: uint256,
+  _lowerPriorityExitId: uint256
 ):
-  parent: Exit = self.exits[_parentExitId]
-  exit: Exit = self.exits[_exitId]
+  parent: Exit = self.exits[_higherPriorityExitId]
+  exit: Exit = self.exits[_lowerPriorityExitId]
   assert parent.priority < exit.priority
-  assert self.relations[_parentExitId] == 0
+  assert self.lowerExits[_higherPriorityExitId] == 0
   self.checkSegment(parent.segment, exit.segment)
-  self.exits[_exitId].challengeCount += 1
-  self.relations[_parentExitId] = _exitId
+  self.exits[_lowerPriorityExitId].challengeCount += 1
+  self.lowerExits[_higherPriorityExitId] = _lowerPriorityExitId
 
 @public
 def includeSignature(
