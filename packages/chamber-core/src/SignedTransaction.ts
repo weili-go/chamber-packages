@@ -3,7 +3,8 @@ import {
   BaseTransaction,
   TransactionDecoder,
   TransactionOutput,
-  SwapTransaction
+  SwapTransaction,
+  TransactionOutputDeserializer
 } from './tx'
 import {
   HexString,
@@ -112,6 +113,7 @@ export class SignedTransactionWithProof {
   timestamp: BigNumber
   blkNum: BigNumber
   confSigs: Signature[]
+  txo: TransactionOutput
 
   constructor(
     tx: SignedTransaction,
@@ -120,7 +122,8 @@ export class SignedTransactionWithProof {
     root: Hash,
     timestamp: BigNumber,
     proof: SumMerkleProof,
-    blkNum: BigNumber
+    blkNum: BigNumber,
+    txo?: TransactionOutput
   ) {
     this.signedTx = tx
     this.outputIndex = outputIndex
@@ -130,6 +133,11 @@ export class SignedTransactionWithProof {
     this.proof = proof
     this.blkNum = blkNum
     this.confSigs = []
+    if(txo) {
+      this.txo = txo
+    } else {
+      this.txo = this.signedTx.tx.getOutput(this.outputIndex).withBlkNum(this.blkNum)
+    }
   }
 
   withRawConfSigs(sigs: Signature[]): SignedTransactionWithProof {
@@ -183,7 +191,7 @@ export class SignedTransactionWithProof {
   }
 
   getOutput() {
-    return this.signedTx.tx.getOutput(this.outputIndex).withBlkNum(this.blkNum)
+    return this.txo
   }
 
   merkleHash(): Hash {
@@ -210,7 +218,8 @@ export class SignedTransactionWithProof {
       timestamp: this.timestamp.toString(),
       proof: this.proof.serialize(),
       blkNum: this.blkNum.toString(),
-      confSigs: this.confSigs
+      confSigs: this.confSigs,
+      txo: this.txo.serialize()
     }
   }
 
@@ -222,8 +231,24 @@ export class SignedTransactionWithProof {
       data.root,
       utils.bigNumberify(data.timestamp),
       SumMerkleProof.deserialize(data.proof),
-      utils.bigNumberify(data.blkNum)
+      utils.bigNumberify(data.blkNum),
+      TransactionOutputDeserializer.deserialize(data.txo)
     ).withRawConfSigs(data.confSigs)
+  }
+
+  spend(txo: TransactionOutput) {
+    return this.getOutput().subSpent(txo).map(newTxo => {
+      return new SignedTransactionWithProof(
+        this.signedTx,
+        this.outputIndex,
+        this.superRoot,
+        this.root,
+        this.timestamp,
+        this.proof,
+        this.blkNum,
+        newTxo
+      )
+    })
   }
 
 }

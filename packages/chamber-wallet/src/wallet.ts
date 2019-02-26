@@ -23,7 +23,8 @@ import {
   ChamberOk,
   MapUtil,
   SwapRequest,
-  SwapTransaction
+  SwapTransaction,
+  TransactionOutput
 } from '@layer2/core'
 import { WalletErrorFactory } from './error'
 import { Exit, WaitingBlockWrapper } from './models'
@@ -257,6 +258,21 @@ export class ChamberWallet {
   /**
    * @ignore
    */
+  private _spend(txo: TransactionOutput) {
+    this.getUTXOArray().forEach((tx) => {
+      const output = tx.getOutput()
+      if(output.checkSpent(txo)) {
+        this.deleteUTXO(output.hash())
+        tx.spend(txo).forEach(newTx => {
+          this.addUTXO(newTx)
+        })
+      }
+    })
+  }
+
+  /**
+   * @ignore
+   */
   private updateBlock(block: Block) {
     this.getUTXOArray().forEach((tx) => {
       const exclusionProof = block.getExclusionProof(tx.getOutput().getSegment(0))
@@ -265,7 +281,7 @@ export class ChamberWallet {
     })
     const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(tx => {
       tx.signedTx.tx.getInputs().forEach(input => {
-        this.deleteUTXO(input.hash())
+        this._spend(input)
       })
       if(tx.getOutput().getOwners().indexOf(this.wallet.address) >= 0) {
         // require confirmation signature?
@@ -482,6 +498,7 @@ export class ChamberWallet {
   getBalance() {
     let balance = ethers.utils.bigNumberify(0)
     this.getUTXOArray().forEach((tx) => {
+      console.log('getBalance: ', tx.getOutput().getSegment(0))
       balance = balance.add(tx.getOutput().getSegment(0).getAmount())
     })
     return balance
@@ -564,7 +581,8 @@ export class ChamberWallet {
     let tx: SplitTransaction | null = null
     this.getUTXOArray().forEach((_tx) => {
       const output = _tx.getOutput()
-      const segment = output.getSegment(0)  
+      const segment = output.getSegment(0)
+      console.log('searchUtxo:', segment)
       if(segment.getAmount().gte(amount)) {
         tx = new SplitTransaction(
           this.wallet.address,
