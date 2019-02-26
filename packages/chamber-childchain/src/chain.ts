@@ -14,6 +14,7 @@ import { ChainErrorFactory } from './error'
 import { BigNumber } from 'ethers/utils';
 import { SwapManager } from './SwapManager';
 import { ethers } from 'ethers';
+import { SegmentChecker } from './SegmentChecker';
 
 export interface IChainDb {
   contains(key: string): Promise<boolean>
@@ -23,19 +24,18 @@ export interface IChainDb {
 }
 
 export class Chain {
-  snapshot: Snapshot
   blockHeight: number
   db: IChainDb
   txQueue: SignedTransaction[]
   txFilter: TxFilter
   numTokens: number
   swapManager: SwapManager
+  segmentChecker: SegmentChecker
 
   constructor(
-    snapshot: Snapshot,
     db: IChainDb
   ) {
-    this.snapshot = snapshot
+    this.segmentChecker = new SegmentChecker()
     this.blockHeight = 0
     this.db = db
     this.txQueue = []
@@ -54,7 +54,8 @@ export class Chain {
 
   appendTx(tx: SignedTransaction): ChamberResult<boolean> {
     try {
-      if(this.txFilter.checkAndInsertTx(tx)) {
+      if(this.txFilter.checkAndInsertTx(tx)
+      && this.segmentChecker.isContain(tx)) {
         this.txQueue.push(tx)
         return new ChamberOk(true)
       }else{
@@ -86,8 +87,9 @@ export class Chain {
       return new ChamberResultError(ChainErrorFactory.NoValidTransactions())
     }
     const tasks = this.txQueue.map(async tx => {
-      const inputChecked = await this.snapshot.checkInput(tx)
+      const inputChecked = this.segmentChecker.isContain(tx)
       if(inputChecked) {
+        this.segmentChecker.spent(tx)
         block.appendTx(tx)
       }
     })
@@ -110,7 +112,7 @@ export class Chain {
   async handleSubmit(superRoot: string, root: string, blkNum: BigNumber, timestamp: BigNumber) {
     const block = await this.readWaitingBlock(root)
     block.txs.forEach(tx => {
-      this.snapshot.applyTx(tx, blkNum)
+      this.segmentChecker.insert(tx, blkNum)
     })
     block.setBlockNumber(blkNum.toNumber())
     block.setBlockTimestamp(timestamp)
@@ -134,7 +136,7 @@ export class Chain {
     block.setDepositTx(depositTx)
     this.blockHeight = blkNum.toNumber()
     // write to DB
-    this.snapshot.db.insertId(depositTx.getOutput().withBlkNum(blkNum).hash())
+    this.segmentChecker.insertDepositTx(depositTx, blkNum)
     await this.writeToDb(block)
   }
 
@@ -175,12 +177,12 @@ export class Chain {
   }
 
   async writeSnapshot() {
-    await this.db.insert('snapshot', this.snapshot.getRoot())
+    await this.db.insert('snapshot', JSON.stringify(this.segmentChecker.serialize()))
   }
 
   async readSnapshot() {
-    const root = await this.db.get('snapshot')
-    this.snapshot.setRoot(root)
+    const snapshot = await this.db.get('snapshot')
+    this.segmentChecker.deserialize(JSON.parse(snapshot))
   }
 
   async syncBlocks() {
@@ -200,8 +202,8 @@ export class Chain {
     if(blockResult.isOk()) {
       const block = blockResult.ok()
       const tasks = block.txs.map(async tx => {
-        await this.snapshot.checkInput(tx)
-        await this.snapshot.applyTx(tx, blkNum)
+        await this.segmentChecker.spent(tx)
+        await this.segmentChecker.insert(tx, blkNum)
       })
       await Promise.all(tasks)
       return true

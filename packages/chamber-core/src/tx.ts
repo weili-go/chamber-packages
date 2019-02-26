@@ -108,6 +108,17 @@ export class TransactionDecoder {
   }
 }
 
+export class TransactionOutputDeserializer {
+
+  static deserialize(data: any[]): TransactionOutput {
+    if(data[0] == 'own') {
+      return OwnState.deserialize(data)
+    } else {
+      throw new Error('unknown state')
+    }
+  }
+}
+
 export interface TransactionOutput {
   withBlkNum(blkNum: BigNumber): TransactionOutput
   getOwners(): Address[]
@@ -115,6 +126,9 @@ export interface TransactionOutput {
   getSegment(index: number): Segment
   hash(): Hash
   getBytes(): string
+  serialize(): any
+  checkSpent(txo: TransactionOutput): boolean
+  subSpent(txo: TransactionOutput): TransactionOutput[]
 }
 
 export class OwnState implements TransactionOutput {
@@ -156,6 +170,19 @@ export class OwnState implements TransactionOutput {
     return this.segment
   }
 
+  serialize() {
+    return [
+      'own',
+      this.getOwners()[0],
+      this.getSegment(0),
+      this.getBlkNum()
+    ]
+  }
+
+  static deserialize(data: any[]) {
+    return new OwnState(data[2], data[1]).withBlkNum(data[3])
+  }
+
   getBytes() {
     return this.joinHex([
       utils.keccak256(utils.toUtf8Bytes('own')),
@@ -179,6 +206,24 @@ export class OwnState implements TransactionOutput {
     }else{
       throw new Error('blkNum should not be null to get hash')
     }
+  }
+
+  checkSpent(txo: TransactionOutput): boolean {
+    if(txo instanceof OwnState
+      && txo.getBlkNum().eq(this.getBlkNum())
+      && txo.getOwners()[0] == this.getOwners()[0]
+      && this.getSegment(0).isContain(txo.getSegment(0))) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  subSpent(txo: TransactionOutput): TransactionOutput[] {
+    const newSegments = this.getSegment(0).sub(txo.getSegment(0))
+    return newSegments.map(s => {
+      return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())
+    })
   }
 
   private joinHex(a: string[]) {
