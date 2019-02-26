@@ -174,13 +174,16 @@ export class OwnState implements TransactionOutput {
     return [
       'own',
       this.getOwners()[0],
-      this.getSegment(0),
-      this.getBlkNum()
+      this.getSegment(0).serialize(),
+      this.getBlkNum().toString()
     ]
   }
 
   static deserialize(data: any[]) {
-    return new OwnState(data[2], data[1]).withBlkNum(data[3])
+    return new OwnState(
+      Segment.deserialize(data[2]),
+      data[1]
+    ).withBlkNum(utils.bigNumberify(data[3]))
   }
 
   getBytes() {
