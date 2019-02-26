@@ -2,7 +2,6 @@ import { utils } from "ethers"
 import {
   Segment
 } from './segment'
-import RLP = utils.RLP
 import {
   Address,
   LockState,
@@ -12,7 +11,7 @@ import {
 } from './helpers/types';
 import BigNumber = utils.BigNumber
 
-class DecoderUtility {
+export class DecoderUtility {
   static decode(bytes: string) {
     const len = Math.floor(utils.hexDataLength(bytes) / 32)
     let arr = []

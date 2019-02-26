@@ -53,7 +53,7 @@ contract MultisigVerifier():
     _exitBlkNum: uint256
   ) -> bool: constant
 
-contract EscrowVerifier():
+contract CustomVerifier():
   def verify(
     _label: uint256,
     _txHash: bytes32,
@@ -74,10 +74,19 @@ contract EscrowVerifier():
     _index: uint256,
     _exitBlkNum: uint256
   ) -> bool: constant
+  def doesRequireConfsig(
+    _label: uint256
+  ) -> bool: constant
+
+VerifierAdded: event({verifierId: uint256, verifierAddress: address})
 
 stdverifier: address
 multisigverifier: address
-escrowverifier: address
+
+operator: address
+
+verifiers: map(uint256, address)
+verifierNonce: uint256
 
 # total deposit amount per token type
 TOTAL_DEPOSIT: constant(uint256) = 2**48
@@ -165,10 +174,19 @@ def verifyDepositTx(
 
 # @dev Constructor
 @public
-def __init__(_stdverifier: address, _multisig: address, _escrow: address):
+def __init__(_stdverifier: address, _multisig: address):
+  self.operator = msg.sender
   self.stdverifier = _stdverifier
   self.multisigverifier = _multisig
-  self.escrowverifier = _escrow
+  self.verifierNonce = 2
+
+@public
+def addVerifier(verifierAddress: address):
+  assert msg.sender == self.operator
+  verifierId: uint256 = self.verifierNonce
+  self.verifiers[verifierId] = verifierAddress
+  self.verifierNonce += 1
+  log.VerifierAdded(verifierId, verifierAddress)
 
 # @dev verify the transaction is signed correctly
 @public
@@ -197,10 +215,9 @@ def verify(
     return self.verifyDepositTx(_txBytes, _owner, _tokenId, _start, _end)
   elif label == 5:
     return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _hasSig)
-  elif label >= 20:
-    return EscrowVerifier(self.escrowverifier).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _timestamp)
   else:
-    assert False
+    verifierAddress: address = self.verifiers[label / 10]
+    return CustomVerifier(verifierAddress).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _timestamp)
 
 # @dev get hash of input state of the transaction
 @public
@@ -220,8 +237,9 @@ def checkSpent(
     return StandardVerifier(self.stdverifier).checkSpentOfMerge(_exitStateBytes, _txBytes, _index, _blkNum)
   elif label == 5:
     return MultisigVerifier(self.multisigverifier).checkSpentOfSwap(_exitStateBytes, _txBytes, _index, _blkNum)
-  elif label >= 20:
-    return EscrowVerifier(self.escrowverifier).checkSpent(label, _exitStateBytes, _txBytes, _index, _blkNum)
+  else:
+    verifierAddress: address = self.verifiers[label / 10]
+    return CustomVerifier(verifierAddress).checkSpent(label, _exitStateBytes, _txBytes, _index, _blkNum)
   return False
 
 @public
@@ -244,6 +262,7 @@ def doesRequireConfsig(
     return True
   elif label == 10:
     return True
-  elif label >= 20:
-    return True
+  else:
+    verifierAddress: address = self.verifiers[label / 10]
+    return CustomVerifier(verifierAddress).doesRequireConfsig(label)
   return False

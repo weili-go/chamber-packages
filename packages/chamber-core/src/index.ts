@@ -31,3 +31,5 @@ export * from './utils/result'
 export * from './utils/MapUtil'
 
 export * from './models/swap'
+
+export * from './verifiers/escrow'

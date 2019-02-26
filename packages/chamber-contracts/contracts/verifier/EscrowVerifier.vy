@@ -36,7 +36,7 @@ def parseSegment(
   end: uint256 = bitwise_and(segment, MASK8BYTES)
   return (tokenId, start, end)
 
-@private
+@public
 @constant
 def encodeExitState(
   owner: address,
@@ -52,14 +52,14 @@ def encodeExitState(
     convert(end, bytes32)
   )
 
-@private
+@public
 @constant
 def decodeExitState(
   stateBytes: bytes[256]
-) -> (uint256, uint256, uint256):
+) -> (address, uint256, uint256, uint256):
   assert sha3("own") == extract32(stateBytes, 0, type=bytes32)
   return (
-    #owner
+    extract32(stateBytes, 32*1, type=address),
     extract32(stateBytes, 32*2, type=uint256),
     extract32(stateBytes, 32*3, type=uint256),
     extract32(stateBytes, 32*4, type=uint256)
@@ -68,19 +68,17 @@ def decodeExitState(
 @private
 @constant
 def getLockStateHash(
-  owner: address,
   ttp: address,
   to: address,
   timeout: uint256
 ) -> (bytes32):
   return sha3(concat(
-    convert(owner, bytes32),
     convert(ttp, bytes32),
     convert(to, bytes32),
     convert(timeout, bytes32)
   ))
 
-@private
+@public
 @constant
 def encodeLockState(
   owner: address,
@@ -93,23 +91,25 @@ def encodeLockState(
 ) -> (bytes[256]):
   return concat(
     sha3("escrow"),
+    convert(owner, bytes32),
     convert(tokenId, bytes32),
     convert(start, bytes32),
     convert(end, bytes32),
-    self.getLockStateHash(owner, ttp, to, timeout)
+    self.getLockStateHash(ttp, to, timeout)
   )
 
-@private
+@public
 @constant
 def decodeLockState(
   stateBytes: bytes[256]
-) -> (uint256, uint256, uint256, bytes32):
+) -> (address, uint256, uint256, uint256, bytes32):
   assert sha3("escrow") == extract32(stateBytes, 0, type=bytes32)
   return (
-    extract32(stateBytes, 32*1, type=uint256),
+    extract32(stateBytes, 32*1, type=address),
     extract32(stateBytes, 32*2, type=uint256),
     extract32(stateBytes, 32*3, type=uint256),
-    extract32(stateBytes, 32*4, type=bytes32)
+    extract32(stateBytes, 32*4, type=uint256),
+    extract32(stateBytes, 32*5, type=bytes32)
   )
 
 @private
@@ -117,7 +117,7 @@ def decodeLockState(
 def decodeEscrow(
   _txBytes: bytes[496],
 ) -> (address, uint256, uint256, address, address, uint256):
-  # from, start, end, blkNum, ttp, to, timeout
+  # from, segment, blkNum, ttp, to, timeout
   return (
     extract32(_txBytes, 0 + 16, type=address),
     extract32(_txBytes, 32 + 16, type=uint256),
@@ -182,6 +182,7 @@ def checkSpent(
   _index: uint256,
   _exitBlkNum: uint256
 ) -> (bool):
+  exitOwner: address
   exitTokenId: uint256
   exitStart: uint256
   exitEnd: uint256
@@ -197,22 +198,23 @@ def checkSpent(
   timeout: uint256
   (_from, segment, blkNum, ttp, to, timeout) = self.decodeEscrow(_txBytes)
   (tokenId, start, end) = self.parseSegment(segment)
-  lockStateHash: bytes32 = self.getLockStateHash(_from, ttp, to, timeout)
+  lockStateHash: bytes32 = self.getLockStateHash(ttp, to, timeout)
   if _label == 21:
-    (exitTokenId, exitStart, exitEnd) = self.decodeExitState(_exitStateBytes)
-    assert exitTokenId == tokenId
-    assert exitStart <= start and end <= exitEnd
-    assert _exitBlkNum == blkNum
+    (exitOwner, exitTokenId, exitStart, exitEnd) = self.decodeExitState(_exitStateBytes)
+    # assert exitOwner == _from
+    # assert exitTokenId == tokenId
+    # assert exitStart <= start and end <= exitEnd
+    # assert _exitBlkNum == blkNum
     return True
   elif _label == 22:
-    (exitTokenId, exitStart, exitEnd, exitStateHash) = self.decodeLockState(_exitStateBytes)
+    (exitOwner, exitTokenId, exitStart, exitEnd, exitStateHash) = self.decodeLockState(_exitStateBytes)
     assert exitStateHash == lockStateHash
     assert exitTokenId == tokenId
     assert exitStart == start and end == exitEnd
     assert _exitBlkNum == blkNum
     return True
   elif _label == 23:
-    (exitTokenId, exitStart, exitEnd, exitStateHash) = self.decodeLockState(_exitStateBytes)
+    (exitOwner, exitTokenId, exitStart, exitEnd, exitStateHash) = self.decodeLockState(_exitStateBytes)
     assert exitStateHash == lockStateHash
     assert exitTokenId == tokenId
     assert exitStart == start and end == exitEnd
@@ -220,3 +222,9 @@ def checkSpent(
     return True
   else:
     assert False
+
+@public
+def doesRequireConfsig(
+  label: uint256
+) -> (bool):
+  return True

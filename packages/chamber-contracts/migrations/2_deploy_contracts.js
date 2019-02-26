@@ -16,9 +16,11 @@ module.exports = (deployer) => {
   .then(() => deployer.deploy(
     TransactionVerifier,
     StandardVerifier.address,
-    MultisigVerifier.address,
-    EscrowVerifier.address
+    MultisigVerifier.address
   ))
+  .then((_txVerifier) => {
+    return _txVerifier.addVerifier(EscrowVerifier.address)
+  })
   .then(() => deployer.deploy(
     RootChain,
     TransactionVerifier.address,

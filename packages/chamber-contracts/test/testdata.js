@@ -312,5 +312,5 @@ module.exports = {
   Scenario4: scenario4(),
   transactions: transactions(),
   testKeys: {AlicePrivateKey, BobPrivateKey, OperatorPrivateKey},
-  testAddresses: {AliceAddress, OperatorAddress}
+  testAddresses: {AliceAddress, OperatorAddress, BobAddress}
 }
