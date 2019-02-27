@@ -33,7 +33,8 @@ The definition of Transaction and Block.
 Utilities for Plasma core logic.
 
 ### contracts
-Vyper contract for deposit, submit, exit, challenge, withdraw and verification of application specific state transition.
+Vyper contract for deposit, submit, withdraw and verification of application specific state transition.
+And also Simple exit game, Plasma Fast Finality and Checkpoint.
 
 ### childchain
 Child chain implementation using the core module.
