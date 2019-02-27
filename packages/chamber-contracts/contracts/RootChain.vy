@@ -65,7 +65,7 @@ contract TransactionVerifier():
 ListingEvent: event({_tokenId: uint256, _tokenAddress: address})
 BlockSubmitted: event({_superRoot: bytes32, _root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: indexed(address), _tokenId: uint256, _start: uint256, _end: uint256, _blkNum: uint256})
-ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
+ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256, _isForceInclude: bool})
 Challenged: event({_exitId: uint256})
 ForceIncluded: event({_exitId: uint256})
 FinalizedExit: event({_exitId: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
@@ -462,7 +462,7 @@ def exit(
   if _hasSig > 0:
     self.removed[txHash] = True
   assert ERC721(self.exitToken).mint(msg.sender, exitId)
-  log.ExitStarted(msg.sender, exitId, exitableAt, tokenId, start, end)
+  log.ExitStarted(msg.sender, exitId, exitableAt, tokenId, start, end, _hasSig > 0)
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx
@@ -667,6 +667,7 @@ def challengeTooOldExit(
   )
   # break exit
   clear(self.exits[_exitId])
+  log.Challenged(_exitId)
 
 # @dev mergeExitable
 @public
@@ -695,6 +696,14 @@ def mergeExitable(
 @constant
 def getExit(
   _exitId: uint256
-) -> (address, uint256):
+) -> (address, uint256, uint256):
   exit: Exit = self.exits[_exitId]
-  return (exit.owner, exit.challengeCount)
+  return (exit.owner, exit.exitableAt, exit.challengeCount)
+
+# @dev getPlasmaBlock
+@public
+@constant
+def getPlasmaBlock(
+  _blkNum: uint256
+) -> (bytes32):
+  return self.childChain[_blkNum]

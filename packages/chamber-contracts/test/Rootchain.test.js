@@ -226,7 +226,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       // 6 weeks after
       const exitResult = await this.rootChain.getExit(exitId)
       // challengeCount is 1
-      assert.equal(exitResult[1].toNumber(), 1)
+      assert.equal(exitResult[2].toNumber(), 1)
       await increaseTime(duration.weeks(6))
       await assertRevert(this.rootChain.finalizeExit(
         exitableEnd,
@@ -288,7 +288,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         })
       const exitResult = await this.rootChain.getExit(exitId1)
       // challengeCount is 0
-      assert.equal(exitResult[1].toNumber(), 0)
+      assert.equal(exitResult[2].toNumber(), 0)
     })
 
     it("should success to challengeBefore by deposit transaction", async () => {
@@ -344,7 +344,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         })
       const exitResult = await this.rootChain.getExit(exitId1)
       // challengeCount is 0
-      assert.equal(exitResult[1].toNumber(), 0)
+      assert.equal(exitResult[2].toNumber(), 0)
     })
 
     it("should failed to finalizeExit", async () => {
