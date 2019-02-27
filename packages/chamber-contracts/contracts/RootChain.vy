@@ -9,12 +9,18 @@ struct Exit:
   exitableAt: uint256
   txHash: bytes32
   stateHash: bytes32
-  extendedExitableAt: uint256
   blkNum: uint256
-  priority: uint256
   segment: uint256
-  hasSig: uint256
+
+# extended attributes of exit
+struct ExtendExit:
+  extendedExitableAt: uint256
+  priority: uint256
   challengeCount: uint256
+  # 0: not force include
+  # 1: user don't have confsig 1
+  # 2: user don't have confsig 2
+  forceInclude: uint256
 
 struct Challenge:
   blkNum: uint256
@@ -65,7 +71,7 @@ contract TransactionVerifier():
 ListingEvent: event({_tokenId: uint256, _tokenAddress: address})
 BlockSubmitted: event({_superRoot: bytes32, _root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: indexed(address), _tokenId: uint256, _start: uint256, _end: uint256, _blkNum: uint256})
-ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
+ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256, _isForceInclude: bool})
 Challenged: event({_exitId: uint256})
 ForceIncluded: event({_exitId: uint256})
 FinalizedExit: event({_exitId: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
@@ -92,6 +98,7 @@ exitNonce: public(uint256)
 # tokentype -> ( end -> start
 exitable: public(map(uint256, map(uint256, exitableRange)))
 exits: map(uint256, Exit)
+extendExits: map(uint256, ExtendExit)
 challenges: map(bytes32, Challenge)
 childs: map(uint256, uint256)
 lowerExits: map(uint256, uint256)
@@ -423,11 +430,10 @@ def exit(
   exitableAt: uint256 = as_unitless_number(block.timestamp) + EXIT_PERIOD_SECONDS
   blkNum: uint256 = _utxoPos / 100
   outputIndex: uint256 = _utxoPos - blkNum * 100
-  priority: uint256 = blkNum
   txHash: bytes32 = sha3(_txBytes)
   exitId: uint256 = self.exitNonce
-  if self.challenges[txHash].isAvailable and self.challenges[txHash].blkNum < priority:
-    priority = self.challenges[txHash].blkNum
+  if self.challenges[txHash].isAvailable and self.challenges[txHash].blkNum < blkNum:
+    self.extendExits[exitId].priority = self.challenges[txHash].blkNum
     self.childs[self.challenges[txHash].exitId] = exitId
   tokenId: uint256
   start: uint256
@@ -452,17 +458,14 @@ def exit(
     exitableAt: exitableAt,
     txHash: txHash,
     stateHash: sha3(exitStateBytes),
-    extendedExitableAt: 0,
     blkNum: blkNum,
-    priority: priority,
-    segment: _segment,
-    challengeCount: 0,
-    hasSig: _hasSig
+    segment: _segment
   })
   if _hasSig > 0:
+    self.extendExits[exitId].forceInclude = _hasSig
     self.removed[txHash] = True
   assert ERC721(self.exitToken).mint(msg.sender, exitId)
-  log.ExitStarted(msg.sender, exitId, exitableAt, tokenId, start, end)
+  log.ExitStarted(msg.sender, exitId, exitableAt, tokenId, start, end, _hasSig > 0)
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx
@@ -514,9 +517,9 @@ def challenge(
   if _exitId == _childExitId:
     lowerExit: uint256 = self.lowerExits[_exitId]
     if self.exits[lowerExit].owner != ZERO_ADDRESS:
-      self.exits[lowerExit].challengeCount -= 1
+      self.extendExits[lowerExit].challengeCount -= 1
       if as_unitless_number(block.timestamp) > self.exits[lowerExit].exitableAt - EXTEND_PERIOD_SECONDS:
-        self.exits[lowerExit].extendedExitableAt = as_unitless_number(block.timestamp) + EXTEND_PERIOD_SECONDS
+        self.extendExits[lowerExit].extendedExitableAt = as_unitless_number(block.timestamp) + EXTEND_PERIOD_SECONDS
     if not TransactionVerifier(self.txverifier).doesRequireConfsig(_txBytes):
       self.challenges[txHash] = Challenge({
         blkNum: exitBlkNum,
@@ -529,7 +532,7 @@ def challenge(
     txoIndex,
     exitBlkNum)
   # break exit procedure
-  if exit.hasSig > 0:
+  if self.extendExits[_exitId].forceInclude > 0:
     self.removed[exit.txHash] = False
   if _exitId == _childExitId:
     self.exits[_exitId].owner = ZERO_ADDRESS
@@ -546,12 +549,18 @@ def requestHigherPriorityExit(
   _higherPriorityExitId: uint256,
   _lowerPriorityExitId: uint256
 ):
-  parent: Exit = self.exits[_higherPriorityExitId]
+  higherPriorityExit: Exit = self.exits[_higherPriorityExitId]
   exit: Exit = self.exits[_lowerPriorityExitId]
-  assert parent.priority < exit.priority
+  higherPriority: uint256 = higherPriorityExit.blkNum
+  lowerPriority: uint256 = exit.blkNum
+  if self.extendExits[_higherPriorityExitId].priority > 0:
+    higherPriority = self.extendExits[_higherPriorityExitId].priority
+  if self.extendExits[_lowerPriorityExitId].priority > 0:
+    lowerPriority = self.extendExits[_lowerPriorityExitId].priority
+  assert higherPriority < lowerPriority
   assert self.lowerExits[_higherPriorityExitId] == 0
-  self.checkSegment(parent.segment, exit.segment)
-  self.exits[_lowerPriorityExitId].challengeCount += 1
+  self.checkSegment(higherPriorityExit.segment, exit.segment)
+  self.extendExits[_lowerPriorityExitId].challengeCount += 1
   self.lowerExits[_higherPriorityExitId] = _lowerPriorityExitId
 
 @public
@@ -584,7 +593,7 @@ def includeSignature(
     outputIndex,
     ZERO_ADDRESS
   )
-  assert exit.hasSig > 0
+  assert self.extendExits[_exitId].forceInclude > 0
   self.removed[txHash] = False
   send(msg.sender, FORCE_INCLUDE_BOND)
   log.ForceIncluded(_exitId)
@@ -614,9 +623,9 @@ def finalizeExit(
     end,
     _exitableEnd
   )
-  assert exit.exitableAt < as_unitless_number(block.timestamp) and exit.extendedExitableAt < as_unitless_number(block.timestamp)
-  assert exit.challengeCount == 0
-  if exit.hasSig == 0:
+  assert exit.exitableAt < as_unitless_number(block.timestamp) and self.extendExits[_exitId].extendedExitableAt < as_unitless_number(block.timestamp)
+  assert self.extendExits[_exitId].challengeCount == 0
+  if self.extendExits[_exitId].forceInclude == 0:
     if tokenId == 0:
       send(exit.owner, as_wei_value(end - start, "gwei") + EXIT_BOND)
     else:
@@ -651,7 +660,10 @@ def challengeTooOldExit(
   blockTimestamp: uint256 = convert(slice(_proof, start=32, len=8), uint256)
   assert self.childChain[blkNum] == self.getPlasmaBlockHash(root, blockTimestamp)
   assert blockTimestamp < as_unitless_number(block.timestamp) - 3 * EXIT_PERIOD_SECONDS
-  assert blkNum > exit.priority
+  priority: uint256 = exit.blkNum
+  if self.extendExits[_exitId].priority > 0:
+    priority = self.extendExits[_exitId].priority
+  assert blkNum > priority
   self.checkTransaction(
     tokenId,
     start,
@@ -667,6 +679,7 @@ def challengeTooOldExit(
   )
   # break exit
   clear(self.exits[_exitId])
+  log.Challenged(_exitId)
 
 # @dev mergeExitable
 @public
@@ -695,6 +708,14 @@ def mergeExitable(
 @constant
 def getExit(
   _exitId: uint256
-) -> (address, uint256):
+) -> (address, uint256, uint256):
   exit: Exit = self.exits[_exitId]
-  return (exit.owner, exit.challengeCount)
+  return (exit.owner, exit.exitableAt, self.extendExits[_exitId].challengeCount)
+
+# @dev getPlasmaBlock
+@public
+@constant
+def getPlasmaBlock(
+  _blkNum: uint256
+) -> (bytes32):
+  return self.childChain[_blkNum]
