@@ -110,9 +110,9 @@ TOTAL_DEPOSIT: constant(uint256) = 2**48
 MASK8BYTES: constant(uint256) = 2**64 - 1
 
 # exit period is 4 weeks
-EXIT_PERIOD_SECONDS: constant(uint256) = 4 * 7 * 24 * 60 * 60
+EXIT_PERIOD_SECONDS: constant(uint256) = 60 * 60 #4 * 7 * 24 * 60 * 60
 # 3 days extended period for withholding attack
-EXTEND_PERIOD_SECONDS: constant(uint256) = 3 * 24 * 60 * 60
+EXTEND_PERIOD_SECONDS: constant(uint256) = 12 * 60 #3 * 24 * 60 * 60
 
 # bonds
 EXIT_BOND: constant(wei_value) = as_wei_value(1, "finney")
@@ -663,7 +663,7 @@ def challengeTooOldExit(
   root: bytes32 = extract32(_proof, 0, type=bytes32)
   blockTimestamp: uint256 = convert(slice(_proof, start=32, len=8), uint256)
   assert self.childChain[blkNum] == self.getPlasmaBlockHash(root, blockTimestamp)
-  assert blockTimestamp < as_unitless_number(block.timestamp) - 3 * EXIT_PERIOD_SECONDS
+  assert blockTimestamp < as_unitless_number(block.timestamp) - 24 * EXIT_PERIOD_SECONDS
   priority: uint256 = exit.blkNum
   if self.extendExits[_exitId].priority > 0:
     priority = self.extendExits[_exitId].priority
