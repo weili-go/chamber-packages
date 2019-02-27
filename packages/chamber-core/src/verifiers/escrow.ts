@@ -87,18 +87,23 @@ export class EscrowLockState implements TransactionOutput {
   }
 
   getBytes() {
-    return this.joinHex([
-      utils.keccak256(utils.toUtf8Bytes('own')),
-      utils.hexZeroPad(utils.hexlify(this.owner), 32),
-      utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
-      utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
-      utils.hexZeroPad(utils.hexlify(this.segment.end), 32),
-      utils.keccak256(this.joinHex([
-        utils.hexZeroPad(utils.hexlify(this.ttp), 32),
-        utils.hexZeroPad(utils.hexlify(this.to), 32),
-        utils.hexZeroPad(utils.hexlify(this.timeout), 32),
-      ]))
-    ])
+    if(this.blkNum) {
+      return this.joinHex([
+        utils.keccak256(utils.toUtf8Bytes('own')),
+        utils.hexZeroPad(utils.hexlify(this.owner), 32),
+        utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
+        utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
+        utils.hexZeroPad(utils.hexlify(this.segment.end), 32),
+        utils.hexZeroPad(utils.hexlify(this.blkNum), 32),
+        utils.keccak256(this.joinHex([
+          utils.hexZeroPad(utils.hexlify(this.ttp), 32),
+          utils.hexZeroPad(utils.hexlify(this.to), 32),
+          utils.hexZeroPad(utils.hexlify(this.timeout), 32),
+        ]))
+      ])
+    } else {
+      throw new Error('blkNum should not be null')
+    }
   }
 
   hash(): Hash {

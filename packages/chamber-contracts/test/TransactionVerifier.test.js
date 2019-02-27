@@ -50,10 +50,11 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         tx.getSignatures(),
         0,
         0,
-        constants.AddressZero,
+        testAddresses.BobAddress,
         constants.Zero,
         transactions.segments[0].start,
         transactions.segments[0].end,
+        6,
         0,
         {
           from: alice
@@ -74,6 +75,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         constants.Zero,
         transactions.segments[0].start,
         transactions.segments[0].end,
+        6,
         0,
         {
           from: alice
@@ -93,6 +95,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         constants.Zero,
         transactions.segments[1].start,
         transactions.segments[1].end,
+        6,
         0,
         {
           from: alice
@@ -112,10 +115,11 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         tx.getSignatures(),
         0,
         0,
-        constants.AddressZero,
+        testAddresses.BobAddress,
         constants.Zero,
         transactions.segment45.start,
         transactions.segment45.end,
+        6,  // block number is 6
         0,
         {
           from: alice
@@ -148,12 +152,12 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         Segment.ETH(
           utils.bigNumberify('5000000'),
           utils.bigNumberify('5100000')),
-        alice)
+        alice).withBlkNum(blkNum3)
       const exitState2 = new OwnState(
         Segment.ETH(
           utils.bigNumberify('5100000'),
           utils.bigNumberify('5200000')),
-        operator)
+        operator).withBlkNum(blkNum5)
   
       const result2 = await this.transactionVerifier.checkSpent(
         exitState1.getBytes(),
@@ -199,7 +203,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
           from: operator
         });
 
-      const exitState = new OwnState(segment, alice)
+      const exitState = new OwnState(segment, alice).withBlkNum(blkNum)
       const result = await this.transactionVerifier.checkSpent(
         exitState.getBytes(),
         escrowTx.getTxBytes(),

@@ -43,14 +43,16 @@ def encodeExitState(
   owner: address,
   tokenId: uint256,
   start: uint256,
-  end: uint256
+  end: uint256,
+  blkNum: uint256
 ) -> (bytes[256]):
   return concat(
     sha3("own"),
     convert(owner, bytes32),
     convert(tokenId, bytes32),
     convert(start, bytes32),
-    convert(end, bytes32)
+    convert(end, bytes32),
+    convert(blkNum, bytes32)
   )
 
 @public
@@ -95,7 +97,8 @@ def verifyTransfer(
   _owner: address,
   _tokenId: uint256,
   _start: uint256,
-  _end: uint256
+  _end: uint256,
+  _txBlkNum: uint256
 ) -> (bytes[256]):
   # from, start, end, blkNum, to1, to2, offset
   _from: address
@@ -114,7 +117,7 @@ def verifyTransfer(
   if _outputIndex == 0:
     assert (_start >= start) and (_end <= end)
   assert (self.ecrecoverSig(_txHash, _sigs, 0) == _from)
-  return self.encodeExitState(to, tokenId, start, end)
+  return self.encodeExitState(to, tokenId, _start, _end, _txBlkNum)
 
 @public
 @constant
@@ -157,7 +160,8 @@ def verifyMerge(
   _owner: address,
   _tokenId: uint256,
   _start: uint256,
-  _end: uint256
+  _end: uint256,
+  _txBlkNum: uint256
 ) -> (bytes[256]):
   # from, start, offset, end, blkNum1, blkNum2, to
   _from: address
@@ -174,7 +178,7 @@ def verifyMerge(
   assert _tokenId == tokenId and (_start >= start) and (_end <= end)
   assert self.ecrecoverSig(_merkleHash, _sigs, 1) == _from
   assert self.ecrecoverSig(_txHash, _sigs, 0) == _from
-  return self.encodeExitState(to, tokenId, start, end)
+  return self.encodeExitState(to, _tokenId, _start, _end, _txBlkNum)
 
 @public
 @constant

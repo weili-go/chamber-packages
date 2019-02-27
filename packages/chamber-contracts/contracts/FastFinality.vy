@@ -42,6 +42,7 @@ contract TransactionVerifier():
     _tokenId: uint256,
     _start: uint256,
     _end: uint256,
+    _txBlkNum: uint256,
     _timestamp: uint256
   ) -> bytes[256]: constant
   def checkSpent(
@@ -176,7 +177,10 @@ def dispute(
     _tokenId,
     _start,
     _end,
-    0)
+    # dummy block number
+    0,
+    # dummy timestamp
+    0)  
   assert TransactionVerifier(self.txverifier).checkSpent(_exitStateBytes, _txBytes, 0, _prevBlkNum)
   self.disputes[txHash] = Dispute({
     recipient: msg.sender,

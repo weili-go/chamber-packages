@@ -41,14 +41,16 @@ def encodeExitState(
   owner: address,
   tokenId: uint256,
   start: uint256,
-  end: uint256
+  end: uint256,
+  blkNum: uint256
 ) -> (bytes[256]):
   return concat(
     sha3("own"),
     convert(owner, bytes32),
     convert(tokenId, bytes32),
     convert(start, bytes32),
-    convert(end, bytes32)
+    convert(end, bytes32),
+    convert(blkNum, bytes32)
   )
 
 @public
@@ -91,6 +93,7 @@ def verifySwap(
   _tokenId: uint256,
   _start: uint256,
   _end: uint256,
+  _txBlkNum: uint256,
   _hasSig: uint256
 ) -> (bytes[256]):
   from1: address
@@ -126,10 +129,7 @@ def verifySwap(
     assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from1
   elif _hasSig == 2:
     assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from2
-  if _outputIndex == 0:
-    return self.encodeExitState(from1, tokenId1, start1, end1)
-  elif _outputIndex == 1:
-    return self.encodeExitState(from2, tokenId2, start2, end2)
+  return self.encodeExitState(_owner, _tokenId, _start, _end, _txBlkNum)
 
 @public
 @constant

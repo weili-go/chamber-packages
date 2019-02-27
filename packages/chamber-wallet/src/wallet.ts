@@ -167,6 +167,14 @@ export class ChamberWallet {
     })
     this.listener.addEvent('ExitStarted', (e) => {
       console.log('ExitStarted', e)
+      this.handleExit(
+        e.values._exitId,
+        e.values._exitStateHash,
+        e.values._exitableAt,
+        e.values._tokenId,
+        e.values._start,
+        e.values._end
+      )
     })
     this.listener.addEvent('FinalizedExit', (e) => {
       console.log('FinalizedExit', e)
@@ -328,16 +336,31 @@ export class ChamberWallet {
   /**
    * @ignore
    */
-  handleExit(exitId: BigNumber, exitableAt: BigNumber, tokenId: BigNumber, start: BigNumber, end: BigNumber) {
-    const segment = new Segment(tokenId, start, end)
-    const exit = new Exit(
-      exitId,
-      exitableAt,
-      segment
-    )
-    this.exitList.set(exit.getId(), exit.serialize())
-    this.storeMap('exits', this.exitList)
-    return exit
+  handleExit(
+    exitId: BigNumber,
+    exitStateHash: string,
+    exitableAt: BigNumber,
+    tokenId: BigNumber,
+    start: BigNumber,
+    end: BigNumber
+  ) {
+    const utxo = this.getUTXOArray().filter(utxo => {
+      return utxo.getOutput().hash() == exitStateHash
+    })[0]
+    if(utxo) {
+      this.deleteUTXO(utxo.getOutput().hash())
+      const segment = new Segment(tokenId, start, end)
+      const exit = new Exit(
+        exitId,
+        exitableAt,
+        segment
+      )
+      this.exitList.set(exit.getId(), exit.serialize())
+      this.storeMap('exits', this.exitList)
+      return exit
+    } else {
+      null
+    }
   }
 
   /**
@@ -543,14 +566,18 @@ export class ChamberWallet {
     if(receipt.logs && receipt.logs[0]) {
       const logDesc = this.rootChainInterface.parseLog(receipt.logs[0])
       // delete exiting UTXO from UTXO list.
-      this.deleteUTXO(tx.getOutput().hash())
-      return new ChamberOk(this.handleExit(
+      const exitOrNull = this.handleExit(
         logDesc.values._exitId,
-        logDesc.values.exitableAt,
+        logDesc.values._exitStateHash,
+        logDesc.values._exitableAt,
         logDesc.values._tokenId,
         logDesc.values._start,
         logDesc.values._end
-      ))
+      )
+      if(exitOrNull)
+        return new ChamberOk(exitOrNull)
+      else
+        return new ChamberResultError(WalletErrorFactory.InvalidReceipt())
     } else {
       return new ChamberResultError(WalletErrorFactory.InvalidReceipt())
     }
