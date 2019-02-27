@@ -8,6 +8,7 @@ const {
 
 const FastFinality = artifacts.require("FastFinality")
 const RootChain = artifacts.require("RootChain")
+const Checkpoint = artifacts.require("Checkpoint")
 const TransactionVerifier = artifacts.require("TransactionVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
 const MultisigVerifier = artifacts.require("MultisigVerifier")
@@ -40,6 +41,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
   beforeEach(async () => {
     this.erc721 = await ERC721.new()
+    this.checkpoint = await Checkpoint.new({ from: operator })
     this.standardVerifier = await StandardVerifier.new({ from: operator })
     this.multisigVerifier = await MultisigVerifier.new({ from: operator })
     this.transactionVerifier = await TransactionVerifier.new(
@@ -51,6 +53,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     this.rootChain = await RootChain.new(
       this.transactionVerifier.address,
       this.erc721.address,
+      this.checkpoint.address,
       {
         from: operator
       })
