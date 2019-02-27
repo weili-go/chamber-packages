@@ -177,7 +177,7 @@ def verifyDepositTx(
   assert _tokenId == token and _start >= start and _end <= end
   if _owner != ZERO_ADDRESS:
     assert _owner == depositor
-  return self.getOwnState(depositor, token, start, end, _txBlkNum)
+  return self.getOwnState(depositor, token, _start, _end, _txBlkNum)
 
 # @dev Constructor
 @public
