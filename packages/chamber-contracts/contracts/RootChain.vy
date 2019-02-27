@@ -47,6 +47,7 @@ contract TransactionVerifier():
     _tokenId: uint256,
     _start: uint256,
     _end: uint256,
+    _txBlkNum: uint256,
     _timestamp: uint256
   ) -> bytes[256]: constant
   def checkSpent(
@@ -201,6 +202,7 @@ def checkTransaction(
     _tokenId,
     _start,
     _end,
+    _blkNum,
     blockTimestamp)
 
 @private

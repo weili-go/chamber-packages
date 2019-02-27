@@ -186,28 +186,22 @@ export class OwnState implements TransactionOutput {
   }
 
   getBytes() {
-    return this.joinHex([
-      utils.keccak256(utils.toUtf8Bytes('own')),
-      utils.hexZeroPad(utils.hexlify(this.owner), 32),
-      utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
-      utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
-      utils.hexZeroPad(utils.hexlify(this.segment.end), 32)
-    ])
-  }
-
-  hash(): Hash {
     if(this.blkNum) {
-      return utils.keccak256(this.joinHex([
-        utils.hexlify(utils.toUtf8Bytes('own')),
+      return this.joinHex([
+        utils.keccak256(utils.toUtf8Bytes('own')),
         utils.hexZeroPad(utils.hexlify(this.owner), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.end), 32),
         utils.hexZeroPad(utils.hexlify(this.blkNum), 32)
-      ]))
-    }else{
+      ])
+    } else {
       throw new Error('blkNum should not be null to get hash')
     }
+  }
+
+  hash(): Hash {
+    return utils.keccak256(this.getBytes())
   }
 
   checkSpent(txo: TransactionOutput): boolean {

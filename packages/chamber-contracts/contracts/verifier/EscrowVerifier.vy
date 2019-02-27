@@ -42,14 +42,16 @@ def encodeExitState(
   owner: address,
   tokenId: uint256,
   start: uint256,
-  end: uint256
+  end: uint256,
+  blkNum: uint256
 ) -> (bytes[256]):
   return concat(
     sha3("own"),
     convert(owner, bytes32),
     convert(tokenId, bytes32),
     convert(start, bytes32),
-    convert(end, bytes32)
+    convert(end, bytes32),
+    convert(blkNum, bytes32)
   )
 
 @public
@@ -109,7 +111,8 @@ def decodeLockState(
     extract32(stateBytes, 32*2, type=uint256),
     extract32(stateBytes, 32*3, type=uint256),
     extract32(stateBytes, 32*4, type=uint256),
-    extract32(stateBytes, 32*5, type=bytes32)
+    # 32*5 is blkNum
+    extract32(stateBytes, 32*6, type=bytes32)
   )
 
 @private
@@ -139,6 +142,7 @@ def verify(
   _tokenId: uint256,
   _start: uint256,
   _end: uint256,
+  _txBlkNum: uint256,
   _timestamp: uint256
 ) -> (bytes[256]):
   _from: address
@@ -164,14 +168,14 @@ def verify(
     if _owner != ZERO_ADDRESS:
       assert(_owner == to and _outputIndex == 0)
     assert (self.ecrecoverSig(_txHash, _sigs) == ttp)
-    return self.encodeExitState(to, tokenId, start, end)
+    return self.encodeExitState(to, tokenId, start, end, _txBlkNum)
   elif _label == 23:
     # timeout escrow
     if _owner != ZERO_ADDRESS:
       assert(_owner == _from and _outputIndex == 0)
     assert timeout >= _timestamp
     assert (self.ecrecoverSig(_txHash, _sigs) == _from)
-    return self.encodeExitState(_from, tokenId, start, end)
+    return self.encodeExitState(_from, tokenId, start, end, _txBlkNum)
 
 @public
 @constant

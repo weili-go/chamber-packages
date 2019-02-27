@@ -7,7 +7,8 @@ contract StandardVerifier():
     _owner: address,
     _tokenId: uint256,
     _start: uint256,
-    _end: uint256
+    _end: uint256,
+    _txBlkNum: uint256
   ) -> bytes[256]: constant
   def checkSpentOfTransfer(
     _exitStateBytes: bytes[256],
@@ -23,7 +24,8 @@ contract StandardVerifier():
     _owner: address,
     _tokenId: uint256,
     _start: uint256,
-    _end: uint256
+    _end: uint256,
+    _txBlkNum: uint256
   ) -> bytes[256]: constant
   def checkSpentOfMerge(
     _exitStateBytes: bytes[256],
@@ -44,6 +46,7 @@ contract MultisigVerifier():
     _tokenId: uint256,
     _start: uint256,
     _end: uint256,
+    _txBlkNum: uint256,
     _hasSig: uint256
   ) -> bytes[256]: constant
   def checkSpentOfSwap(
@@ -65,6 +68,7 @@ contract CustomVerifier():
     _tokenId: uint256,
     _start: uint256,
     _end: uint256,
+    _txBlkNum: uint256,
     _timestamp: uint256
   ) -> bytes[256]: constant
   def checkSpent(
@@ -202,22 +206,23 @@ def verify(
   _tokenId: uint256,
   _start: uint256,
   _end: uint256,
+  _txBlkNum: uint256,
   _timestamp: uint256
 ) -> bytes[256]:
   label: uint256
   maxBlock: uint256
   (label, maxBlock) = self.decodeBaseTx(_txBytes)
   if label == 2:
-    return StandardVerifier(self.stdverifier).verifyTransfer(_txHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
+    return StandardVerifier(self.stdverifier).verifyTransfer(_txHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _txBlkNum)
   elif label == 3:
-    return StandardVerifier(self.stdverifier).verifyMerge(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end)
+    return StandardVerifier(self.stdverifier).verifyMerge(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _txBlkNum)
   elif label == 4:
     return self.verifyDepositTx(_txBytes, _owner, _tokenId, _start, _end)
   elif label == 5:
-    return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _hasSig)
+    return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _txBlkNum, _hasSig)
   else:
     verifierAddress: address = self.verifiers[label / 10]
-    return CustomVerifier(verifierAddress).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _timestamp)
+    return CustomVerifier(verifierAddress).verify(label, _txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _txBlkNum, _timestamp)
 
 # @dev get hash of input state of the transaction
 @public
