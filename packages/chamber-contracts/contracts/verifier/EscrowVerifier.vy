@@ -168,14 +168,14 @@ def verify(
     if _owner != ZERO_ADDRESS:
       assert(_owner == to and _outputIndex == 0)
     assert (self.ecrecoverSig(_txHash, _sigs) == ttp)
-    return self.encodeExitState(to, tokenId, start, end, _txBlkNum)
+    return self.encodeExitState(to, tokenId, _start, _end, _txBlkNum)
   elif _label == 23:
     # timeout escrow
     if _owner != ZERO_ADDRESS:
       assert(_owner == _from and _outputIndex == 0)
     assert timeout >= _timestamp
     assert (self.ecrecoverSig(_txHash, _sigs) == _from)
-    return self.encodeExitState(_from, tokenId, start, end, _txBlkNum)
+    return self.encodeExitState(_from, tokenId, _start, _end, _txBlkNum)
 
 @public
 @constant
