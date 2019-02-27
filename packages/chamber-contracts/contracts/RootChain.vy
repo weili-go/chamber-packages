@@ -72,7 +72,7 @@ contract TransactionVerifier():
 ListingEvent: event({_tokenId: uint256, _tokenAddress: address})
 BlockSubmitted: event({_superRoot: bytes32, _root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: indexed(address), _tokenId: uint256, _start: uint256, _end: uint256, _blkNum: uint256})
-ExitStarted: event({_exitor: indexed(address), _exitId: uint256, exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256, _isForceInclude: bool})
+ExitStarted: event({_exitor: indexed(address), _exitId: uint256, _exitStateHash: bytes32, _exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256, _isForceInclude: bool})
 Challenged: event({_exitId: uint256})
 ForceIncluded: event({_exitId: uint256})
 FinalizedExit: event({_exitId: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
@@ -139,19 +139,20 @@ def checkMembership(
   _rootHash: bytes32,
   _proof: bytes[512]
 ) -> bool:
-  _totalAmount: uint256 = TOTAL_DEPOSIT * convert(slice(_proof, start=40, len=2), uint256)
-  currentAmount: uint256 = _end - _start
+  currentAmount: uint256 = convert(slice(_proof, start=40, len=8), uint256)
+  _totalAmount: uint256 = TOTAL_DEPOSIT * convert(slice(_proof, start=48, len=2), uint256)
+  # currentAmount: uint256 = _end - _start
   currentLeft: uint256 = 0
   currentRight: uint256 = _totalAmount
   computedHash: bytes32 = _leaf
   proofElement: bytes32
 
   for i in range(16):
-    if (42 + i * 41) >= len(_proof):
+    if (50 + i * 41) >= len(_proof):
       break
-    leftOrRight: uint256 = convert(slice(_proof, start=42 + i * 41, len=1), uint256)
-    amount: uint256 = convert(slice(_proof, start=42 + i * 41 + 1, len=8), uint256)
-    proofElement = extract32(_proof, 42 + i * 41 + 9, type=bytes32)
+    leftOrRight: uint256 = convert(slice(_proof, start=50 + i * 41, len=1), uint256)
+    amount: uint256 = convert(slice(_proof, start=50 + i * 41 + 1, len=8), uint256)
+    proofElement = extract32(_proof, 50 + i * 41 + 9, type=bytes32)
     if leftOrRight == 0:
       currentRight -= amount
       computedHash = sha3(concat(
@@ -161,7 +162,7 @@ def checkMembership(
       computedHash = sha3(concat(
         convert(amount, bytes32), proofElement, convert(currentAmount, bytes32), computedHash))
     currentAmount += amount
-  return (computedHash == _rootHash) and (currentLeft <= _start) and (_end <= currentRight) and (currentAmount == _totalAmount)
+  return (computedHash == _rootHash) and (currentLeft <= _start) and (_end <= currentRight)
 
 # check transaction include deposit transaction
 @public
@@ -454,12 +455,13 @@ def exit(
     outputIndex,
     ZERO_ADDRESS
   )
+  exitStateHash: bytes32 = sha3(exitStateBytes)
   self.exitNonce += 1
   self.exits[exitId] = Exit({
     owner: msg.sender,
     exitableAt: exitableAt,
     txHash: txHash,
-    stateHash: sha3(exitStateBytes),
+    stateHash: exitStateHash,
     blkNum: blkNum,
     segment: _segment
   })
@@ -467,7 +469,7 @@ def exit(
     self.extendExits[exitId].forceInclude = _hasSig
     self.removed[txHash] = True
   assert ERC721(self.exitToken).mint(msg.sender, exitId)
-  log.ExitStarted(msg.sender, exitId, exitableAt, tokenId, start, end, _hasSig > 0)
+  log.ExitStarted(msg.sender, exitId, exitStateHash, exitableAt, tokenId, start, end, _hasSig > 0)
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx

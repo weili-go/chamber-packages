@@ -117,7 +117,7 @@ def verifyTransfer(
   if _outputIndex == 0:
     assert (_start >= start) and (_end <= end)
   assert (self.ecrecoverSig(_txHash, _sigs, 0) == _from)
-  return self.encodeExitState(to, tokenId, start, end, _txBlkNum)
+  return self.encodeExitState(to, tokenId, _start, _end, _txBlkNum)
 
 @public
 @constant
@@ -178,7 +178,7 @@ def verifyMerge(
   assert _tokenId == tokenId and (_start >= start) and (_end <= end)
   assert self.ecrecoverSig(_merkleHash, _sigs, 1) == _from
   assert self.ecrecoverSig(_txHash, _sigs, 0) == _from
-  return self.encodeExitState(to, tokenId, start, end, _txBlkNum)
+  return self.encodeExitState(to, _tokenId, _start, _end, _txBlkNum)
 
 @public
 @constant

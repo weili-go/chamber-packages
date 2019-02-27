@@ -332,7 +332,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await this.rootChain.challenge(
         exitId2,
         exitId2,
-        depositTx.getOutput().withBlkNum(ethers.utils.bigNumberify(6)).getBytes(),
+        depositTx.getOutput().withBlkNum(ethers.utils.bigNumberify(3)).getBytes(),
         6 * 100 + 0,
         Scenario1.segments[0].toBigNumber(),
         respondTx.getTxBytes(),

@@ -129,10 +129,7 @@ def verifySwap(
     assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from1
   elif _hasSig == 2:
     assert self.ecrecoverSig(_merkleHash, _sigs, 2) == from2
-  if _outputIndex == 0:
-    return self.encodeExitState(from1, tokenId1, start1, end1, _txBlkNum)
-  elif _outputIndex == 1:
-    return self.encodeExitState(from2, tokenId2, start2, end2, _txBlkNum)
+  return self.encodeExitState(_owner, _tokenId, _start, _end, _txBlkNum)
 
 @public
 @constant

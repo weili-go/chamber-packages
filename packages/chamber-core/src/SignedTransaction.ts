@@ -180,8 +180,11 @@ export class SignedTransactionWithProof {
   getProofAsHex(): HexString {
     const rootHeader = utils.arrayify(this.root)
     const timestampHeader = utils.padZeros(utils.arrayify(this.timestamp), 8)
+    // get original range
+    const range: BigNumber = this.getSignedTx().getRawTx().getOutput(this.outputIndex).getSegment(0).getAmount()
+    const rangeHeader = utils.padZeros(utils.arrayify(range), 8)
     const body = utils.arrayify(this.proof.toHex())
-    return utils.hexlify(utils.concat([rootHeader, timestampHeader, body]))
+    return utils.hexlify(utils.concat([rootHeader, timestampHeader, rangeHeader, body]))
   }
 
   getSignatures(): HexString {
@@ -247,7 +250,7 @@ export class SignedTransactionWithProof {
         this.proof,
         this.blkNum,
         newTxo
-      )
+      ).withRawConfSigs(this.confSigs)
     })
   }
 

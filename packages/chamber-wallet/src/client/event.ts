@@ -15,6 +15,7 @@ export class RootChainEventListener {
   seenEvents: Map<string, boolean>
   confirmation: number
   checkingEvents: Map<string, RootChainEventHandler>
+  initialBlock: number
 
   constructor(
     provider: JsonRpcProvider,
@@ -31,6 +32,7 @@ export class RootChainEventListener {
     this.seenEvents = seenEvents || new Map<string, boolean>()
     this.checkingEvents = new Map<string, RootChainEventHandler>()
     this.confirmation = confirmation || 1
+    this.initialBlock = 1
   }
 
   addEvent(event: string, handler: RootChainEventHandler) {
@@ -39,7 +41,7 @@ export class RootChainEventListener {
 
   async initPolling(handler: CompletedHandler) {
     const block = await this.provider.getBlock('latest')
-    const loaded = Number(this.storage.get('loaded') || (block.number - 2))
+    const loaded = Number(this.storage.get('loaded') || this.initialBlock)
     await this.polling(loaded, block.number, handler)
     this.storage.add('seenEvents', JSON.stringify(this.seenEvents))
     setTimeout(async ()=>{

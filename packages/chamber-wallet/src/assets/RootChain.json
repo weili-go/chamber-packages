@@ -92,8 +92,13 @@
           "indexed": false
         },
         {
+          "type": "bytes32",
+          "name": "_exitStateHash",
+          "indexed": false
+        },
+        {
           "type": "uint256",
-          "name": "exitableAt",
+          "name": "_exitableAt",
           "indexed": false
         },
         {
@@ -109,6 +114,11 @@
         {
           "type": "uint256",
           "name": "_end",
+          "indexed": false
+        },
+        {
+          "type": "bool",
+          "name": "_isForceInclude",
           "indexed": false
         }
       ],
@@ -192,7 +202,7 @@
       "name": "checkTransaction",
       "outputs": [
         {
-          "type": "bool",
+          "type": "bytes",
           "name": "out"
         }
       ],
@@ -245,7 +255,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 97441
+      "gas": 136640
     },
     {
       "name": "__init__",
@@ -318,14 +328,6 @@
       "payable": false,
       "type": "function",
       "gas": 77719
-    },
-    {
-      "name": "__default__",
-      "outputs": [],
-      "inputs": [],
-      "constant": false,
-      "payable": true,
-      "type": "function"
     },
     {
       "name": "deposit",
@@ -408,7 +410,7 @@
       "constant": false,
       "payable": true,
       "type": "function",
-      "gas": 393021
+      "gas": 628590
     },
     {
       "name": "challenge",
@@ -419,16 +421,16 @@
           "name": "_exitId"
         },
         {
+          "type": "uint256",
+          "name": "_childExitId"
+        },
+        {
           "type": "bytes",
-          "name": "_exitTxBytes"
+          "name": "_exitStateBytes"
         },
         {
           "type": "uint256",
           "name": "_utxoPos"
-        },
-        {
-          "type": "int128",
-          "name": "_eInputPos"
         },
         {
           "type": "uint256",
@@ -450,7 +452,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 447649
+      "gas": 399807
     },
     {
       "name": "requestHigherPriorityExit",
@@ -458,17 +460,17 @@
       "inputs": [
         {
           "type": "uint256",
-          "name": "_parentExitId"
+          "name": "_higherPriorityExitId"
         },
         {
           "type": "uint256",
-          "name": "_exitId"
+          "name": "_lowerPriorityExitId"
         }
       ],
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 84630
+      "gas": 84253
     },
     {
       "name": "includeSignature",
@@ -502,7 +504,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 68521
+      "gas": 67369
     },
     {
       "name": "finalizeExit",
@@ -520,7 +522,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 452152
+      "gas": 373736
     },
     {
       "name": "challengeTooOldExit",
@@ -554,7 +556,7 @@
       "constant": false,
       "payable": false,
       "type": "function",
-      "gas": 221430
+      "gas": 142353
     },
     {
       "name": "mergeExitable",
@@ -584,6 +586,10 @@
         {
           "type": "uint256",
           "name": "out"
+        },
+        {
+          "type": "uint256",
+          "name": "out"
         }
       ],
       "inputs": [
@@ -595,7 +601,26 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 4199
+      "gas": 3416
+    },
+    {
+      "name": "getPlasmaBlock",
+      "outputs": [
+        {
+          "type": "bytes32",
+          "name": "out"
+        }
+      ],
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_blkNum"
+        }
+      ],
+      "constant": true,
+      "payable": false,
+      "type": "function",
+      "gas": 1336
     },
     {
       "name": "totalDeposited",
@@ -614,7 +639,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1336
+      "gas": 1366
     },
     {
       "name": "lastPublished",
@@ -628,7 +653,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1233
+      "gas": 1263
     },
     {
       "name": "listings__decimalOffset",
@@ -647,7 +672,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1468
+      "gas": 1498
     },
     {
       "name": "listings__tokenAddress",
@@ -666,7 +691,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1504
+      "gas": 1534
     },
     {
       "name": "listed",
@@ -685,7 +710,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1495
+      "gas": 1525
     },
     {
       "name": "listingNonce",
@@ -699,7 +724,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1353
+      "gas": 1383
     },
     {
       "name": "exitNonce",
@@ -713,7 +738,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1383
+      "gas": 1413
     },
     {
       "name": "exitable__start",
@@ -736,7 +761,7 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1745
+      "gas": 1775
     },
     {
       "name": "exitable__isAvailable",
@@ -759,9 +784,10 @@
       "constant": true,
       "payable": false,
       "type": "function",
-      "gas": 1769
+      "gas": 1799
     }
   ],
+
   "networks": {},
   "schemaVersion": "3.0.1",
   "updatedAt": "2019-02-01T03:59:14.528Z"

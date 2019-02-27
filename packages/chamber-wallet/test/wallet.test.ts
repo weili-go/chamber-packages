@@ -80,13 +80,24 @@ describe('ChamberWallet', () => {
     )
 
     it('should getExit', () => {
+      const blkNum = utils.bigNumberify(2)
+      const depositTx = wallet.handleDeposit(
+        AliceAddress,
+        utils.bigNumberify(0),
+        utils.bigNumberify(0),
+        utils.bigNumberify(10000000),
+        blkNum
+      )
+
       wallet.handleExit(
         utils.bigNumberify(1),
+        depositTx.getOutput().withBlkNum(blkNum).hash(),
         utils.bigNumberify(1520700),
         utils.bigNumberify(0),
         utils.bigNumberify(0),
         utils.bigNumberify(10000000)
       )
+      
       assert.equal(wallet.getExits().length, 1)
       wallet.loadExits()
       assert.equal(wallet.getExits().length, 1)

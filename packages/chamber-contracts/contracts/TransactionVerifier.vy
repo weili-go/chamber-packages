@@ -108,14 +108,16 @@ def getOwnState(
   owner: address,
   tokenId: uint256,
   start: uint256,
-  end: uint256
+  end: uint256,
+  _txBlkNum: uint256
 ) -> (bytes[256]):
   return concat(
     sha3("own"),
     convert(owner, bytes32),
     convert(tokenId, bytes32),
     convert(start, bytes32),
-    convert(end, bytes32)
+    convert(end, bytes32),
+    convert(_txBlkNum, bytes32)
   )
 
 # @dev decodeDeposit
@@ -164,7 +166,8 @@ def verifyDepositTx(
   _owner: address,
   _tokenId: uint256,
   _start: uint256,
-  _end: uint256
+  _end: uint256,
+  _txBlkNum: uint256
 ) -> (bytes[256]):
   depositor: address
   token: uint256
@@ -174,7 +177,7 @@ def verifyDepositTx(
   assert _tokenId == token and _start >= start and _end <= end
   if _owner != ZERO_ADDRESS:
     assert _owner == depositor
-  return self.getOwnState(depositor, token, start, end)
+  return self.getOwnState(depositor, token, start, end, _txBlkNum)
 
 # @dev Constructor
 @public
@@ -217,7 +220,7 @@ def verify(
   elif label == 3:
     return StandardVerifier(self.stdverifier).verifyMerge(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _txBlkNum)
   elif label == 4:
-    return self.verifyDepositTx(_txBytes, _owner, _tokenId, _start, _end)
+    return self.verifyDepositTx(_txBytes, _owner, _tokenId, _start, _end, _txBlkNum)
   elif label == 5:
     return MultisigVerifier(self.multisigverifier).verifySwap(_txHash, _merkleHash, _txBytes, _sigs, _outputIndex, _owner, _tokenId, _start, _end, _txBlkNum, _hasSig)
   else:

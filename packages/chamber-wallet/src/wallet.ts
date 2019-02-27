@@ -345,7 +345,7 @@ export class ChamberWallet {
     end: BigNumber
   ) {
     const utxo = this.getUTXOArray().filter(utxo => {
-      utxo.getOutput().hash() == exitStateHash
+      return utxo.getOutput().hash() == exitStateHash
     })[0]
     if(utxo) {
       this.deleteUTXO(utxo.getOutput().hash())
