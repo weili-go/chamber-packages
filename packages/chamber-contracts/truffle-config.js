@@ -57,6 +57,7 @@ module.exports = {
           process.env.PRIVATE_KEY,
           "https://kovan.infura.io/v3/b4c8518704574fe3992f9a479de0c004")
       },
+      gasPrice: 10000000000,
       network_id: 42
     }
   },
