@@ -137,6 +137,7 @@ export class Chain {
     // write to DB
     this.segmentChecker.insertDepositTx(depositTx, blkNum)
     await this.writeToDb(block)
+    await this.writeSnapshot()
   }
 
   async getBlock(blkNum: BigNumber): Promise<ChamberResult<Block>> {
