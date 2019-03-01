@@ -7,7 +7,7 @@ chamber-packages
 
 ## Overview
 
-Layer2 modules for Plasma Chamber.
+Layer2 modules for [Plasma Chamber](https://github.com/cryptoeconomicslab/plasma-chamber).
 Chamber is General Purpose Plasma.
 
 
