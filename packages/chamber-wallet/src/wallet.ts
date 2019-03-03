@@ -4,8 +4,9 @@ import {
   RootChainEventListener
 } from './client'
 import {
-  IWalletStorage
-} from './storage/IWalletStorage'
+  IStorage
+} from './storage/IStorage'
+import { WalletStorage } from './storage/WalletStorage'
 import {
   Address,
   constants,
@@ -27,9 +28,10 @@ import {
   TransactionOutput
 } from '@layer2/core'
 import { WalletErrorFactory } from './error'
-import { Exit, WaitingBlockWrapper } from './models'
+import { Exit } from './models'
 import { Contract } from 'ethers'
 import { BigNumber } from 'ethers/utils';
+import { PlasmaSyncher } from './client/PlasmaSyncher'
 import artifact from './assets/RootChain.json'
 if(!artifact.abi) {
   console.error('ABI not found')
@@ -51,14 +53,13 @@ export class ChamberWallet {
   private loadedBlockNumber: number
   private rootChainContract: Contract
   private wallet: ethers.Wallet
-  private utxos: Map<string, string>
-  private storage: IWalletStorage
+  private storage: WalletStorage
   private httpProvider: ethers.providers.JsonRpcProvider
   private listener: RootChainEventListener
   private rootChainInterface: ethers.utils.Interface
-  private exitList: Map<string, string>
-  private waitingBlocks: Map<string, string>
   private exitableRangeManager: ExitableRangeManager
+  private plasmaSyncher: PlasmaSyncher
+  private options: any
 
   /**
    * 
@@ -87,8 +88,9 @@ export class ChamberWallet {
     client: PlasmaClient,
     rootChainEndpoint: string,
     contractAddress: Address,
-    storage: IWalletStorage,
-    privateKey: string
+    storage: IStorage,
+    privateKey: string,
+    options?: any
   ) {
     const httpProvider = new ethers.providers.JsonRpcProvider(rootChainEndpoint)
     return new ChamberWallet(
@@ -96,7 +98,8 @@ export class ChamberWallet {
       httpProvider,
       new ethers.Wallet(privateKey, httpProvider),
       contractAddress,
-      storage
+      storage,
+      options
     )
   }
 
@@ -104,15 +107,17 @@ export class ChamberWallet {
     client: PlasmaClient,
     rootChainEndpoint: string,
     contractAddress: Address,
-    storage: IWalletStorage,
-    mnemonic: string
+    storage: IStorage,
+    mnemonic: string,
+    options?: any
   ) {
     return new ChamberWallet(
       client,
       new ethers.providers.JsonRpcProvider(rootChainEndpoint),
       ethers.Wallet.fromMnemonic(mnemonic),
       contractAddress,
-      storage
+      storage,
+      options
     )    
   }
 
@@ -120,14 +125,16 @@ export class ChamberWallet {
     client: PlasmaClient,
     rootChainEndpoint: string,
     contractAddress: Address,
-    storage: IWalletStorage
+    storage: IStorage,
+    options?: any
   ) {
     return new ChamberWallet(
       client,
       new ethers.providers.JsonRpcProvider(rootChainEndpoint),
       ethers.Wallet.createRandom(),
       contractAddress,
-      storage
+      storage,
+      options
     )
   }
 
@@ -136,35 +143,26 @@ export class ChamberWallet {
     provider: ethers.providers.JsonRpcProvider,
     wallet: ethers.Wallet,
     contractAddress: Address,
-    storage: IWalletStorage
+    storage: IStorage,
+    options?: any
   ) {
     this.client = client
-    this.loadedBlockNumber = 0
+    this.options = options || {}
     this.httpProvider = provider
     const contract = new ethers.Contract(contractAddress, abi, this.httpProvider)
     this.wallet = wallet
     this.rootChainContract = contract.connect(this.wallet)
-    this.storage = storage
-    this.utxos = this.loadUTXO()
-    this.exitList = this.loadExits()
-    this.waitingBlocks = this.loadMap<string>('waitingBlocks')
-    this.loadedBlockNumber = this.getNumberFromStorage('loadedBlockNumber')
+    this.storage = new WalletStorage(storage)
+    this.loadedBlockNumber = this.storage.getLoadedPlasmaBlockNumber()
     this.rootChainInterface = new ethers.utils.Interface(artifact.abi)
-    this.listener = new RootChainEventListener(
-      this.httpProvider,
-      this.rootChainInterface,
+    this.plasmaSyncher = new PlasmaSyncher(
+      client,
+      provider,
       contractAddress,
-      storage,
-      this.loadSeenEvents(),
-      2
+      this.storage,
+      this.options
     )
-    this.listener.addEvent('BlockSubmitted', (e) => {
-      console.log('BlockSubmitted', e)
-      this.addWaitingBlock(new WaitingBlockWrapper(
-        e.values._blkNum,
-        e.values._root
-      ))
-    })
+    this.listener = this.plasmaSyncher.getListener()
     this.listener.addEvent('ExitStarted', (e) => {
       console.log('ExitStarted', e)
       this.handleExit(
@@ -195,26 +193,7 @@ export class ChamberWallet {
       )
     })
 
-    this.exitableRangeManager = this.loadExitableRangeManager()
-  }
-
-  /**
-   * @ignore
-   */
-  private loadExitableRangeManager() {
-    try {
-      const loaded = this.storage.get('exitable')
-      return ExitableRangeManager.deserialize(loaded)
-    }catch(e) {
-      return new ExitableRangeManager()
-    }
-  }
-
-  /**
-   * @ignore
-   */
-  private saveExitableRangeManager() {
-    this.storage.add('exitable', this.exitableRangeManager.serialize())
+    this.exitableRangeManager = this.storage.loadExitableRangeManager()
   }
 
   /**
@@ -226,40 +205,17 @@ export class ChamberWallet {
    * ```
    */
   async init(handler: (wallet: ChamberWallet) => void) {
-    await this.listener.initPolling(() => {
-      handler(this)
-    })
+    await this.plasmaSyncher.init(() => handler(this))
   }
 
   async loadBlockNumber() {
     return await this.client.getBlockNumber()
   }
 
-  /**
-   * @ignore
-   */
-  private async loadBlocks() {
-    const tasks = this.getWaitingBlocks().map(block => {
-      return this.client.getBlock(block.blkNum.toNumber())
-    })
-    return Promise.all(tasks)
-  }
-
   async syncChildChain(): Promise<SignedTransactionWithProof[]> {
-    const results = await this.loadBlocks()
-    const tasks = results.map(block => {
-      if(block.isOk()) {
-        const tasks = this.updateBlock(block.ok())
-        // When success to get block, remove the block from waiting block list
-        this.deleteWaitingBlock(block.ok().number)
-        return tasks
-      } else {
-        console.warn(block.error())
-        return []
-      }
+    await this.plasmaSyncher.sync(async (block: Block) => {
+      await this.updateBlock(block)
     })
-    // send confirmation signatures
-    await Promise.all(tasks)
     return this.getUTXOArray()
   }
 
@@ -270,9 +226,9 @@ export class ChamberWallet {
     this.getUTXOArray().forEach((tx) => {
       const output = tx.getOutput()
       if(output.checkSpent(txo)) {
-        this.deleteUTXO(output.hash())
+        this.storage.deleteUTXO(output.hash())
         tx.spend(txo).forEach(newTx => {
-          this.addUTXO(newTx)
+          this.storage.addUTXO(newTx)
         })
       }
     })
@@ -285,7 +241,7 @@ export class ChamberWallet {
     this.getUTXOArray().forEach((tx) => {
       const exclusionProof = block.getExclusionProof(tx.getOutput().getSegment(0))
       const key = tx.getOutput().hash()
-      this.storage.addProof(key, block.getBlockNumber(), JSON.stringify(exclusionProof.serialize()))
+      this.storage.getStorage().addProof(key, block.getBlockNumber(), JSON.stringify(exclusionProof.serialize()))
     })
     const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(tx => {
       tx.signedTx.tx.getInputs().forEach(input => {
@@ -296,7 +252,7 @@ export class ChamberWallet {
         if(tx.requireConfsig()) {
           tx.confirmMerkleProofs(this.wallet.privateKey)
         }
-        this.addUTXO(tx)
+        this.storage.addUTXO(tx)
         // send back to operator
         if(tx.requireConfsig()) {
           return this.client.sendConfsig(tx)
@@ -304,7 +260,7 @@ export class ChamberWallet {
       }
     }).filter(p => !!p)
     this.loadedBlockNumber = block.getBlockNumber()
-    this.storage.add('loadedBlockNumber', this.loadedBlockNumber.toString())
+    this.storage.setLoadedPlasmaBlockNumber(this.loadedBlockNumber)
     return tasks
   }
 
@@ -319,7 +275,7 @@ export class ChamberWallet {
       segment
     )
     if(depositorAddress === this.getAddress()) {
-      this.addUTXO(new SignedTransactionWithProof(
+      this.storage.addUTXO(new SignedTransactionWithProof(
         new SignedTransaction(depositTx),
         0,
         '',
@@ -329,7 +285,7 @@ export class ChamberWallet {
         blkNum))
     }
     this.exitableRangeManager.extendRight(end)
-    this.saveExitableRangeManager()
+    this.storage.saveExitableRangeManager(this.exitableRangeManager)
     return depositTx
   }
 
@@ -348,15 +304,14 @@ export class ChamberWallet {
       return utxo.getOutput().hash() == exitStateHash
     })[0]
     if(utxo) {
-      this.deleteUTXO(utxo.getOutput().hash())
+      this.storage.deleteUTXO(utxo.getOutput().hash())
       const segment = new Segment(tokenId, start, end)
       const exit = new Exit(
         exitId,
         exitableAt,
         segment
       )
-      this.exitList.set(exit.getId(), exit.serialize())
-      this.storeMap('exits', this.exitList)
+      this.storage.setExit(exit)
       return exit
     } else {
       null
@@ -376,47 +331,15 @@ export class ChamberWallet {
     }catch(e){
       console.warn(e.message)
     }
-    this.saveExitableRangeManager()
+    this.storage.saveExitableRangeManager(this.exitableRangeManager)
   }
 
   getExits() {
-    const arr: Exit[] = []
-    this.exitList.forEach(value => {
-      arr.push(Exit.deserialize(value))
-    })
-    return arr
-  }
-
-  /**
-   * @ignore
-   */
-  private deleteExit(id: string) {
-    this.exitList.delete(id)
-    this.storeMap('exits', this.exitList)
-  }
-
-  /**
-   * @ignore
-   */
-  private getExitFromLocal(exitId: string) {
-    const serialized = this.exitList.get(exitId)
-    if(serialized)
-      return Exit.deserialize(serialized)
-    return null
-  }
-
-  /**
-   * @ignore
-   */
-  loadExits() {
-    return this.loadMap<string>('exits')
+    return this.storage.getExitList()
   }
 
   getUTXOArray(): SignedTransactionWithProof[] {
-    const arr: SignedTransactionWithProof[] = []
-    this.utxos.forEach(value => {
-      arr.push(SignedTransactionWithProof.deserialize(JSON.parse(value)))
-    })
+    let arr = this.storage.getUTXOList()
     arr.sort((a: SignedTransactionWithProof, b: SignedTransactionWithProof) => {
       const aa = a.getOutput().getSegment(0).start
       const bb = b.getOutput().getSegment(0).start
@@ -425,89 +348,6 @@ export class ChamberWallet {
       else return 0
     })
     return arr
-  }
-
-  getWaitingBlocks(): WaitingBlockWrapper[] {
-    const arr: WaitingBlockWrapper[] = []
-    this.waitingBlocks.forEach(value => {
-      arr.push(WaitingBlockWrapper.deserialize(value))
-    })
-    return arr
-  }
-
-  /**
-   * @ignore
-   */
-  private addWaitingBlock(tx: WaitingBlockWrapper) {
-    this.waitingBlocks.set(tx.blkNum.toString(), tx.serialize())
-    this.storeMap('waitingBlocks', this.waitingBlocks)
-  }
-
-  /**
-   * @ignore
-   */
-  private deleteWaitingBlock(blkNum: number) {
-    this.waitingBlocks.delete(blkNum.toString())
-    this.storeMap('waitingBlocks', this.waitingBlocks)
-  }
-
-  /**
-   * @ignore
-   */
-  private addUTXO(tx: SignedTransactionWithProof) {
-    this.utxos.set(tx.getOutput().hash(), JSON.stringify(tx.serialize()))
-    this.storeMap('utxos', this.utxos)
-  }
-
-  /**
-   * @ignore
-   */
-  private loadUTXO() {
-    return this.loadMap<string>('utxos')
-  }
-
-  /**
-   * @ignore
-   */
-  private deleteUTXO(key: string) {
-    this.utxos.delete(key)
-    this.storeMap('utxos', this.utxos)
-  }
-
-  /**
-   * @ignore
-   */
-  private loadSeenEvents() {
-    return this.loadMap<boolean>('seenEvents')
-  }
-
-  /**
-   * @ignore
-   */
-  private getNumberFromStorage(key: string): number {
-    try {
-      return Number(this.storage.get(key))
-    } catch(e) {
-      return 0
-    }
-  }
-
-  /**
-   * @ignore
-   */
-  private storeMap<T>(key: string, map: Map<string, T>) {
-    this.storage.add(key, JSON.stringify(MapUtil.serialize<T>(map)))
-  }
-
-  /**
-   * @ignore
-   */
-  private loadMap<T>(key: string) {
-    try {
-      return MapUtil.deserialize<T>(JSON.parse(this.storage.get(key)))
-    } catch (e) {
-      return MapUtil.deserialize<T>({})
-    }
   }
 
   getAddress() {
@@ -588,7 +428,7 @@ export class ChamberWallet {
   }
   
   async finalizeExit(exitId: string): Promise<ChamberResult<Exit>> {
-    const exit = this.getExitFromLocal(exitId)
+    const exit = this.storage.getExit(exitId)
     if(exit == null) {
       return new ChamberResultError(WalletErrorFactory.ExitNotFound())
     }
@@ -596,7 +436,7 @@ export class ChamberWallet {
       this.exitableRangeManager.getExitableEnd(exit.segment.start, exit.segment.end),
       exitId)
     await result.wait()
-    this.deleteExit(exit.getId())
+    this.storage.deleteExit(exit.getId())
     return new ChamberOk(exit)
   }
 

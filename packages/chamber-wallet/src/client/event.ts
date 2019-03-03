@@ -1,38 +1,80 @@
 import * as ethers from 'ethers'
 import JsonRpcProvider = ethers.providers.JsonRpcProvider
 import {
-  IWalletStorage
+  IStorage
 } from '../storage'
 
 export type RootChainEventHandler = (e: any) => void
 export type CompletedHandler = () => void
 
+export interface IEventWatcherStorage {
+
+  getLoaded(initialBlock: number): number
+
+  setLoaded(loaded: number): void
+
+  addSeen(event: string): void
+
+  getSeen(event: string): boolean
+
+}
+
+export class DefaultEventWatcherStorage implements IEventWatcherStorage {
+  storage: IStorage
+  private seen: { [key: string]: boolean} = {}
+
+  constructor(storage: IStorage) {
+    this.storage = storage
+  }
+
+  getLoaded(initialBlock: number) {
+    const loaded = this.storage.get('loaded')
+    if(loaded) {
+      return parseInt(loaded)
+    } else {
+      return initialBlock
+    }
+  }
+
+  setLoaded(loaded: number) {
+    this.storage.add('loaded', loaded.toString())
+  }
+
+  addSeen(event: string) {
+    this.seen[event] = true
+  }
+
+  getSeen(event: string) {
+    return this.seen[event]
+  }
+
+}
+
 export class RootChainEventListener {
   provider: JsonRpcProvider
   rootChainInterface: ethers.utils.Interface
   address: string
-  storage: IWalletStorage
-  seenEvents: Map<string, boolean>
-  confirmation: number
+  storage: IEventWatcherStorage
   checkingEvents: Map<string, RootChainEventHandler>
+  options: any
   initialBlock: number
-
+  interval: number
+  
   constructor(
     provider: JsonRpcProvider,
     rootChainInterface: ethers.utils.Interface,
     address: string,
-    storage: IWalletStorage,
-    seenEvents: Map<string, boolean>,
-    confirmation: number
+    storage: IStorage,
+    options: any
   ) {
     this.provider = provider
     this.rootChainInterface = rootChainInterface
     this.address = address
-    this.storage = storage
-    this.seenEvents = seenEvents || new Map<string, boolean>()
+    this.storage = new DefaultEventWatcherStorage(storage)
     this.checkingEvents = new Map<string, RootChainEventHandler>()
-    this.confirmation = confirmation || 1
-    this.initialBlock = 1
+    this.options = options || {}
+    this.initialBlock = this.options.initialBlock || 1
+    this.interval = this.options.interval || 10000
   }
 
   addEvent(event: string, handler: RootChainEventHandler) {
@@ -41,12 +83,11 @@ export class RootChainEventListener {
 
   async initPolling(handler: CompletedHandler) {
     const block = await this.provider.getBlock('latest')
-    const loaded = Number(this.storage.get('loaded') || this.initialBlock)
+    const loaded = this.storage.getLoaded(this.initialBlock)
     await this.polling(loaded, block.number, handler)
-    this.storage.add('seenEvents', JSON.stringify(this.seenEvents))
     setTimeout(async ()=>{
       await this.initPolling(handler);
-    }, 10000);
+    }, this.interval);
 
   }
 
@@ -58,7 +99,7 @@ export class RootChainEventListener {
     })
     const filtered = events.filter(e => {
       if(e.transactionHash)
-        return !this.seenEvents.get(e.transactionHash)
+        return !this.storage.getSeen(e.transactionHash)
       else
         return false
     }).map((e) => {
@@ -67,11 +108,12 @@ export class RootChainEventListener {
       if(handler) {
         handler(logDesc)
       }
-      if(e.transactionHash)
-        this.seenEvents.set(e.transactionHash, true)
+      if(e.transactionHash) {
+        this.storage.addSeen(e.transactionHash)
+      }
       return true
     })
-    this.storage.add('loaded', blockNumber.toString())
+    this.storage.setLoaded(blockNumber)
     if(filtered.length > 0) completedHandler()
   }
   

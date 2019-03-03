@@ -1,8 +1,8 @@
 import {
-  IWalletStorage
-} from './IWalletStorage'
+  IStorage
+} from './IStorage'
 
-export class MockWalletStorage implements IWalletStorage {
+export class MockStorage implements IStorage {
   data: Map<string, string>
 
   constructor() {

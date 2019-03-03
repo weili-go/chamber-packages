@@ -1,1 +1,2 @@
-export * from './IWalletStorage'
+export * from './IStorage'
+export * from './WalletStorage'

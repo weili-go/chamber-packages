@@ -2,11 +2,9 @@ export {
   ChamberWallet
 } from './wallet'
 
-export {
-  JsonRpcClient,
-  PlasmaClient
-} from './client'
+export * from './client'
 
 export {
-  IWalletStorage
+  IStorage,
+  WalletStorage
 } from './storage'
