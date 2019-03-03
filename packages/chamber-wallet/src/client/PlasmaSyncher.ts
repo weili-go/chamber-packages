@@ -1,6 +1,5 @@
 import * as ethers from 'ethers'
 import { PlasmaClient } from './PlasmaClient'
-import { RootChainEventListener } from './event'
 import {
   WalletStorage
 } from '../storage/WalletStorage'
@@ -11,16 +10,48 @@ import {
 } from '@layer2/core'
 import { WaitingBlockWrapper } from '../models'
 import artifact from '../assets/RootChain.json'
+import { IEventWatcherStorage, EventWatcher, ETHEventAdaptor } from '@layer2/events-watcher'
+import { IStorage } from '../storage/IStorage'
 if(!artifact.abi) {
   console.error('ABI not found')
 }
 
+export class WalletEventWatcherStorage implements IEventWatcherStorage {
+  storage: IStorage
+  private seen: { [key: string]: boolean} = {}
+
+  constructor(storage: IStorage) {
+    this.storage = storage
+  }
+
+  getLoaded(initialBlock: number) {
+    const loaded = this.storage.get('loaded')
+    if(loaded) {
+      return parseInt(loaded)
+    } else {
+      return initialBlock
+    }
+  }
+
+  setLoaded(loaded: number) {
+    this.storage.add('loaded', loaded.toString())
+  }
+
+  addSeen(event: string) {
+    this.seen[event] = true
+  }
+
+  getSeen(event: string) {
+    return this.seen[event]
+  }
+
+}
 
 export class PlasmaSyncher {
   private client: PlasmaClient
   private storage: WalletStorage
   private httpProvider: ethers.providers.JsonRpcProvider
-  private listener: RootChainEventListener
+  private listener: EventWatcher
   private rootChainInterface: ethers.utils.Interface
   private waitingBlocks: Map<string, string>
 
@@ -36,11 +67,9 @@ export class PlasmaSyncher {
     this.storage = storage
     this.waitingBlocks = this.storage.loadMap<string>('waitingBlocks')
     this.rootChainInterface = new ethers.utils.Interface(artifact.abi)
-    this.listener = new RootChainEventListener(
-      this.httpProvider,
-      this.rootChainInterface,
-      contractAddress,
-      storage.getStorage(),
+    this.listener = new EventWatcher(
+      new ETHEventAdaptor(contractAddress, this.httpProvider, this.rootChainInterface),
+      new WalletEventWatcherStorage(storage.getStorage()),
       options
     )
     this.listener.addEvent('BlockSubmitted', (e) => {

@@ -1,0 +1,17 @@
+{
+  "name": "@layer2/events-watcher",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc --build ./tsconfig.json",
+    "build:ci": "npm run build",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "test": "mocha -r ts-node/register 'test/**/*.ts'",
+    "test:ci": "npm run test",
+    "docs": "typedoc --out ../../docs/core ./src"
+  }
+}

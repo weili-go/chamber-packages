@@ -1,11 +1,11 @@
 import * as ethers from 'ethers'
 import {
-  PlasmaClient,
-  RootChainEventListener
+  PlasmaClient
 } from './client'
 import {
   IStorage
 } from './storage/IStorage'
+import { EventWatcher } from '@layer2/events-watcher'
 import { WalletStorage } from './storage/WalletStorage'
 import {
   Address,
@@ -22,7 +22,6 @@ import {
   ChamberResult,
   ChamberResultError,
   ChamberOk,
-  MapUtil,
   SwapRequest,
   SwapTransaction,
   TransactionOutput
@@ -55,7 +54,7 @@ export class ChamberWallet {
   private wallet: ethers.Wallet
   private storage: WalletStorage
   private httpProvider: ethers.providers.JsonRpcProvider
-  private listener: RootChainEventListener
+  private listener: EventWatcher
   private rootChainInterface: ethers.utils.Interface
   private exitableRangeManager: ExitableRangeManager
   private plasmaSyncher: PlasmaSyncher

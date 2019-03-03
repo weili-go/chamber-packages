@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@layer2/core": "^0.0.29",
+    "@layer2/events-watcher": "^0.0.1",
     "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "^7.1.0",
     "@types/mocha": "^5.2.5",
