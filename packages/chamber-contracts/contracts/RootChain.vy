@@ -672,7 +672,7 @@ def challengeTooOldExit(
   (checkpointBlkNum, checkpointSegment) = Checkpoint(self.checkpointAddress).getCheckpoint(_checkpointId)
   self.checkSegment(_segment, checkpointSegment)
   txHash: bytes32 = sha3(_txBytes)
-  assert blkNum < checkpointBlkNum
+  assert blkNum <= checkpointBlkNum
   priority: uint256 = exit.blkNum
   if self.extendExits[_exitId].priority > 0:
     priority = self.extendExits[_exitId].priority

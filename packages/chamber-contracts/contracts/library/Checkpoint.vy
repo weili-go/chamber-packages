@@ -191,17 +191,13 @@ def respondChallengeCheckpoint(
 @public
 def finalizeCheckpoint(
   _checkpointId: uint256
-) -> bool:
+):
   assert self.checkpoints[_checkpointId].finalizeAt < as_unitless_number(block.timestamp)
-  if self.checkpoints[_checkpointId].challengeCount > 0:
-    clear(self.checkpoints[_checkpointId])
-    return False
-  else:
-    assert self.checkpoints[_checkpointId].blkNum > 0
-    self.checkpoints[_checkpointId].isAvailable = True
-    #send(self.checkpoints[_checkpointId].owner, BOND)
-    log.CheckpointFinalized(_checkpointId)
-    return True
+  assert self.checkpoints[_checkpointId].challengeCount == 0
+  assert self.checkpoints[_checkpointId].blkNum > 0
+  self.checkpoints[_checkpointId].isAvailable = True
+  send(self.checkpoints[_checkpointId].owner, BOND)
+  log.CheckpointFinalized(_checkpointId)
 
 @public
 def getRequestingCheckpoint(

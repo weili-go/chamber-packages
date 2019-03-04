@@ -67,7 +67,11 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
         from: operator
       })
     await this.rootChain.setup()
-    await this.checkpoint.setRootChain(this.rootChain.address)
+    await this.checkpoint.setRootChain(
+      this.rootChain.address,
+      {
+        from: operator
+      })
   });
 
   describe("requestCheckpoint", () => {
@@ -103,6 +107,7 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
       await submit(Scenario1.blocks[1].block)
       await submit(Scenario1.blocks[2].block)
       await submit(Scenario1.blocks[3].block)
+      await submit(Scenario1.blocks[4].block)
     })
 
     it("should success to request checkpoint", async () => {
@@ -114,13 +119,44 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
           value: CHECKPOINT_BOND
         });
       await increaseTime(duration.weeks(4 * 3 + 1))
-      const isSuccess = await this.checkpoint.finalizeCheckpoint.call(
+      await this.checkpoint.finalizeCheckpoint(
         checkpointId,
         {
           from: operator
         });
-      assert.isTrue(isSuccess)
-
+      const checkpoint = await this.checkpoint.getCheckpoint.call(
+        checkpointId,
+        {
+          from: operator
+        });
+      
+      const tx = Scenario1.blocks[0].block.getSignedTransactionWithProof(
+        Scenario1.blocks[0].transactions[0].hash())[0]
+      const result = await this.rootChain.exit(
+        6 * 100,
+        Scenario1.segments[0].toBigNumber(),
+        tx.getTxBytes(),
+        tx.getProofAsHex(),
+        tx.getSignatures(),
+        0,
+        {
+          from: bob,
+          value: EXIT_BOND
+        });
+      const exitId = result.receipt.logs[0].args._exitId
+      const lastTx = Scenario1.blocks[4].block.getSignedTransactionWithProof(
+        Scenario1.blocks[4].transactions[2].hash())[0]
+      await this.rootChain.challengeTooOldExit(
+        checkpointId,
+        14 * 100,
+        exitId,
+        Scenario1.segments[0].toBigNumber(),
+        lastTx.getTxBytes(),
+        lastTx.getProofAsHex(),
+        lastTx.getSignatures(),
+        {
+          from: operator
+        });
     })
 
     it("should success to challenge checkpoint", async () => {
@@ -172,13 +208,12 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob
         });
       assert.equal(getCheckpointResult[2].toNumber(), 1)
-
-      const isSuccess = await this.checkpoint.finalizeCheckpoint.call(
+      
+      await assertRevert(this.checkpoint.finalizeCheckpoint(
         checkpointId,
         {
           from: operator
-        });
-      assert.isFalse(isSuccess)
+        }))
     })
 
     it("should success to respond challenge checkpoint", async () => {
@@ -243,12 +278,11 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
         });
       assert.equal(getCheckpointResult[2].toNumber(), 0)
       
-      const isSuccess = await this.checkpoint.finalizeCheckpoint.call(
+      await this.checkpoint.finalizeCheckpoint(
         checkpointId,
         {
           from: operator
         });
-      assert.isTrue(isSuccess)
     })
 
   });

@@ -88,6 +88,7 @@ function scenario1() {
   const tx62 = createTransfer(User5PrivateKey, User5Address, segment2, blkNum4, User4Address)
   const tx71 = createTransfer(User5PrivateKey, User5Address, segment4, blkNum1, OperatorAddress)
   const tx72 = createTransfer(User5PrivateKey, User5Address, segment5, blkNum1, OperatorAddress)
+  const tx73 = createTransfer(User5PrivateKey, User5Address, segment1, blkNum3, OperatorAddress)
   
   block3.appendTx(tx31)
   block3.appendTx(tx32)
@@ -99,6 +100,7 @@ function scenario1() {
   block6.appendTx(tx62)
   block7.appendTx(tx71)
   block7.appendTx(tx72)
+  block7.appendTx(tx73)
 
   const tree3 = block3.createTree()
   const tree4 = block4.createTree()
@@ -130,7 +132,7 @@ function scenario1() {
       },{
         block: block7,
         tree: tree7,
-        transactions: [tx71, tx72]
+        transactions: [tx71, tx72, tx73]
       }
     ]
   }
