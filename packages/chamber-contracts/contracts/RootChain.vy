@@ -78,7 +78,7 @@ contract TransactionVerifier():
 ListingEvent: event({_tokenId: uint256, _tokenAddress: address})
 BlockSubmitted: event({_superRoot: bytes32, _root: bytes32, _timestamp: timestamp, _blkNum: uint256})
 Deposited: event({_depositer: indexed(address), _tokenId: uint256, _start: uint256, _end: uint256, _blkNum: uint256})
-ExitStarted: event({_exitor: indexed(address), _exitId: uint256, _exitStateHash: bytes32, _exitableAt: uint256, _tokenId: uint256, _start: uint256, _end: uint256, _isForceInclude: bool})
+ExitStarted: event({_exitor: indexed(address), _exitId: uint256, _exitStateHash: bytes32, _exitableAt: uint256, _segment: uint256, _blkNum: uint256, _isForceInclude: bool})
 Challenged: event({_exitId: uint256})
 ForceIncluded: event({_exitId: uint256})
 FinalizedExit: event({_exitId: uint256, _tokenId: uint256, _start: uint256, _end: uint256})
@@ -478,7 +478,7 @@ def exit(
     self.extendExits[exitId].forceInclude = _hasSig
     self.removed[txHash] = True
   assert ERC721(self.exitToken).mint(msg.sender, exitId)
-  log.ExitStarted(msg.sender, exitId, exitStateHash, exitableAt, tokenId, start, end, _hasSig > 0)
+  log.ExitStarted(msg.sender, exitId, exitStateHash, exitableAt, _segment, blkNum, _hasSig > 0)
 
 # @dev challenge
 # @param _utxoPos is blknum and index of challenge tx

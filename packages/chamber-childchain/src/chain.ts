@@ -7,12 +7,13 @@ import {
   SignedTransaction,
   Block,
   Segment,
-  SignedTransactionWithProof
+  SignedTransactionWithProof,
+  SplitTransaction
 } from '@layer2/core'
 import { ChainErrorFactory } from './error'
-import { BigNumber } from 'ethers/utils';
+import { constants, utils } from 'ethers';
+import BigNumber = utils.BigNumber
 import { SwapManager } from './SwapManager';
-import { ethers } from 'ethers';
 import { SegmentChecker } from './SegmentChecker';
 
 export interface IChainDb {
@@ -140,6 +141,21 @@ export class Chain {
     await this.writeSnapshot()
   }
 
+  async handleExit(
+    exitor: string,
+    segment: BigNumber,
+    blkNum: BigNumber
+  ) {
+    this.segmentChecker.spent(new SignedTransaction(new SplitTransaction(
+      exitor,
+      Segment.fromBigNumber(segment),
+      blkNum,
+      constants.AddressZero
+    )))
+    await this.writeSnapshot()
+  }
+
+
   async getBlock(blkNum: BigNumber): Promise<ChamberResult<Block>> {
     try {
       const block = await this.readFromDb(blkNum)
@@ -186,7 +202,7 @@ export class Chain {
   }
 
   async syncBlocks() {
-    await this.syncBlocksPart(ethers.utils.bigNumberify(3), false)
+    await this.syncBlocksPart(utils.bigNumberify(3), false)
   }
 
   private async syncBlocksPart(blkNum: BigNumber, prevDoesExist: boolean) {

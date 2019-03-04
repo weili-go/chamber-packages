@@ -93,8 +93,6 @@ describe('ChamberWallet', () => {
         utils.bigNumberify(1),
         depositTx.getOutput().withBlkNum(blkNum).hash(),
         utils.bigNumberify(1520700),
-        utils.bigNumberify(0),
-        utils.bigNumberify(0),
         utils.bigNumberify(10000000)
       )
       
