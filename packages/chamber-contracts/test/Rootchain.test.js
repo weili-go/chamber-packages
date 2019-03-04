@@ -82,7 +82,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   describe("exit", () => {
 
-    const exitableEnd = Scenario1.segments[1].end
+    const exitableEnd = Scenario1.segments[5].end
 
     beforeEach(async () => {
       const result = await this.rootChain.deposit(
@@ -108,6 +108,12 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await submit(Scenario1.blocks[1].block)
       await submit(Scenario1.blocks[2].block)
       await submit(Scenario1.blocks[3].block)
+      await submit(Scenario1.blocks[4].block)
+      await this.rootChain.deposit(
+        {
+          from: bob,
+          value: '1000000000000000'
+        })      
     })
 
     it("should success to exit and finalizeExit", async () => {
@@ -156,12 +162,12 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
     })
 
-    it("should success to exit depositTx", async () => {
-      const tx = Scenario1.deposits[1]
-      const result = await this.rootChain.exit(
-        5 * 100,
-        Scenario1.segments[1].toBigNumber(),
-        tx.encode(),
+    it("should success to exit depositTx and nevert challenged before tx", async () => {
+      const depositTx = Scenario1.deposits[2]
+      const result1 = await this.rootChain.exit(
+        15 * 100,
+        Scenario1.segments[5].toBigNumber(),
+        depositTx.encode(),
         '0x',
         '0x',
         0,
@@ -169,8 +175,28 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob,
           value: BOND
         });
-      const exitId = result.receipt.logs[0].args._exitId
-      assert.equal(exitId.toNumber(), 1)
+      const tx2 = Scenario1.blocks[4].block.getSignedTransactionWithProof(
+        Scenario1.blocks[4].transactions[0].hash())[0]
+      const result2 = await this.rootChain.exit(
+        14 * 100,
+        Scenario1.segments[3].toBigNumber(),
+        tx2.getTxBytes(),
+        tx2.getProofAsHex(),
+        tx2.getSignatures(),
+        0,
+        {
+          from: operator,
+          value: BOND
+        });
+
+      const exitId1 = result1.receipt.logs[0].args._exitId
+      const exitId2 = result2.receipt.logs[0].args._exitId
+      await assertRevert(this.rootChain.requestHigherPriorityExit(
+        exitId2,
+        exitId1,
+        {
+          from: operator
+        }))
     })
 
     it("should success to challenge", async () => {
