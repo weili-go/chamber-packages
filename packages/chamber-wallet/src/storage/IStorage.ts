@@ -1,4 +1,4 @@
-export interface IWalletStorage {
+export interface IStorage {
   add(key: string, value: string): boolean
   get(key: string): string
   delete(key: string): boolean

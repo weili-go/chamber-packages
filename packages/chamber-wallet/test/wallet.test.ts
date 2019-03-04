@@ -10,7 +10,7 @@ import {
 
 import { assert } from "chai"
 import { constants, utils } from "ethers"
-import { MockWalletStorage } from "../src/storage/MockWalletStorage";
+import { MockStorage } from "../src/storage/MockStorage";
 import { util } from 'prettier';
 
 class MockNetworkClient implements INetworkClient {
@@ -27,10 +27,10 @@ describe('ChamberWallet', () => {
   const ContractAddress = '0xfb88de099e13c3ed21f80a7a1e49f8caecf10df6'
   const mockClient = new MockNetworkClient()
   const client = new PlasmaClient(mockClient)
-  let storage = new MockWalletStorage()
+  let storage = new MockStorage()
 
   beforeEach(() => {
-    storage = new MockWalletStorage()
+    storage = new MockStorage()
   })
 
   it('should create wallet', () => {
@@ -98,8 +98,6 @@ describe('ChamberWallet', () => {
         utils.bigNumberify(10000000)
       )
       
-      assert.equal(wallet.getExits().length, 1)
-      wallet.loadExits()
       assert.equal(wallet.getExits().length, 1)
     })
     

@@ -16,9 +16,13 @@ export class DecoderUtility {
     const len = Math.floor(utils.hexDataLength(bytes) / 32)
     let arr = []
     for(let i = 0;i < len;i++) {
-      arr.push(utils.hexStripZeros(utils.hexDataSlice(bytes, i * 32, i * 32 + 32)))
+      arr.push(utils.hexDataSlice(bytes, i * 32, i * 32 + 32))
     }
     return arr
+  }
+
+  static getAddress(addressString: string) {
+    return utils.getAddress(utils.hexDataSlice(addressString, 12, 32))
   }
 }
 /**
@@ -244,7 +248,7 @@ export class DepositTransaction extends BaseTransaction {
 
   static fromTuple(tuple: RLPItem[]): DepositTransaction {
     return new DepositTransaction(
-      utils.getAddress(tuple[0]),
+      DecoderUtility.getAddress(tuple[0]),
       Segment.fromBigNumber(utils.bigNumberify(tuple[2])))
   }
 
@@ -319,10 +323,10 @@ export class SplitTransaction extends BaseTransaction {
 
   static fromTuple(tuple: RLPItem[]): SplitTransaction {
     return new SplitTransaction(
-      utils.getAddress(tuple[0]),
+      DecoderUtility.getAddress(tuple[0]),
       Segment.fromBigNumber(utils.bigNumberify(tuple[1])),
       utils.bigNumberify(tuple[2]),
-      utils.getAddress(tuple[3]))
+      DecoderUtility.getAddress(tuple[3]))
   }
 
   static decode(bytes: string): SplitTransaction {
@@ -407,10 +411,10 @@ export class MergeTransaction extends BaseTransaction {
     const segment = Segment.fromBigNumber(utils.bigNumberify(tuple[1]))
     const offset = utils.bigNumberify(tuple[2])
     return new MergeTransaction(
-      utils.getAddress(tuple[0]),
+      DecoderUtility.getAddress(tuple[0]),
       new Segment(segment.tokenId, segment.start, offset),
       new Segment(segment.tokenId, offset, segment.end),
-      utils.getAddress(tuple[3]),
+      DecoderUtility.getAddress(tuple[3]),
       utils.bigNumberify(tuple[4]),
       utils.bigNumberify(tuple[5]))
   }
@@ -528,10 +532,10 @@ export class SwapTransaction extends BaseTransaction {
 
   static fromTuple(tuple: RLPItem[]): SwapTransaction {
     return new SwapTransaction(
-      utils.getAddress(tuple[0]),
+      DecoderUtility.getAddress(tuple[0]),
       Segment.fromBigNumber(utils.bigNumberify(tuple[1])),
       utils.bigNumberify(tuple[2]),
-      utils.getAddress(tuple[3]),
+      DecoderUtility.getAddress(tuple[3]),
       Segment.fromBigNumber(utils.bigNumberify(tuple[4])),
       utils.bigNumberify(tuple[5]))
   }
