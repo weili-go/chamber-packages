@@ -730,10 +730,10 @@ def getExit(
 @constant
 def getFinalizedExit(
   _exitId: uint256
-) -> (uint256, uint256):
+) -> (address, uint256, uint256):
   exit: Exit = self.exits[_exitId]
   assert exit.isFinalized
-  return (exit.blkNum, exit.segment)
+  return (exit.owner, exit.blkNum, exit.segment)
 
 # @dev getPlasmaBlock
 @public
