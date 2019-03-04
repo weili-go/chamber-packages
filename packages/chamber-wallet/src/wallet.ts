@@ -39,7 +39,7 @@ if(!artifact.abi) {
 const abi = [
   'event BlockSubmitted(bytes32 _superRoot, bytes32 _root, uint256 _timestamp, uint256 _blkNum)',
   'event Deposited(address indexed _depositer, uint256 _tokenId, uint256 _start, uint256 _end, uint256 _blkNum)',
-  'event ExitStarted(address indexed _exitor, uint256 _exitId, uint256 exitableAt, uint256 _tokenId, uint256 _start, uint256 _end)',
+  'event ExitStarted(address indexed _exitor, uint256 _exitId, uint256 exitableAt, uint256 _segment, uint256 _blkNum, bool _isForceInclude)',
   'event FinalizedExit(uint256 _exitId, uint256 _tokenId, uint256 _start, uint256 _end)',
   'function deposit() payable',
   'function exit(uint256 _utxoPos, uint256 _segment, bytes _txBytes, bytes _proof, bytes _sig, uint256 _hasSig) payable',
@@ -168,9 +168,7 @@ export class ChamberWallet {
         e.values._exitId,
         e.values._exitStateHash,
         e.values._exitableAt,
-        e.values._tokenId,
-        e.values._start,
-        e.values._end
+        e.values._segment
       )
     })
     this.listener.addEvent('FinalizedExit', (e) => {
@@ -295,20 +293,17 @@ export class ChamberWallet {
     exitId: BigNumber,
     exitStateHash: string,
     exitableAt: BigNumber,
-    tokenId: BigNumber,
-    start: BigNumber,
-    end: BigNumber
+    segment: BigNumber
   ) {
     const utxo = this.getUTXOArray().filter(utxo => {
       return utxo.getOutput().hash() == exitStateHash
     })[0]
     if(utxo) {
       this.storage.deleteUTXO(utxo.getOutput().hash())
-      const segment = new Segment(tokenId, start, end)
       const exit = new Exit(
         exitId,
         exitableAt,
-        segment
+        Segment.fromBigNumber(segment)
       )
       this.storage.setExit(exit)
       return exit
@@ -409,9 +404,7 @@ export class ChamberWallet {
         logDesc.values._exitId,
         logDesc.values._exitStateHash,
         logDesc.values._exitableAt,
-        logDesc.values._tokenId,
-        logDesc.values._start,
-        logDesc.values._end
+        logDesc.values._segment
       )
       if(exitOrNull)
         return new ChamberOk(exitOrNull)
