@@ -11,6 +11,7 @@ struct Exit:
   stateHash: bytes32
   blkNum: uint256
   segment: uint256
+  isFinalized: bool
 
 # extended attributes of exit
 struct ExtendExit:
@@ -40,6 +41,11 @@ contract ERC721:
   def mint(_to: address, _tokenId: uint256) -> bool: modifying
   def ownerOf(_tokenId: uint256) -> address: constant
   def burn(_tokenId: uint256): modifying
+
+contract Checkpoint():
+  def getCheckpoint(
+    _checkpointId: uint256
+  ) -> (uint256, uint256): constant
 
 contract TransactionVerifier():
   def verify(
@@ -81,6 +87,7 @@ ExitableMerged: event({_tokenId: uint256, _start: uint256, _end: uint256})
 # management
 operator: address
 txverifier: address
+checkpointAddress: address
 childChain: map(uint256, bytes32)
 exitToken: address
 currentChildBlock: uint256
@@ -334,11 +341,12 @@ def checkSegment(
 
 # @dev Constructor
 @public
-def __init__(_txverifierAddress: address, _exitToken: address):
+def __init__(_txverifierAddress: address, _exitToken: address, _checkpointAddress: address):
   self.operator = msg.sender
   self.currentChildBlock = 1
   self.txverifier = _txverifierAddress
   self.exitToken = create_with_code_of(_exitToken)
+  self.checkpointAddress = _checkpointAddress
   ERC721(self.exitToken).setup()
   self.listingNonce = 0
   self.exitNonce = 1
@@ -463,7 +471,8 @@ def exit(
     txHash: txHash,
     stateHash: exitStateHash,
     blkNum: blkNum,
-    segment: _segment
+    segment: _segment,
+    isFinalized: False
   })
   if _hasSig > 0:
     self.extendExits[exitId].forceInclude = _hasSig
@@ -637,12 +646,13 @@ def finalizeExit(
       send(exit.owner, EXIT_BOND)
   else:
     send(exit.owner, FORCE_INCLUDE_BOND)
-  clear(self.exits[_exitId])
+  self.exits[_exitId].isFinalized = True
   ERC721(self.exitToken).burn(_exitId)
   log.FinalizedExit(_exitId, tokenId, start, end)
 
 @public
 def challengeTooOldExit(
+  _checkpointId: uint256,
   _utxoPos: uint256,
   _exitId: uint256,
   _segment: uint256,
@@ -657,13 +667,12 @@ def challengeTooOldExit(
   start: uint256
   end: uint256
   (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
+  checkpointBlkNum: uint256
+  checkpointSegment: uint256
+  (checkpointBlkNum, checkpointSegment) = Checkpoint(self.checkpointAddress).getCheckpoint(_checkpointId)
+  self.checkSegment(_segment, checkpointSegment)
   txHash: bytes32 = sha3(_txBytes)
-  # if tx is 12 weeks before
-  # blockTimestamp
-  root: bytes32 = extract32(_proof, 0, type=bytes32)
-  blockTimestamp: uint256 = convert(slice(_proof, start=32, len=8), uint256)
-  assert self.childChain[blkNum] == self.getPlasmaBlockHash(root, blockTimestamp)
-  assert blockTimestamp < as_unitless_number(block.timestamp) - 3 * EXIT_PERIOD_SECONDS
+  assert blkNum <= checkpointBlkNum
   priority: uint256 = exit.blkNum
   if self.extendExits[_exitId].priority > 0:
     priority = self.extendExits[_exitId].priority
@@ -715,6 +724,16 @@ def getExit(
 ) -> (address, uint256, uint256):
   exit: Exit = self.exits[_exitId]
   return (exit.owner, exit.exitableAt, self.extendExits[_exitId].challengeCount)
+
+# @dev getExit
+@public
+@constant
+def getFinalizedExit(
+  _exitId: uint256
+) -> (address, uint256, uint256):
+  exit: Exit = self.exits[_exitId]
+  assert exit.isFinalized
+  return (exit.owner, exit.blkNum, exit.segment)
 
 # @dev getPlasmaBlock
 @public
