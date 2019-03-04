@@ -54,6 +54,9 @@ function createTransfer(privKey, from, seg, blkNum, to) {
  * 1->3->4-x>5
  */
 function scenario1() {
+  const segment6 = Segment.ETH(
+    utils.bigNumberify('2000000'),
+    utils.bigNumberify('3000000'))
   // deposits
   const blkNum1 = utils.bigNumberify('3')
   const blkNum2 = utils.bigNumberify('5')
@@ -69,9 +72,12 @@ function scenario1() {
   block5.setBlockNumber(10)
   const block6 = new Block(12)
   block6.setBlockNumber(12)
+  const block7 = new Block(14)
+  block7.setBlockNumber(14)
 
   const depositTx1 = new DepositTransaction(AliceAddress, segment1)
   const depositTx2 = new DepositTransaction(BobAddress, segment2)
+  const depositTx3 = new DepositTransaction(BobAddress, segment6)
   const tx31 = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
   const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
   const tx41 = createTransfer(BobPrivateKey, BobAddress, segment1, blkNum3, AliceAddress)
@@ -80,6 +86,8 @@ function scenario1() {
   const tx52 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum4, User5Address)
   const tx61 = createTransfer(User5PrivateKey, User5Address, segment3, blkNum1, OperatorAddress)
   const tx62 = createTransfer(User5PrivateKey, User5Address, segment2, blkNum4, User4Address)
+  const tx71 = createTransfer(User5PrivateKey, User5Address, segment4, blkNum1, OperatorAddress)
+  const tx72 = createTransfer(User5PrivateKey, User5Address, segment5, blkNum1, OperatorAddress)
   
   block3.appendTx(tx31)
   block3.appendTx(tx32)
@@ -89,15 +97,18 @@ function scenario1() {
   block5.appendTx(tx52)
   block6.appendTx(tx61)
   block6.appendTx(tx62)
+  block7.appendTx(tx71)
+  block7.appendTx(tx72)
 
   const tree3 = block3.createTree()
   const tree4 = block4.createTree()
   const tree5 = block5.createTree()
   const tree6 = block6.createTree()
+  const tree7 = block7.createTree()
 
   return {
-    segments: [segment1, segment2, segment3],
-    deposits: [depositTx1, depositTx2],
+    segments: [segment1, segment2, segment3, segment4, segment5, segment6],
+    deposits: [depositTx1, depositTx2, depositTx3],
     blocks: [
       {
         block: block3,
@@ -116,6 +127,10 @@ function scenario1() {
         block: block6,
         tree: tree6,
         transactions: [tx61, tx62]
+      },{
+        block: block7,
+        tree: tree7,
+        transactions: [tx71, tx72]
       }
     ]
   }
