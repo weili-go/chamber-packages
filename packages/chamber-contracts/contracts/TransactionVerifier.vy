@@ -94,6 +94,7 @@ verifierNonce: uint256
 
 # total deposit amount per token type
 TOTAL_DEPOSIT: constant(uint256) = 2**48
+MASK8BYTES: constant(uint256) = 2**64 - 1
 
 @public
 @constant
@@ -129,8 +130,8 @@ def decodeDeposit(
 ) -> (address, uint256, uint256, uint256):
   # depositor, token, start, end
   segment: uint256 = extract32(_txBytes, 64 + 16, type=uint256)
-  start: uint256 = segment / TOTAL_DEPOSIT
-  end: uint256 = segment - start * TOTAL_DEPOSIT
+  start: uint256 = bitwise_and(shift(segment, - 8 * 8), MASK8BYTES)
+  end: uint256 = bitwise_and(segment, MASK8BYTES)
   return (
     extract32(_txBytes, 0 + 16, type=address),
     extract32(_txBytes, 32 + 16, type=uint256),
@@ -174,9 +175,9 @@ def verifyDepositTx(
   start: uint256
   end: uint256
   (depositor, token, start, end) = self.decodeDeposit(_txBytes)
-  assert _tokenId == token and _start >= start and _end <= end
-  if _owner != ZERO_ADDRESS:
-    assert _owner == depositor
+  #assert _tokenId == token and _start >= start and _end <= end
+  #if _owner != ZERO_ADDRESS:
+  #  assert _owner == depositor
   return self.getOwnState(depositor, token, _start, _end, _txBlkNum)
 
 # @dev Constructor

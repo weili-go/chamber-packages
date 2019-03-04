@@ -277,10 +277,10 @@ export class ChamberWallet {
       this.storage.addUTXO(new SignedTransactionWithProof(
         new SignedTransaction(depositTx),
         0,
-        '',
-        '',
+        '0x',
+        '0x',
         ethers.constants.Zero,
-        new SumMerkleProof(1, 0, segment, ''),
+        new SumMerkleProof(1, 0, segment, '0x'),
         blkNum))
     }
     this.exitableRangeManager.extendRight(end)

@@ -156,6 +156,23 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
     })
 
+    it("should success to exit depositTx", async () => {
+      const tx = Scenario1.deposits[1]
+      const result = await this.rootChain.exit(
+        5 * 100,
+        Scenario1.segments[1].toBigNumber(),
+        tx.encode(),
+        '0x',
+        '0x',
+        0,
+        {
+          from: bob,
+          value: BOND
+        });
+      const exitId = result.receipt.logs[0].args._exitId
+      assert.equal(exitId.toNumber(), 1)
+    })
+
     it("should success to challenge", async () => {
       const tx = Scenario1.blocks[0].block.getSignedTransactionWithProof(
         Scenario1.blocks[0].transactions[0].hash())[0]
