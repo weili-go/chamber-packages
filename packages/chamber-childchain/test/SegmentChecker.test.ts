@@ -36,17 +36,39 @@ describe('SegmentChecker', () => {
 
   it('should success to insert', async () => {
     const segmentChecker = new SegmentChecker()
-    segmentChecker.insert(signedTx1, utils.bigNumberify(6))
+    const insertResults = segmentChecker.insert(signedTx1, utils.bigNumberify(6))
+    assert.deepEqual(insertResults, [true])
     assert.isTrue(segmentChecker.isContain(signedTx2))
     assert.isTrue(segmentChecker.isContain(signedTx3))
+  })
+
+  it('should failed to insert twice', async () => {
+    const segmentChecker = new SegmentChecker()
+    segmentChecker.insert(signedTx1, utils.bigNumberify(6))
+    const insertResults = segmentChecker.insert(signedTx1, utils.bigNumberify(6))
+    assert.deepEqual(insertResults, [false])
+    assert.equal(segmentChecker.leaves.length, 1)
   })
 
   it('should success to spent', async () => {
     const segmentChecker = new SegmentChecker()
     segmentChecker.insert(signedTx1, utils.bigNumberify(6))
     segmentChecker.spent(signedTx2)
+    assert.equal(segmentChecker.leaves.length, 1)
     assert.isFalse(segmentChecker.isContain(signedTx2))
     assert.isTrue(segmentChecker.isContain(signedTx3))
   })
+
+  it('should failed to spent twice', async () => {
+    const segmentChecker = new SegmentChecker()
+    segmentChecker.insert(signedTx1, utils.bigNumberify(6))
+    segmentChecker.spent(signedTx2)
+    const spentResults = segmentChecker.spent(signedTx2)
+    assert.equal(segmentChecker.leaves.length, 1)
+    assert.deepEqual(spentResults, [false])
+    assert.isFalse(segmentChecker.isContain(signedTx2))
+    assert.isTrue(segmentChecker.isContain(signedTx3))
+  })
+
 
 })
