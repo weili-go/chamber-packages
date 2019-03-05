@@ -39,6 +39,10 @@ export class EscrowLockState implements TransactionOutput {
     this.blkNum = null
   }
 
+  getLabel(): Hash {
+    return utils.keccak256(utils.toUtf8Bytes('escrow'))
+  }
+
   withBlkNum(blkNum: BigNumber) {
     this.setBlkNum(blkNum)
     return this
@@ -89,7 +93,7 @@ export class EscrowLockState implements TransactionOutput {
   getBytes() {
     if(this.blkNum) {
       return this.joinHex([
-        utils.keccak256(utils.toUtf8Bytes('own')),
+        this.getLabel(),
         utils.hexZeroPad(utils.hexlify(this.owner), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
@@ -132,6 +136,14 @@ export class EscrowLockState implements TransactionOutput {
     return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
   }
 
+  toObject() {
+    return {
+      start: this.getSegment(0).start.toString(),
+      end: this.getSegment(0).end.toString(),
+      owner: this.getOwners(),
+      blkNum: this.getBlkNum().toString()
+    }
+  }
 
 }
 export class EscrowTransaction extends BaseTransaction {

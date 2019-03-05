@@ -33,12 +33,22 @@ export class SegmentChecker {
     }
   }
 
+  private getIndex(txo: TransactionOutput) {
+    for(let i=0; i < this.leaves.length;i++) {
+      if(this.leaves[i].getSegment(0).start.gt(txo.getSegment(0).start)) {
+        return i
+      }
+    }
+    return this.leaves.length
+  }
+
   private _insert(txo: TransactionOutput, blkNum: BigNumber) {
     const newTxo = txo.withBlkNum(blkNum)
     if(this._isContain(newTxo)) {
       return false
     } else {
-      this.leaves.push(newTxo)
+      const index = this.getIndex(newTxo)
+      this.leaves.splice(index, 0, newTxo)
       return true
     }
   }
@@ -73,6 +83,10 @@ export class SegmentChecker {
     this.leaves = data.map(d => {
       return TransactionOutputDeserializer.deserialize(d)
     })
+  }
+
+  toObject() {
+    return this.leaves.map(l => l.toObject())
   }
 
 }
