@@ -1,8 +1,8 @@
 export interface IEventWatcherStorage {
 
-  getLoaded(initialBlock: number): number
+  getLoaded(initialBlock: number): Promise<number>
 
-  setLoaded(loaded: number): void
+  setLoaded(loaded: number): Promise<void>
 
   addSeen(event: string): void
 
@@ -17,11 +17,11 @@ export class DefaultEventWatcherStorage implements IEventWatcherStorage {
   constructor() {
   }
 
-  getLoaded(initialBlock: number) {
+  async getLoaded(initialBlock: number) {
     return this.loaded
   }
 
-  setLoaded(loaded: number) {
+  async setLoaded(loaded: number) {
     this.loaded = loaded
   }
 
