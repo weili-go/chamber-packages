@@ -34,7 +34,13 @@ export class SegmentChecker {
   }
 
   private _insert(txo: TransactionOutput, blkNum: BigNumber) {
-    this.leaves.push(txo.withBlkNum(blkNum))
+    const newTxo = txo.withBlkNum(blkNum)
+    if(this._isContain(newTxo)) {
+      return false
+    } else {
+      this.leaves.push(newTxo)
+      return true
+    }
   }
 
   isContain(tx: SignedTransaction): boolean {
@@ -44,19 +50,19 @@ export class SegmentChecker {
   }
 
   spent(tx: SignedTransaction) {
-    tx.getRawTx().getInputs().forEach((i) => {
-      this._spent(i)
+    return tx.getRawTx().getInputs().map((i) => {
+      return this._spent(i)
     })
   }
 
   insert(tx: SignedTransaction, blkNum: BigNumber) {
-    tx.getRawTx().getOutputs().forEach((o) => {
-      this._insert(o, blkNum)
+    return tx.getRawTx().getOutputs().map((o) => {
+      return this._insert(o, blkNum)
     })
   }
 
   insertDepositTx(depositTx: DepositTransaction, blkNum: BigNumber) {
-    this._insert(depositTx.getOutput(), blkNum)
+    return this._insert(depositTx.getOutput(), blkNum)
   }
 
   serialize() {
