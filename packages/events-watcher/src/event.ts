@@ -80,7 +80,7 @@ export class EventWatcher {
 
   async initPolling(handler: CompletedHandler) {
     const blockNumber = await this.adaptor.getLatestBlockNumber()
-    const loaded = this.storage.getLoaded(this.options.initialBlock)
+    const loaded = await this.storage.getLoaded(this.options.initialBlock)
     await this.polling(loaded, blockNumber, handler)
     setTimeout(async ()=>{
       await this.initPolling(handler);
@@ -110,7 +110,7 @@ export class EventWatcher {
       }
       return true
     })
-    this.storage.setLoaded(blockNumber)
+    await this.storage.setLoaded(blockNumber)
     if(filtered.length > 0) completedHandler()
   }
   
