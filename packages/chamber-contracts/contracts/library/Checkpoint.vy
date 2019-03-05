@@ -92,16 +92,18 @@ def setRootChain(_rootchain: address):
 @private
 @constant
 def decodePermission(
-  _permission: bytes[128]
-) -> (address, uint256, uint256):
+  _permission: bytes[160]
+) -> (address, address, uint256, uint256):
   assert sha3("checkpoint") == extract32(_permission, 0, type=bytes32)
   return (
-    # target
+    # chainId
     extract32(_permission, 32*1, type=address),
+    # target
+    extract32(_permission, 32*2, type=address),
     # blkNum
-    extract32(_permission, 32*2, type=uint256),
+    extract32(_permission, 32*3, type=uint256),
     # segment
-    extract32(_permission, 32*3, type=uint256)
+    extract32(_permission, 32*4, type=uint256)
   )
 
 @private
@@ -116,16 +118,18 @@ def getChallengeId(
 @constant
 def verifyCheckpointPermittion(
   _checkpointId: uint256,
-  _permission: bytes[128],
+  _permission: bytes[160],
   _sigs: bytes[65],
   _allower: address
 ) -> bool:
+  chainId: address
   target: address
   blkNum: uint256
   segment: uint256
   assert self.ecrecoverSig(sha3(_permission), _sigs) == _allower
   checkpoint: Checkpoint = self.checkpoints[_checkpointId]
-  (target, blkNum, segment) = self.decodePermission(_permission)
+  (chainId, target, blkNum, segment) = self.decodePermission(_permission)
+  assert self.rootchain == chainId
   assert checkpoint.owner == target
   assert checkpoint.blkNum == blkNum
   assert checkpoint.segment == segment
@@ -177,7 +181,7 @@ def challengeCheckpoint(
 def respondChallengeCheckpoint(
   _checkpointId: uint256,
   _exitId: uint256,
-  _permission: bytes[128],
+  _permission: bytes[160],
   _sigs: bytes[65]
 ):
   challengeId: bytes32 = self.getChallengeId(_checkpointId, _exitId)

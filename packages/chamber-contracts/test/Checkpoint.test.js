@@ -37,9 +37,10 @@ require('chai')
 const EXIT_BOND = constants.EXIT_BOND
 const CHECKPOINT_BOND = constants.CHECKPOINT_BOND
 
-function getPermission(target, blkNum, segment) {
+function getPermission(chainId, target, blkNum, segment) {
   return utils.hexlify(utils.concat([
     utils.arrayify(utils.keccak256(utils.toUtf8Bytes('checkpoint'))),
+    utils.padZeros(utils.arrayify(chainId), 32),
     utils.padZeros(utils.arrayify(target), 32),
     utils.padZeros(utils.arrayify(blkNum), 32),
     utils.padZeros(utils.arrayify(segment), 32)
@@ -252,7 +253,7 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
         {
           from: bob
         });
-      const permission = getPermission(operator, checkpointBlkNum, checkpointSegment.toBigNumber())
+      const permission = getPermission(this.rootChain.address, operator, checkpointBlkNum, checkpointSegment.toBigNumber())
       const bobKey = new utils.SigningKey(testKeys.BobPrivateKey)
       const sigs = utils.joinSignature(bobKey.signDigest(utils.keccak256(permission)))
       await this.checkpoint.respondChallengeCheckpoint(
