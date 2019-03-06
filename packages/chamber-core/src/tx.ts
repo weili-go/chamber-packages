@@ -75,6 +75,10 @@ export abstract class BaseTransaction {
 
   abstract getSegments(): Segment[]
 
+  /**
+   * @description verify function verify transaction's segment, owner and signatures.
+   * @param signatures 
+   */
   abstract verify(signatures: string[]): boolean
 
   abstract normalizeSigs(signatures: string[], hash?: string): string[]
@@ -131,8 +135,12 @@ export interface TransactionOutput {
   hash(): Hash
   getBytes(): string
   serialize(): any
-  checkSpent(txo: TransactionOutput): boolean
-  subSpent(txo: TransactionOutput): TransactionOutput[]
+  /**
+   * @description checkSpend function verify that the transaction spend UTXO correctly.
+   * @param txo 
+   */
+  checkSpend(txo: TransactionOutput): boolean
+  subSpend(txo: TransactionOutput): TransactionOutput[]
   toObject(): any
 }
 
@@ -214,7 +222,10 @@ export class OwnState implements TransactionOutput {
     return utils.keccak256(this.getBytes())
   }
 
-  checkSpent(txo: TransactionOutput): boolean {
+  /**
+   * @description verify txo spend this instance correctly
+   */
+  checkSpend(txo: TransactionOutput): boolean {
     if(txo.getLabel() == this.getLabel()
       && txo.getBlkNum().eq(this.getBlkNum())
       && txo.getOwners()[0] == this.getOwners()[0]
@@ -225,7 +236,7 @@ export class OwnState implements TransactionOutput {
     }
   }
 
-  subSpent(txo: TransactionOutput): TransactionOutput[] {
+  subSpend(txo: TransactionOutput): TransactionOutput[] {
     const newSegments = this.getSegment(0).sub(txo.getSegment(0))
     return newSegments.map(s => {
       return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())
@@ -374,6 +385,11 @@ export class SplitTransaction extends BaseTransaction {
     return [this.segment]
   }
 
+  /**
+   * @description verify transfer transaction
+   *     see also https://github.com/cryptoeconomicslab/chamber-packages/blob/master/packages/chamber-contracts/contracts/verifier/StandardVerifier.vy#L92
+   * @param signatures 
+   */
   verify(signatures: string[]): boolean {
     return utils.recoverAddress(
       this.hash(), signatures[0]) == this.from
@@ -472,6 +488,11 @@ export class MergeTransaction extends BaseTransaction {
     ]
   }
   
+  /**
+   * @description verify transaction
+   *     see also https://github.com/cryptoeconomicslab/chamber-packages/blob/master/packages/chamber-contracts/contracts/verifier/StandardVerifier.vy#L154
+   * @param signatures 
+   */
   verify(signatures: string[]): boolean {
     return utils.recoverAddress(
       this.hash(), signatures[0]) == this.from
@@ -605,6 +626,11 @@ export class SwapTransaction extends BaseTransaction {
     return [this.segment1, this.segment2]
   }
 
+  /**
+   * @description verify swap transaction
+   *     see also https://github.com/cryptoeconomicslab/chamber-packages/blob/master/packages/chamber-contracts/contracts/verifier/MultisigVerifier.vy#L86
+   * @param signatures 
+   */
   verify(signatures: string[]): boolean {
     return utils.recoverAddress(
       this.hash(), signatures[0]) == this.from1

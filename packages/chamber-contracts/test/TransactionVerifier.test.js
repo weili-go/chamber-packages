@@ -147,7 +147,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
       utils.bigNumberify('40000'),
       utils.bigNumberify('60000')))
     
-    it("should checkSpent", async () => {
+    it("should checkSpend", async () => {
       const exitState1 = new OwnState(
         Segment.ETH(
           utils.bigNumberify('5000000'),
@@ -159,7 +159,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
           utils.bigNumberify('5200000')),
         operator).withBlkNum(blkNum5)
   
-      const result2 = await this.transactionVerifier.checkSpent(
+      const result2 = await this.transactionVerifier.checkSpend(
         exitState1.getBytes(),
         swapTx.getTxBytes(),
         0,
@@ -167,7 +167,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         {
           from: alice
         });
-      const result3 = await this.transactionVerifier.checkSpent(
+      const result3 = await this.transactionVerifier.checkSpend(
         exitState2.getBytes(),
         swapTx.getTxBytes(),
         1,
@@ -204,7 +204,7 @@ contract("TransactionVerifier", ([alice, bob, operator, user4, user5, admin]) =>
         });
 
       const exitState = new OwnState(segment, alice).withBlkNum(blkNum)
-      const result = await this.transactionVerifier.checkSpent(
+      const result = await this.transactionVerifier.checkSpend(
         exitState.getBytes(),
         escrowTx.getTxBytes(),
         0,

@@ -179,7 +179,7 @@ def verify(
 
 @public
 @constant
-def checkSpent(
+def checkSpend(
   _label: uint256,
   _exitStateBytes: bytes[256],
   _txBytes: bytes[496],

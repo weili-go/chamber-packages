@@ -121,7 +121,7 @@ def verifyTransfer(
 
 @public
 @constant
-def checkSpentOfTransfer(
+def checkSpendOfTransfer(
   _exitStateBytes: bytes[256],
   _txBytes: bytes[496],
   _exitBlkNum: uint256
@@ -182,7 +182,7 @@ def verifyMerge(
 
 @public
 @constant
-def checkSpentOfMerge(
+def checkSpendOfMerge(
   _exitStateBytes: bytes[256],
   _txBytes: bytes[496],
   _index: uint256,

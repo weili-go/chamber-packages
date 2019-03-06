@@ -16,15 +16,15 @@ export class SegmentChecker {
 
   private _isContain(txo: TransactionOutput) {
     return this.leaves.filter(l => {
-      return l.checkSpent(txo)
+      return l.checkSpend(txo)
     }).length > 0
   }
 
-  private _spent(txo: TransactionOutput) {
-    const target = this.leaves.filter(l => l.checkSpent(txo))[0]
-    this.leaves = this.leaves.filter(l => !(l.checkSpent(txo)))
+  private _spend(txo: TransactionOutput) {
+    const target = this.leaves.filter(l => l.checkSpend(txo))[0]
+    this.leaves = this.leaves.filter(l => !(l.checkSpend(txo)))
     if(target) {
-      target.subSpent(txo).forEach(newTxo => {
+      target.subSpend(txo).forEach(newTxo => {
         this.leaves.push(newTxo)
       })
       return true
@@ -59,9 +59,9 @@ export class SegmentChecker {
     }, true)
   }
 
-  spent(tx: SignedTransaction) {
+  spend(tx: SignedTransaction) {
     return tx.getRawTx().getInputs().map((i) => {
-      return this._spent(i)
+      return this._spend(i)
     })
   }
 

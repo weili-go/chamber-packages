@@ -62,7 +62,7 @@ contract TransactionVerifier():
     _txBlkNum: uint256,
     _timestamp: uint256
   ) -> bytes[256]: constant
-  def checkSpent(
+  def checkSpend(
     _exitStateBytes: bytes[256],
     _txBytes: bytes[496],
     _index: uint256,
@@ -539,7 +539,7 @@ def challenge(
         isAvailable: True,
         exitId: _exitId
       })
-  assert TransactionVerifier(self.txverifier).checkSpent(
+  assert TransactionVerifier(self.txverifier).checkSpend(
     _exitStateBytes,
     _txBytes,
     txoIndex,

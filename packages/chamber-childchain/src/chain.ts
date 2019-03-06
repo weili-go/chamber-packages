@@ -93,7 +93,7 @@ export class Chain {
     const tasks = this.txQueue.map(async tx => {
       const inputChecked = this.segmentChecker.isContain(tx)
       if(inputChecked) {
-        this.segmentChecker.spent(tx)
+        this.segmentChecker.spend(tx)
         block.appendTx(tx)
       }
     })
@@ -150,7 +150,7 @@ export class Chain {
     segment: BigNumber,
     blkNum: BigNumber
   ) {
-    this.segmentChecker.spent(new SignedTransaction(new SplitTransaction(
+    this.segmentChecker.spend(new SignedTransaction(new SplitTransaction(
       exitor,
       Segment.fromBigNumber(segment),
       blkNum,
@@ -222,7 +222,7 @@ export class Chain {
     if(blockResult.isOk()) {
       const block = blockResult.ok()
       const tasks = block.txs.map(async tx => {
-        await this.segmentChecker.spent(tx)
+        await this.segmentChecker.spend(tx)
         await this.segmentChecker.insert(tx, blkNum)
       })
       await Promise.all(tasks)

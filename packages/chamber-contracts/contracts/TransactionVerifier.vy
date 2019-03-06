@@ -10,7 +10,7 @@ contract StandardVerifier():
     _end: uint256,
     _txBlkNum: uint256
   ) -> bytes[256]: constant
-  def checkSpentOfTransfer(
+  def checkSpendOfTransfer(
     _exitStateBytes: bytes[256],
     _txBytes: bytes[496],
     _exitBlkNum: uint256
@@ -27,7 +27,7 @@ contract StandardVerifier():
     _end: uint256,
     _txBlkNum: uint256
   ) -> bytes[256]: constant
-  def checkSpentOfMerge(
+  def checkSpendOfMerge(
     _exitStateBytes: bytes[256],
     _txBytes: bytes[496],
     _index: uint256,
@@ -49,7 +49,7 @@ contract MultisigVerifier():
     _txBlkNum: uint256,
     _hasSig: uint256
   ) -> bytes[256]: constant
-  def checkSpentOfSwap(
+  def checkSpendOfSwap(
     _exitStateBytes: bytes[256],
     _txBytes: bytes[496],
     _index: uint256,
@@ -71,7 +71,7 @@ contract CustomVerifier():
     _txBlkNum: uint256,
     _timestamp: uint256
   ) -> bytes[256]: constant
-  def checkSpent(
+  def checkSpend(
     _label: uint256,
     _exitStateBytes: bytes[256],
     _txBytes: bytes[496],
@@ -231,7 +231,7 @@ def verify(
 # @dev get hash of input state of the transaction
 @public
 @constant
-def checkSpent(
+def checkSpend(
   _exitStateBytes: bytes[256],
   _txBytes: bytes[496],
   _index: uint256,
@@ -241,14 +241,14 @@ def checkSpent(
   maxBlock: uint256
   (label, maxBlock) = self.decodeBaseTx(_txBytes)
   if label == 2:
-    return StandardVerifier(self.stdverifier).checkSpentOfTransfer(_exitStateBytes, _txBytes, _blkNum)
+    return StandardVerifier(self.stdverifier).checkSpendOfTransfer(_exitStateBytes, _txBytes, _blkNum)
   elif label == 3:
-    return StandardVerifier(self.stdverifier).checkSpentOfMerge(_exitStateBytes, _txBytes, _index, _blkNum)
+    return StandardVerifier(self.stdverifier).checkSpendOfMerge(_exitStateBytes, _txBytes, _index, _blkNum)
   elif label == 5:
-    return MultisigVerifier(self.multisigverifier).checkSpentOfSwap(_exitStateBytes, _txBytes, _index, _blkNum)
+    return MultisigVerifier(self.multisigverifier).checkSpendOfSwap(_exitStateBytes, _txBytes, _index, _blkNum)
   else:
     verifierAddress: address = self.verifiers[label / 10]
-    return CustomVerifier(verifierAddress).checkSpent(label, _exitStateBytes, _txBytes, _index, _blkNum)
+    return CustomVerifier(verifierAddress).checkSpend(label, _exitStateBytes, _txBytes, _index, _blkNum)
   return False
 
 @public

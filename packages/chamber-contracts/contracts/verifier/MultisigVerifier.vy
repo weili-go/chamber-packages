@@ -133,7 +133,7 @@ def verifySwap(
 
 @public
 @constant
-def checkSpentOfSwap(
+def checkSpendOfSwap(
   _exitStateBytes: bytes[256],
   _txBytes: bytes[496],
   _index: uint256,

@@ -222,7 +222,7 @@ export class ChamberWallet {
   private _spend(txo: TransactionOutput) {
     this.getUTXOArray().forEach((tx) => {
       const output = tx.getOutput()
-      if(output.checkSpent(txo)) {
+      if(output.checkSpend(txo)) {
         this.storage.deleteUTXO(output.hash())
         tx.spend(txo).forEach(newTx => {
           this.storage.addUTXO(newTx)
@@ -515,7 +515,7 @@ export class ChamberWallet {
     if(input) {
       return this.getUTXOArray().filter((_tx) => {
         // check input spent _tx which user has
-        return _tx.getOutput().checkSpent(input)
+        return _tx.getOutput().checkSpend(input)
       }).length > 0
     } else {
       return false

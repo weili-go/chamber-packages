@@ -49,7 +49,7 @@ describe('SegmentChecker', () => {
   const signedTx4 = new SignedTransaction(tx4)
   const signedTx5 = new SignedTransaction(tx5)
 
-  it('should success to insert', async () => {
+  it('should succeed to insert', async () => {
     const segmentChecker = new SegmentChecker()
     const insertResults = segmentChecker.insert(signedTx1, utils.bigNumberify(6))
     assert.deepEqual(insertResults, [true])
@@ -57,7 +57,7 @@ describe('SegmentChecker', () => {
     assert.isTrue(segmentChecker.isContain(signedTx3))
   })
 
-  it('should failed to insert twice', async () => {
+  it('should fail to insert twice', async () => {
     const segmentChecker = new SegmentChecker()
     segmentChecker.insert(signedTx1, utils.bigNumberify(6))
     const insertResults = segmentChecker.insert(signedTx1, utils.bigNumberify(6))
@@ -65,22 +65,22 @@ describe('SegmentChecker', () => {
     assert.equal(segmentChecker.leaves.length, 1)
   })
 
-  it('should success to spent', async () => {
+  it('should succeed to spend', async () => {
     const segmentChecker = new SegmentChecker()
     segmentChecker.insert(signedTx1, utils.bigNumberify(6))
-    segmentChecker.spent(signedTx2)
+    segmentChecker.spend(signedTx2)
     assert.equal(segmentChecker.leaves.length, 1)
     assert.isFalse(segmentChecker.isContain(signedTx2))
     assert.isTrue(segmentChecker.isContain(signedTx3))
   })
 
-  it('should failed to spent twice', async () => {
+  it('should fail to spend twice', async () => {
     const segmentChecker = new SegmentChecker()
     segmentChecker.insert(signedTx1, utils.bigNumberify(6))
-    segmentChecker.spent(signedTx2)
-    const spentResults = segmentChecker.spent(signedTx2)
+    segmentChecker.spend(signedTx2)
+    const spendResults = segmentChecker.spend(signedTx2)
     assert.equal(segmentChecker.leaves.length, 1)
-    assert.deepEqual(spentResults, [false])
+    assert.deepEqual(spendResults, [false])
     assert.isFalse(segmentChecker.isContain(signedTx2))
     assert.isTrue(segmentChecker.isContain(signedTx3))
   })

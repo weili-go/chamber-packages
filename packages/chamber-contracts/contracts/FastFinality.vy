@@ -45,7 +45,7 @@ contract TransactionVerifier():
     _txBlkNum: uint256,
     _timestamp: uint256
   ) -> bytes[256]: constant
-  def checkSpent(
+  def checkSpend(
     _exitStateBytes: bytes[256],
     _txBytes: bytes[496],
     _index: uint256,
@@ -181,7 +181,7 @@ def dispute(
     0,
     # dummy timestamp
     0)  
-  assert TransactionVerifier(self.txverifier).checkSpent(_exitStateBytes, _txBytes, 0, _prevBlkNum)
+  assert TransactionVerifier(self.txverifier).checkSpend(_exitStateBytes, _txBytes, 0, _prevBlkNum)
   self.disputes[txHash] = Dispute({
     recipient: msg.sender,
     withdrawableAt: block.timestamp + 1 * 7 * 24 * 60 * 60,
@@ -250,7 +250,7 @@ def secondDispute(
     ZERO_ADDRESS)
   disputeId: bytes32 = sha3(_disputeTxBytes)
   assert self.disputes[disputeId].stateHash == sha3(_stateBytes)
-  assert TransactionVerifier(self.txverifier).checkSpent(
+  assert TransactionVerifier(self.txverifier).checkSpend(
     _stateBytes,
     _txBytes,
     0,
