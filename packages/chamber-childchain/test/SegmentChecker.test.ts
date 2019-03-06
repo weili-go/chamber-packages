@@ -29,10 +29,25 @@ describe('SegmentChecker', () => {
     ethers.utils.bigNumberify(6),
     AliceAddress
   )
+  const tx4 = SplitTransaction.Transfer(
+    BobAddress,
+    Segment.ETH(ethers.utils.bigNumberify(10000000), ethers.utils.bigNumberify(12000000)),
+    ethers.utils.bigNumberify(6),
+    AliceAddress
+  )
+  const tx5 = SplitTransaction.Transfer(
+    BobAddress,
+    Segment.ETH(ethers.utils.bigNumberify(12000000), ethers.utils.bigNumberify(15000000)),
+    ethers.utils.bigNumberify(6),
+    AliceAddress
+  )
+
 
   const signedTx1 = new SignedTransaction(tx1)
   const signedTx2 = new SignedTransaction(tx2)
   const signedTx3 = new SignedTransaction(tx3)
+  const signedTx4 = new SignedTransaction(tx4)
+  const signedTx5 = new SignedTransaction(tx5)
 
   it('should success to insert', async () => {
     const segmentChecker = new SegmentChecker()
@@ -70,5 +85,14 @@ describe('SegmentChecker', () => {
     assert.isTrue(segmentChecker.isContain(signedTx3))
   })
 
+  it('should be ordered', async () => {
+    const segmentChecker = new SegmentChecker()
+    segmentChecker.insert(signedTx2, utils.bigNumberify(6))
+    segmentChecker.insert(signedTx3, utils.bigNumberify(6))
+    segmentChecker.insert(signedTx5, utils.bigNumberify(8))
+    segmentChecker.insert(signedTx4, utils.bigNumberify(10))
+    assert.equal(segmentChecker.leaves[0].getSegment(0).start.toString(), '0')
+    assert.equal(segmentChecker.leaves[3].getSegment(0).start.toString(), '12000000')
+  })
 
 })

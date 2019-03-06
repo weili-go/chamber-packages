@@ -123,6 +123,7 @@ export class TransactionOutputDeserializer {
 }
 
 export interface TransactionOutput {
+  getLabel(): Hash
   withBlkNum(blkNum: BigNumber): TransactionOutput
   getOwners(): Address[]
   getBlkNum(): BigNumber
@@ -132,6 +133,7 @@ export interface TransactionOutput {
   serialize(): any
   checkSpent(txo: TransactionOutput): boolean
   subSpent(txo: TransactionOutput): TransactionOutput[]
+  toObject(): any
 }
 
 export class OwnState implements TransactionOutput {
@@ -146,6 +148,10 @@ export class OwnState implements TransactionOutput {
     this.segment = segment
     this.owner = owner
     this.blkNum = null
+  }
+
+  getLabel(): Hash {
+    return utils.keccak256(utils.toUtf8Bytes('own'))
   }
 
   withBlkNum(blkNum: BigNumber) {
@@ -192,7 +198,7 @@ export class OwnState implements TransactionOutput {
   getBytes() {
     if(this.blkNum) {
       return this.joinHex([
-        utils.keccak256(utils.toUtf8Bytes('own')),
+        this.getLabel(),
         utils.hexZeroPad(utils.hexlify(this.owner), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
         utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
@@ -209,7 +215,7 @@ export class OwnState implements TransactionOutput {
   }
 
   checkSpent(txo: TransactionOutput): boolean {
-    if(txo instanceof OwnState
+    if(txo.getLabel() == this.getLabel()
       && txo.getBlkNum().eq(this.getBlkNum())
       && txo.getOwners()[0] == this.getOwners()[0]
       && this.getSegment(0).isContain(txo.getSegment(0))) {
@@ -230,6 +236,14 @@ export class OwnState implements TransactionOutput {
     return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
   }
 
+  toObject() {
+    return {
+      start: this.getSegment(0).start.toString(),
+      end: this.getSegment(0).end.toString(),
+      owner: this.getOwners(),
+      blkNum: this.getBlkNum().toString()
+    }
+  }
 
 }
 

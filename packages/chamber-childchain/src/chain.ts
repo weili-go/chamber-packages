@@ -52,6 +52,10 @@ export class Chain {
     return this.swapManager
   }
 
+  getCurrentSegments() {
+    return this.segmentChecker.toObject()
+  }
+
   appendTx(tx: SignedTransaction): ChamberResult<boolean> {
     try {
       if(this.txFilter.checkAndInsertTx(tx)
