@@ -79,6 +79,24 @@ describe('ExitableRangeManager', () => {
       bn1500000.toString())
   })
 
+  it('shoud success to insert and remove multiple times', () => {
+    const exitableRangeManager = new ExitableRangeManager()
+    exitableRangeManager.extendRight(bn1000000)
+    exitableRangeManager.extendRight(bn2000000)
+    exitableRangeManager.extendRight(bn3000000)
+    exitableRangeManager.remove(bn0, bn1000000, bn2000000)
+    exitableRangeManager.extendRight(utils.bigNumberify('5000000'))
+    try {
+      exitableRangeManager.remove(bn0, bn1000000, bn2000000)
+    }catch(e) {
+
+    }
+    exitableRangeManager.remove(bn0, bn2000000, bn3000000)
+    assert.equal(
+      exitableRangeManager.getExitableEnd(bn3000000, utils.bigNumberify('3100000')).toString(),
+      utils.bigNumberify('5000000').toString())    
+  })
+
   it('shoud success to serialize and deserialize', () => {
     const exitableRangeManager = new ExitableRangeManager()
     exitableRangeManager.extendRight(bn1000000)

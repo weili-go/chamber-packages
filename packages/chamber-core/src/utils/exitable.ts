@@ -55,11 +55,20 @@ export class ExitableRangeManager {
     }else{
       this.removeItem(start, end)
     }
+    this.sort()
   }
 
   private removeItem(start: BigNumber, end: BigNumber) {
     this.ranges = this.ranges.filter(r => {
       return !(r.start.lte(start) && r.end.gte(end))
+    })
+  }
+
+  private sort() {
+    this.ranges.sort((a, b) => {
+      if(a.start.gt(b.start)) return 1
+      else if(a.start.lt(b.start)) return -1
+      else return 0
     })
   }
 
