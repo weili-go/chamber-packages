@@ -12,6 +12,11 @@ import {
 import * as constants from './helpers/constants'
 
 import BigNumber = utils.BigNumber
+import {
+  EscrowLockTransaction,
+  EscrowUnlockTransaction,
+  EscrowTimeoutTransaction
+} from './verifiers/escrow'
 
 export class DecoderUtility {
   static decode(bytes: string) {
@@ -111,6 +116,12 @@ export class TransactionDecoder {
       return DepositTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else if(label === 21) {
       return SwapTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
+    }else if(label === 21) {
+      return EscrowLockTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
+    }else if(label === 22) {
+      return EscrowUnlockTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
+    }else if(label === 23) {
+      return EscrowTimeoutTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else{
       throw new Error('unknown label')
     }

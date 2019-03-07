@@ -1,20 +1,16 @@
 import { utils } from "ethers"
 import BigNumber = utils.BigNumber
 import {
-  BaseTransaction,
-  DecoderUtility,
   OwnState,
   TransactionOutput
-} from '../tx'
+} from '../../tx'
 import {
   Segment
-} from '../segment'
+} from '../../segment'
 import {
   Address,
-  RLPItem,
   Hash,
-} from '../helpers/types'
-
+} from '../../helpers/types'
 
 export class EscrowLockState extends TransactionOutput {
   segment: Segment
@@ -44,7 +40,7 @@ export class EscrowLockState extends TransactionOutput {
     return utils.keccak256(utils.toUtf8Bytes('escrow'))
   }
 
-  withBlkNum(blkNum: BigNumber) {
+  withBlkNum(blkNum: BigNumber):EscrowLockState {
     this.setBlkNum(blkNum)
     return this
   }

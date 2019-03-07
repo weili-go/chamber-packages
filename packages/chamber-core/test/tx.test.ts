@@ -6,7 +6,6 @@ import {
   MergeTransaction,
   SwapTransaction,
   SignedTransaction,
-  SignedTransactionWithProof
 } from '../src'
 import { assert } from "chai"
 import { utils } from "ethers"

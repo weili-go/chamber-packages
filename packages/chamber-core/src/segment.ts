@@ -40,7 +40,7 @@ export class Segment {
     return this.tokenId
   }
 
-  getAmount() {
+  getAmount():BigNumber {
     return this.end.sub(this.start)
   }
 
@@ -135,7 +135,7 @@ export class Segment {
     && this.end.gte(segment.end)
   }
 
-  sub(segment: Segment) {
+  sub(segment: Segment): Segment[] {
     const s1 = new Segment(
       this.tokenId,
       this.start,
