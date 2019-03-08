@@ -9,6 +9,7 @@ import {
   RLPItem,
   Hash,
 } from './helpers/types';
+
 import BigNumber = utils.BigNumber
 
 export class DecoderUtility {
@@ -159,7 +160,7 @@ export class OwnState implements TransactionOutput {
   }
 
   getLabel(): Hash {
-    return utils.keccak256(utils.toUtf8Bytes('own'))
+    return utils.hexZeroPad(constants.OwnStateAddress, 32),
   }
 
   withBlkNum(blkNum: BigNumber) {
@@ -266,7 +267,7 @@ export class DepositTransaction extends BaseTransaction {
     depositor: Address,
     segment: Segment
   ) {
-    super(4, [depositor, segment.getTokenId(), segment.toBigNumber()])
+    super(1, [depositor, segment.toBigNumber()])
     this.depositor = depositor
     this.segment = segment
   }
@@ -274,7 +275,7 @@ export class DepositTransaction extends BaseTransaction {
   static fromTuple(tuple: RLPItem[]): DepositTransaction {
     return new DepositTransaction(
       DecoderUtility.getAddress(tuple[0]),
-      Segment.fromBigNumber(utils.bigNumberify(tuple[2])))
+      Segment.fromBigNumber(utils.bigNumberify(tuple[1])))
   }
 
   static decode(bytes: string): DepositTransaction {
@@ -330,7 +331,7 @@ export class SplitTransaction extends BaseTransaction {
     blkNum: BigNumber,
     to: Address
   ) {
-    super(2, [from, segment.toBigNumber(), blkNum, to])
+    super(11, [from, segment.toBigNumber(), blkNum, to])
     this.from = from
     this.segment = segment
     this.blkNum = blkNum
@@ -421,7 +422,7 @@ export class MergeTransaction extends BaseTransaction {
     blkNum1: BigNumber,
     blkNum2: BigNumber
   ) {
-    super(3, 
+    super(12, 
       [from,
         new Segment(segment1.tokenId, segment1.start, segment2.end).toBigNumber(),
         segment1.end,
@@ -524,7 +525,7 @@ export class SwapTransaction extends BaseTransaction {
     segment2: Segment,
     blkNum2: BigNumber
   ) {
-    super(5,
+    super(21,
       [from1,
         segment1.toBigNumber(),
         blkNum1,

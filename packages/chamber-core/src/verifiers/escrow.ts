@@ -162,7 +162,7 @@ export class EscrowTransaction extends BaseTransaction {
     to: Address,
     timeout: BigNumber
   ) {
-    super(21, [from, segment.toBigNumber(), blkNum, ttp, to, timeout])
+    super(31, [from, segment.toBigNumber(), blkNum, ttp, to, timeout])
     this.from = from
     this.segment = segment
     this.blkNum = blkNum

@@ -9,9 +9,11 @@ const {
 const FastFinality = artifacts.require("FastFinality")
 const RootChain = artifacts.require("RootChain")
 const Checkpoint = artifacts.require("Checkpoint")
-const TransactionVerifier = artifacts.require("TransactionVerifier")
+const CustomVerifier = artifacts.require("CustomVerifier")
+const VerifierUtil = artifacts.require("VerifierUtil")
+const OwnStateVerifier = artifacts.require("OwnStateVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
-const MultisigVerifier = artifacts.require("MultisigVerifier")
+const SwapVerifier = artifacts.require("SwapVerifier")
 const ERC721 = artifacts.require("ERC721")
 const {
   utils
@@ -42,16 +44,27 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
   beforeEach(async () => {
     this.erc721 = await ERC721.new()
     this.checkpoint = await Checkpoint.new({ from: operator })
-    this.standardVerifier = await StandardVerifier.new({ from: operator })
-    this.multisigVerifier = await MultisigVerifier.new({ from: operator })
-    this.transactionVerifier = await TransactionVerifier.new(
-      this.standardVerifier.address,
-      this.multisigVerifier.address,
+    this.verifierUtil = await VerifierUtil.new({ from: operator })
+    this.ownStateVerifier = await OwnStateVerifier.new(
+      this.verifierUtil.address, { from: operator })
+    this.standardVerifier = await StandardVerifier.new(
+      this.verifierUtil.address,
+      this.ownStateVerifier.address,
+      { from: operator })
+    this.swapVerifier = await SwapVerifier.new(
+      this.verifierUtil.address,
+      this.ownStateVerifier.address,
+      { from: operator })
+    this.customVerifier = await CustomVerifier.new(
+      this.verifierUtil.address,
+      this.ownStateVerifier.address,
       {
         from: operator
       })
+    await this.customVerifier.addVerifier(this.standardVerifier.address, {from: operator})
+    await this.customVerifier.addVerifier(this.swapVerifier.address, {from: operator})
     this.rootChain = await RootChain.new(
-      this.transactionVerifier.address,
+      this.customVerifier.address,
       this.erc721.address,
       this.checkpoint.address,
       {
@@ -59,7 +72,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
       })
     this.fastFinality = await FastFinality.new(
       this.rootChain.address,
-      this.transactionVerifier.address,
+      this.customVerifier.address,
       this.erc721.address,
       {
         from: operator

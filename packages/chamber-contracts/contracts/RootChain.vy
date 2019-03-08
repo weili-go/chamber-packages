@@ -47,29 +47,32 @@ contract Checkpoint():
     _checkpointId: uint256
   ) -> (uint256, uint256): constant
 
-contract TransactionVerifier():
-  def verify(
+contract CustomVerifier():
+  def isExitGamable(
     _txHash: bytes32,
     _merkleHash: bytes32,
     _txBytes: bytes[496],
     _sigs: bytes[260],
-    _hasSig: uint256,
     _outputIndex: uint256,
     _owner: address,
-    _tokenId: uint256,
-    _start: uint256,
-    _end: uint256,
+    _segment: uint256,
+    _hasSig: uint256
+  ) -> bool: constant
+  def getOutput(
+    _txBytes: bytes[496],
     _txBlkNum: uint256,
-    _timestamp: uint256
+    _index: uint256
   ) -> bytes[256]: constant
-  def checkSpend(
-    _exitStateBytes: bytes[256],
+  def getSpentEvidence(
     _txBytes: bytes[496],
     _index: uint256,
-    _blkNum: uint256
-  ) -> bool: constant
-  def doesRequireConfsig(
-    _txBytes: bytes[496]
+    _sigs: bytes[260]
+  ) -> bytes[256]: constant
+  def isSpent(
+    _txHash: bytes32,
+    _stateBytes: bytes[256],
+    _evidence: bytes[256],
+    _timestamp: uint256
   ) -> bool: constant
   def getDepositHash(
     _txBytes: bytes[496]
@@ -128,6 +131,33 @@ FORCE_INCLUDE_BOND: constant(wei_value) = as_wei_value(1, "finney")
 
 @private
 @constant
+def parseSegment(
+  segment: uint256
+) -> (uint256, uint256, uint256):
+  tokenId: uint256 = bitwise_and(shift(segment, -16 * 8), MASK8BYTES)
+  start: uint256 = bitwise_and(shift(segment, -8 * 8), MASK8BYTES)
+  end: uint256 = bitwise_and(segment, MASK8BYTES)
+  return (tokenId, start, end)
+
+@private
+@constant
+def checkSegment(
+  segment1: uint256,
+  segment2: uint256
+) -> (uint256, uint256, uint256):
+  tokenId1: uint256
+  start1: uint256
+  end1: uint256
+  tokenId2: uint256
+  start2: uint256
+  end2: uint256
+  (tokenId1, start1, end1) = self.parseSegment(segment1)
+  (tokenId2, start2, end2) = self.parseSegment(segment2)
+  assert tokenId1 == tokenId2 and start1 < end2 and start2 < end1
+  return (tokenId1, start1, end1)
+
+@private
+@constant
 def getPlasmaBlockHash(
   _root: bytes32,
   _timestamp: uint256
@@ -175,9 +205,7 @@ def checkMembership(
 @public
 @constant
 def checkTransaction(
-  _tokenId: uint256,
-  _start: uint256,
-  _end: uint256,
+  _segment: uint256,
   _txHash: bytes32,
   _txBytes: bytes[496],
   _blkNum: uint256,
@@ -190,12 +218,16 @@ def checkTransaction(
   root: bytes32
   blockTimestamp: uint256
   if _blkNum % 2 == 0:
+    tokenId: uint256
+    start: uint256
+    end: uint256
+    (tokenId, start, end) = self.parseSegment(_segment)
     root = extract32(_proof, 0, type=bytes32)
     blockTimestamp = convert(slice(_proof, start=32, len=8), uint256)
     assert self.childChain[_blkNum] == self.getPlasmaBlockHash(root, blockTimestamp)
     assert self.checkMembership(
-      _start + _tokenId * TOTAL_DEPOSIT,
-      _end + _tokenId * TOTAL_DEPOSIT,
+      start + tokenId * TOTAL_DEPOSIT,
+      end + tokenId * TOTAL_DEPOSIT,
       _txHash,
       root,
       _proof
@@ -204,21 +236,22 @@ def checkTransaction(
     root = self.childChain[_blkNum]
     blockTimestamp = 0
     # deposit transaction
-    depositHash: bytes32 = TransactionVerifier(self.txverifier).getDepositHash(_txBytes)
+    depositHash: bytes32 = CustomVerifier(self.txverifier).getDepositHash(_txBytes)
     assert depositHash == root
-  return TransactionVerifier(self.txverifier).verify(
+  assert CustomVerifier(self.txverifier).isExitGamable(
     _txHash,
     sha3(concat(_txHash, self.childChain[_blkNum])),
     _txBytes,
     _sigs,
-    _hasSig,
     _outputIndex,
     _owner,
-    _tokenId,
-    _start,
-    _end,
+    _segment,
+    _hasSig)
+  return CustomVerifier(self.txverifier).getOutput(
+    _txBytes,
     _blkNum,
-    blockTimestamp)
+    _outputIndex
+  )
 
 @private
 @constant
@@ -311,33 +344,6 @@ def processDepositFragment(
                   )
   self.childChain[self.currentChildBlock] = root
   log.Deposited(depositer, tokenId, start, end, self.currentChildBlock)
-
-@private
-@constant
-def parseSegment(
-  segment: uint256
-) -> (uint256, uint256, uint256):
-  tokenId: uint256 = bitwise_and(shift(segment, -16 * 8), MASK8BYTES)
-  start: uint256 = bitwise_and(shift(segment, -8 * 8), MASK8BYTES)
-  end: uint256 = bitwise_and(segment, MASK8BYTES)
-  return (tokenId, start, end)
-
-@private
-@constant
-def checkSegment(
-  segment1: uint256,
-  segment2: uint256
-) -> (uint256, uint256, uint256):
-  tokenId1: uint256
-  start1: uint256
-  end1: uint256
-  tokenId2: uint256
-  start2: uint256
-  end2: uint256
-  (tokenId1, start1, end1) = self.parseSegment(segment1)
-  (tokenId2, start2, end2) = self.parseSegment(segment2)
-  assert tokenId1 == tokenId2 and start1 < end2 and start2 < end1
-  return (tokenId1, start1, end1)
 
 # @dev Constructor
 @public
@@ -446,14 +452,8 @@ def exit(
   if self.challenges[txHash].isAvailable and self.challenges[txHash].blkNum < blkNum:
     self.extendExits[exitId].priority = self.challenges[txHash].blkNum
     self.childs[self.challenges[txHash].exitId] = exitId
-  tokenId: uint256
-  start: uint256
-  end: uint256
-  (tokenId, start, end) = self.parseSegment(_segment)
   exitStateBytes: bytes[256] = self.checkTransaction(
-    tokenId,
-    start,
-    end,
+    _segment,
     txHash,
     _txBytes,
     blkNum,
@@ -495,12 +495,9 @@ def challenge(
 ):
   blkNum: uint256 = _utxoPos / 100
   txoIndex: uint256 = _utxoPos - blkNum * 100
-  tokenId: uint256
-  start: uint256
-  end: uint256
   exit: Exit = self.exits[_exitId]
   exitBlkNum: uint256 = exit.blkNum
-  (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
+  self.checkSegment(_segment, exit.segment)
   # assert exit.txHash == sha3(_exitTxBytes)
   txHash: bytes32 = sha3(_txBytes)
   assert exit.stateHash == sha3(_exitStateBytes)
@@ -515,9 +512,7 @@ def challenge(
   # check removed transaction sha3(_txBytes)
   assert not self.removed[txHash]
   self.checkTransaction(
-    tokenId,
-    start,
-    end,
+    _segment,
     txHash,
     _txBytes,
     blkNum,
@@ -533,17 +528,19 @@ def challenge(
       self.extendExits[lowerExit].challengeCount -= 1
       if as_unitless_number(block.timestamp) > self.exits[lowerExit].exitableAt - EXTEND_PERIOD_SECONDS:
         self.extendExits[lowerExit].extendedExitableAt = as_unitless_number(block.timestamp) + EXTEND_PERIOD_SECONDS
-    if not TransactionVerifier(self.txverifier).doesRequireConfsig(_txBytes):
-      self.challenges[txHash] = Challenge({
-        blkNum: exitBlkNum,
-        isAvailable: True,
-        exitId: _exitId
-      })
-  assert TransactionVerifier(self.txverifier).checkSpend(
+    #if not CustomVerifier(self.txverifier).doesRequireConfsig(_txBytes):
+    #  self.challenges[txHash] = Challenge({
+    #    blkNum: exitBlkNum,
+    #    isAvailable: True,
+    #    exitId: _exitId
+    #  })
+  blockTimestamp: uint256 = convert(slice(_proof, start=32, len=8), uint256)
+  assert CustomVerifier(self.txverifier).isSpent(
+    txHash,
     _exitStateBytes,
-    _txBytes,
-    txoIndex,
-    exitBlkNum)
+    CustomVerifier(self.txverifier).getSpentEvidence(
+      _txBytes, txoIndex, _sig),
+    blockTimestamp)
   # break exit procedure
   if self.extendExits[_exitId].forceInclude > 0:
     self.removed[exit.txHash] = False
@@ -589,14 +586,8 @@ def includeSignature(
   outputIndex: uint256 = _utxoPos - blkNum * 100
   txHash: bytes32 = sha3(_txBytes)
   exit: Exit = self.exits[_exitId]
-  tokenId: uint256
-  start: uint256
-  end: uint256
-  (tokenId, start, end) = self.parseSegment(_segment)
   self.checkTransaction(
-    tokenId,
-    start,
-    end,
+    _segment,
     txHash,
     _txBytes,
     blkNum,
@@ -663,10 +654,7 @@ def challengeTooOldExit(
   blkNum: uint256 = _utxoPos / 100
   outputIndex: uint256 = _utxoPos - blkNum * 100
   exit: Exit = self.exits[_exitId]
-  tokenId: uint256
-  start: uint256
-  end: uint256
-  (tokenId, start, end) = self.checkSegment(_segment, exit.segment)
+  self.checkSegment(_segment, exit.segment)
   checkpointBlkNum: uint256
   checkpointSegment: uint256
   (checkpointBlkNum, checkpointSegment) = Checkpoint(self.checkpointAddress).getCheckpoint(_checkpointId)
@@ -678,9 +666,7 @@ def challengeTooOldExit(
     priority = self.extendExits[_exitId].priority
   assert blkNum > priority
   self.checkTransaction(
-    tokenId,
-    start,
-    end,
+    _segment,
     txHash,
     _txBytes,
     blkNum,
