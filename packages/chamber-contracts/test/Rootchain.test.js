@@ -25,7 +25,8 @@ const {
   constants,
   Segment,
   SignedTransaction,
-  SwapTransaction
+  SwapTransaction,
+  OwnState
 } = require('@layer2/core')
 
 const {
@@ -66,8 +67,6 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       {
         from: operator
       })
-    await this.customVerifier.addVerifier(this.standardVerifier.address, {from: operator})
-    await this.customVerifier.addVerifier(this.swapVerifier.address, {from: operator})
     this.rootChain = await RootChain.new(
       this.customVerifier.address,
       this.erc721.address,
@@ -75,7 +74,14 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       {
         from: operator
       })
+    await this.customVerifier.addVerifier(this.standardVerifier.address, {from: operator})
+    await this.customVerifier.addVerifier(this.swapVerifier.address, {from: operator})
     await this.rootChain.setup()
+    const exitNFTAddress = await this.rootChain.getTokenAddress.call()
+    const exitNFT = await ERC721.at(exitNFTAddress)
+    const minter = await exitNFT.getMinter.call()
+    assert.equal(minter, this.rootChain.address)
+    OwnState.setAddress(this.ownStateVerifier.address)
   });
 
   describe("submit", () => {
@@ -98,7 +104,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
 
   describe("exit", () => {
 
-    const exitableEnd = Scenario1.segments[5].end
+    const exitableEnd = ethers.utils.bigNumberify('3000000')
 
     beforeEach(async () => {
       const result = await this.rootChain.deposit(
@@ -146,8 +152,9 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
           from: bob,
           value: BOND
         });
-      // gas cost of exit is 282823
+        // gas cost of exit is 282823
       console.log('exit gasCost: ', gasCost)
+
       const result = await this.rootChain.exit(
         6 * 100,
         Scenario1.segments[0].toBigNumber(),

@@ -147,8 +147,8 @@ def requestCheckpoint(
     owner: msg.sender,
     blkNum: blkNum,
     segment: segment,
-    finalizeAt: as_unitless_number(block.timestamp) + 3 * EXIT_PERIOD_SECONDS,
     isAvailable: False,
+    finalizeAt: as_unitless_number(block.timestamp) + 3 * EXIT_PERIOD_SECONDS,
     challengeCount: 0
   })
   self.checkpointNonce += 1

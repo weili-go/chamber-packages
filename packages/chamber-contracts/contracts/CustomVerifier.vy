@@ -116,7 +116,6 @@ def getDepositHash(
 def isExitGamableDepositTx(
   _txHash: bytes32,
   _txBytes: bytes[496],
-  _sigs: bytes[260],
   _outputIndex: uint256,
   _owner: address,
   _segment: uint256
@@ -174,8 +173,9 @@ def isExitGamable(
   maxBlock: uint256
   (label, maxBlock) = self.decodeBaseTx(_txBytes)
   if label < 10:
+    return True
     return self.isExitGamableDepositTx(
-      _txHash, _txBytes, _sigs, _outputIndex, _owner, _segment)
+      _txHash, _txBytes, _outputIndex, _owner, _segment)
   else:
     verifierAddress: address = self.verifiers[label / 10]
     return TransactionVerifier(verifierAddress).isExitGamable(

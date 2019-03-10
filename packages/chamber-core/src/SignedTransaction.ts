@@ -161,8 +161,8 @@ export class SignedTransactionWithProof {
     return this.getSignedTx().hash()
   }
 
-  getStateBytes(label: string) {
-    return this.getOutput().getBytes(label)
+  getStateBytes() {
+    return this.getOutput().getBytes()
   }
   
   getSuperRoot() {

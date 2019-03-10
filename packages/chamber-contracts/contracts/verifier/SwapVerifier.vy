@@ -23,7 +23,7 @@ contract OwnStateVerifier():
     segment: uint256,
     blkNum: uint256,
     sigs: bytes[65]
-  ) -> (bytes[129]): constant
+  ) -> (bytes[256]): constant
   def encodeState(
     owner: address,
     segment: uint256,

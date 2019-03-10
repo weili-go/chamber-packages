@@ -139,14 +139,11 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
       await this.fastFinality.dispute(
         prevOutput.getBytes(),
-        prevBlkNum,
         tx.getTxBytes(),
         tx.getSignatures(),
         operatorSig,
         1,
-        tokenId,
-        Scenario3.segments[0].start,
-        Scenario3.segments[0].end,
+        Scenario3.segments[0].toBigNumber(),
         {
           value: BOND,
           from: bob
@@ -171,14 +168,11 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
       await this.fastFinality.dispute(
         prevOutput.getBytes(),
-        prevBlkNum,
         tx.getTxBytes(),
         tx.getSignatures(),
         operatorSig,
         1,
-        tokenId,
-        Scenario3.segments[2].start,
-        Scenario3.segments[2].end,
+        Scenario3.segments[2].toBigNumber(),
         {
           value: BOND,
           from: bob
@@ -222,14 +216,11 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
       await this.fastFinality.dispute(
         prevOutput.getBytes(),
-        prevBlkNum,
         tx.getTxBytes(),
         tx.getSignatures(),
         operatorSig,
         1,
-        tokenId,
-        Scenario3.segments[2].start,
-        Scenario3.segments[2].end,
+        Scenario3.segments[2].toBigNumber(),
         {
           value: BOND,
           from: bob
@@ -244,9 +235,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         tx.getProofAsHex(),
         tx.getSignatures(),
         2 * 100 + 1,
-        tokenId,
-        Scenario3.segments[0].start,
-        Scenario3.segments[0].end,
+        Scenario3.segments[0].toBigNumber(),
         {
           from: operator,
           gas: '500000'
@@ -262,9 +251,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         invalidTx.getProofAsHex(),
         invalidTx.getSignatures(),
         2 * 100 + 1,
-        tokenId,
-        Scenario3.segments[1].start,
-        Scenario3.segments[1].end,
+        Scenario3.segments[1].toBigNumber(),
         {
           from: operator,
           gas: '500000'
@@ -280,24 +267,19 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         tx.getTxBytes(),
         tx.getProofAsHex(),
         tx.getSignatures(),
-        2 * 100 + 1,
-        tokenId,
-        Scenario3.segments[0].start,
-        Scenario3.segments[0].end,
+        2 * 100 + 0,
+        Scenario3.segments[0].toBigNumber(),
         {
           from: operator
         })
       await this.fastFinality.secondDispute(
         prevOutput.getBytes(),
-        prevBlkNum,
         tx.getTxBytes(),
         secondDisputeTx.getTxBytes(),
         secondDisputeTx.getProofAsHex(),
         secondDisputeTx.getSignatures(),
-        4 * 100 + 1,
-        tokenId,
-        Scenario3.segments[0].start,
-        Scenario3.segments[0].end,
+        4 * 100 + 0,
+        Scenario3.segments[0].toBigNumber(),
         {
           from: operator
         });

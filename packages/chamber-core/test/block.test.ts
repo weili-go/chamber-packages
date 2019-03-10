@@ -123,7 +123,7 @@ describe('Block', () => {
       block.appendTx(tx2)
       block.setSuperRoot(block.checkSuperRoot())
       const sinedTx = block.getSignedTransactionWithProof(rawTx1.hash())[0]
-      assert.equal(sinedTx.merkleHash(), '0xbd279ac10975b268a767f3a8f0fc7c8bb84daecbab1cf93b0e78f03b64420617')
+      assert.equal(sinedTx.merkleHash(), '0xfccbc77ba89c3574b1b41947124946454607b055b8cb2119ae7be5f7b3e4103c')
     });
 
     it('serialize and deserialize', () => {

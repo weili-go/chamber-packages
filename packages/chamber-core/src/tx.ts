@@ -9,6 +9,7 @@ import {
   RLPItem,
   Hash,
 } from './helpers/types';
+import * as constants from './helpers/constants'
 
 import BigNumber = utils.BigNumber
 
@@ -102,13 +103,13 @@ export class TransactionDecoder {
     const label = utils.bigNumberify(utils.hexDataSlice(bytes, 0, 8)).toNumber()
     const maxBlkNum = utils.bigNumberify(utils.hexDataSlice(bytes, 8, 16)).toNumber()
     const body = DecoderUtility.decode(utils.hexDataSlice(bytes, 16, 496))
-    if(label === 2) {
+    if(label === 11) {
       return SplitTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
-    }else if(label === 3) {
+    }else if(label === 12) {
       return MergeTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
-    }else if(label === 4) {
+    }else if(label === 1) {
       return DepositTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
-    }else if(label === 5) {
+    }else if(label === 21) {
       return SwapTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else{
       throw new Error('unknown label')
@@ -145,6 +146,7 @@ export interface TransactionOutput {
   toObject(): any
 }
 
+let OwnStateAddress = constants.OwnStateAddress
 export class OwnState implements TransactionOutput {
   segment: Segment
   owner: Address
@@ -159,8 +161,12 @@ export class OwnState implements TransactionOutput {
     this.blkNum = null
   }
 
+  static setAddress(_OwnStateAddress: Address) {
+    OwnStateAddress = _OwnStateAddress
+  }
+
   getLabel(): Hash {
-    return utils.hexZeroPad(constants.OwnStateAddress, 32),
+    return utils.hexZeroPad(OwnStateAddress, 32)
   }
 
   withBlkNum(blkNum: BigNumber) {
@@ -207,11 +213,9 @@ export class OwnState implements TransactionOutput {
   getBytes() {
     if(this.blkNum) {
       return this.joinHex([
-        this.getLabel(),
+        utils.hexZeroPad(utils.hexlify(this.getLabel()), 32),
         utils.hexZeroPad(utils.hexlify(this.owner), 32),
-        utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
-        utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
-        utils.hexZeroPad(utils.hexlify(this.segment.end), 32),
+        utils.hexZeroPad(utils.hexlify(this.segment.toBigNumber()), 32),
         utils.hexZeroPad(utils.hexlify(this.blkNum), 32)
       ])
     } else {

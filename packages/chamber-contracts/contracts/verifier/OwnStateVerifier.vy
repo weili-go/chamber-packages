@@ -25,7 +25,7 @@ def encodeSpentEvidence(
   segment: uint256,
   blkNum: uint256,
   sigs: bytes[65]
-) -> (bytes[129]):
+) -> (bytes[256]):
   return concat(
     convert(segment, bytes32),
     convert(blkNum, bytes32),
@@ -35,7 +35,7 @@ def encodeSpentEvidence(
 @public
 @constant
 def decodeSpentEvidence(
-  witnessBytes: bytes[129]
+  witnessBytes: bytes[256]
 ) -> (uint256, uint256, bytes[65]):
   return (
     extract32(witnessBytes, 32*0, type=uint256),
@@ -66,7 +66,8 @@ def decodeState(
 def isSpent(
   _txHash: bytes32,
   _stateBytes: bytes[256],
-  _evidence: bytes[129]
+  _evidence: bytes[256],
+  _timestamp: uint256
 ) -> (bool):
   exitOwner: address
   exitSegment: uint256

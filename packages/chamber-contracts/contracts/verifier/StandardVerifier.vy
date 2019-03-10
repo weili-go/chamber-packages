@@ -26,7 +26,7 @@ contract OwnStateVerifier():
     segment: uint256,
     blkNum: uint256,
     sigs: bytes[65]
-  ) -> (bytes[129]): constant
+  ) -> (bytes[256]): constant
   def encodeState(
     owner: address,
     segment: uint256,
@@ -106,7 +106,7 @@ def isExitGamableMerge(
   assert VerifierUtil(self.verifierUtil).ecrecoverSig(_txHash, _sigs, 0) == _from
   return True
 
-@private
+@public
 @constant
 def getOutputOfTransfer(
   _txBytes: bytes[496],

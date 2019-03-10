@@ -38,7 +38,7 @@ contract ERC20:
 
 contract ERC721:
   def setup(): modifying
-  def mint(_to: address, _tokenId: uint256) -> bool: modifying
+  def mint(_to: address, _tokenId: uint256): modifying
   def ownerOf(_tokenId: uint256) -> address: constant
   def burn(_tokenId: uint256): modifying
 
@@ -461,7 +461,7 @@ def exit(
     _sig,
     _hasSig,
     outputIndex,
-    ZERO_ADDRESS
+    msg.sender
   )
   exitStateHash: bytes32 = sha3(exitStateBytes)
   self.exitNonce += 1
@@ -477,7 +477,7 @@ def exit(
   if _hasSig > 0:
     self.extendExits[exitId].forceInclude = _hasSig
     self.removed[txHash] = True
-  assert ERC721(self.exitToken).mint(msg.sender, exitId)
+  ERC721(self.exitToken).mint(msg.sender, exitId)
   log.ExitStarted(msg.sender, exitId, exitStateHash, exitableAt, _segment, blkNum, _hasSig > 0)
 
 # @dev challenge

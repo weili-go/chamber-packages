@@ -54,4 +54,5 @@ def isContainSegment(
   end2: uint256
   (tokenId1, start1, end1) = self.parseSegment(segment)
   (tokenId2, start2, end2) = self.parseSegment(small)
-  return tokenId1 == tokenId2 and start1 <= start2 and end2 <= end1
+  assert tokenId1 == tokenId2 and start1 <= start2 and end2 <= end1
+  return True

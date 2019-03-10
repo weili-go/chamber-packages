@@ -12,7 +12,8 @@ const {
 } = require('./helpers/assertRevert')
 const {
   transactions,
-  testAddresses
+  testAddresses,
+  testKeys
 } = require('./testdata')
 const {
   OwnState,
@@ -58,6 +59,8 @@ contract("CustomVerifier", ([alice, bob, operator, user4, user5, admin]) => {
     await this.customVerifier.addVerifier(this.standardVerifier.address, {from: operator})
     // label: 20-29
     await this.customVerifier.addVerifier(this.swapVerifier.address, {from: operator})
+    OwnState.setAddress(this.ownStateVerifier.address)
+
   });
 
   describe("TransferTransaction", () => {
@@ -167,7 +170,9 @@ contract("CustomVerifier", ([alice, bob, operator, user4, user5, admin]) => {
       blkNum5,
       utils.bigNumberify('40000'),
       utils.bigNumberify('60000')))
-    
+      swapTx.sign(testKeys.AlicePrivateKey)
+      swapTx.sign(testKeys.OperatorPrivateKey)
+
     it("should isSpent", async () => {
       const exitState1 = new OwnState(
         Segment.ETH(
@@ -225,6 +230,7 @@ contract("CustomVerifier", ([alice, bob, operator, user4, user5, admin]) => {
       testAddresses.OperatorAddress,
       testAddresses.BobAddress,
       utils.bigNumberify('12000000')))
+    escrowTx.sign(testKeys.AlicePrivateKey)
 
     it("should be addVerifier", async () => {
       await this.customVerifier.addVerifier(
