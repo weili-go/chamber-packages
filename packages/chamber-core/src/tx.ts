@@ -128,26 +128,31 @@ export class TransactionOutputDeserializer {
   }
 }
 
-export interface TransactionOutput {
-  getLabel(): Hash
-  withBlkNum(blkNum: BigNumber): TransactionOutput
-  getOwners(): Address[]
-  getBlkNum(): BigNumber
-  getSegment(index: number): Segment
-  hash(): Hash
-  getBytes(): string
-  serialize(): any
+export abstract class TransactionOutput {
+  abstract getLabel(): Hash
+  abstract withBlkNum(blkNum: BigNumber): TransactionOutput
+  abstract getOwners(): Address[]
+  abstract getBlkNum(): BigNumber
+  abstract getSegment(index: number): Segment
+  abstract hash(): Hash
+  abstract getBytes(): string
+  abstract serialize(): any
   /**
    * @description checkSpend function verify that the transaction spend UTXO correctly.
    * @param txo 
    */
-  isSpent(txo: TransactionOutput): boolean
-  getRemainingState(txo: TransactionOutput): TransactionOutput[]
-  toObject(): any
+  abstract isSpent(txo: TransactionOutput): boolean
+  getRemainingState(txo: TransactionOutput): TransactionOutput[] {
+    const newSegments = this.getSegment(0).sub(txo.getSegment(0))
+    return newSegments.map(s => {
+      return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())
+    })
+  }
+  abstract toObject(): any
 }
 
 let OwnStateAddress = constants.OwnStateAddress
-export class OwnState implements TransactionOutput {
+export class OwnState extends TransactionOutput {
   segment: Segment
   owner: Address
   blkNum: BigNumber | null
@@ -156,6 +161,7 @@ export class OwnState implements TransactionOutput {
     segment: Segment,
     owner: Address
   ) {
+    super()
     this.segment = segment
     this.owner = owner
     this.blkNum = null
@@ -240,14 +246,7 @@ export class OwnState implements TransactionOutput {
       return false
     }
   }
-
-  getRemainingState(txo: TransactionOutput): TransactionOutput[] {
-    const newSegments = this.getSegment(0).sub(txo.getSegment(0))
-    return newSegments.map(s => {
-      return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())
-    })
-  }
-
+  
   private joinHex(a: string[]) {
     return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
   }
