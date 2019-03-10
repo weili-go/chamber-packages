@@ -141,8 +141,8 @@ export interface TransactionOutput {
    * @description checkSpend function verify that the transaction spend UTXO correctly.
    * @param txo 
    */
-  checkSpend(txo: TransactionOutput): boolean
-  subSpend(txo: TransactionOutput): TransactionOutput[]
+  isSpent(txo: TransactionOutput): boolean
+  getRemainingState(txo: TransactionOutput): TransactionOutput[]
   toObject(): any
 }
 
@@ -230,7 +230,7 @@ export class OwnState implements TransactionOutput {
   /**
    * @description verify txo spend this instance correctly
    */
-  checkSpend(txo: TransactionOutput): boolean {
+  isSpent(txo: TransactionOutput): boolean {
     if(txo.getLabel() == this.getLabel()
       && txo.getBlkNum().eq(this.getBlkNum())
       && txo.getOwners()[0] == this.getOwners()[0]
@@ -241,7 +241,7 @@ export class OwnState implements TransactionOutput {
     }
   }
 
-  subSpend(txo: TransactionOutput): TransactionOutput[] {
+  getRemainingState(txo: TransactionOutput): TransactionOutput[] {
     const newSegments = this.getSegment(0).sub(txo.getSegment(0))
     return newSegments.map(s => {
       return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())

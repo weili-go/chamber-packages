@@ -16,15 +16,15 @@ export class SegmentChecker {
 
   private _isContain(txo: TransactionOutput) {
     return this.leaves.filter(l => {
-      return l.checkSpend(txo)
+      return l.isSpent(txo)
     }).length > 0
   }
 
   private _spend(txo: TransactionOutput) {
-    const target = this.leaves.filter(l => l.checkSpend(txo))[0]
-    this.leaves = this.leaves.filter(l => !(l.checkSpend(txo)))
+    const target = this.leaves.filter(l => l.isSpent(txo))[0]
+    this.leaves = this.leaves.filter(l => !(l.isSpent(txo)))
     if(target) {
-      target.subSpend(txo).forEach(newTxo => {
+      target.getRemainingState(txo).forEach(newTxo => {
         this.leaves.push(newTxo)
       })
       return true

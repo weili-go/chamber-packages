@@ -114,7 +114,7 @@ export class EscrowLockState implements TransactionOutput {
     return utils.keccak256(this.getBytes())
   }
 
-  checkSpend(txo: TransactionOutput): boolean {
+  isSpent(txo: TransactionOutput): boolean {
     if(txo instanceof OwnState
       && txo.getBlkNum().eq(this.getBlkNum())
       && txo.getOwners()[0] == this.getOwners()[0]
@@ -125,7 +125,7 @@ export class EscrowLockState implements TransactionOutput {
     }
   }
 
-  subSpend(txo: TransactionOutput): TransactionOutput[] {
+  getRemainingState(txo: TransactionOutput): TransactionOutput[] {
     const newSegments = this.getSegment(0).sub(txo.getSegment(0))
     return newSegments.map(s => {
       return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())
