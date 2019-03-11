@@ -574,6 +574,7 @@ def challenge(
   log.Challenged(_exitId)
 
 # @dev requestHigherPriorityExit
+#     This is an alternative to invalid history challenge.
 @public
 def requestHigherPriorityExit(
   _higherPriorityExitId: uint256,
