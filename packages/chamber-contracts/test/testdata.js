@@ -45,7 +45,7 @@ const segment5 = Segment.ETH(
   utils.bigNumberify('3200000'))
     
 function createTransfer(privKey, from, seg, blkNum, to) {
-  const tx= new SignedTransaction(SplitTransaction.Transfer(from, seg, blkNum, to))
+  const tx= new SignedTransaction([SplitTransaction.Transfer(from, seg, blkNum, to)])
   tx.sign(privKey)
   return tx
 }
@@ -152,8 +152,8 @@ function scenario2() {
   const block5 = new Block(10)
   block5.setBlockNumber(10)
 
-  const tx31 = new SignedTransaction(SwapTransaction.SimpleSwap(
-    AliceAddress, segment4, blkNum1, OperatorAddress, segment5, blkNum2))
+  const tx31 = new SignedTransaction([SwapTransaction.SimpleSwap(
+    AliceAddress, segment4, blkNum1, OperatorAddress, segment5, blkNum2)])
   tx31.sign(AlicePrivateKey)
   tx31.sign(OperatorPrivateKey)
   const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
@@ -201,10 +201,10 @@ function scenario3() {
   const block5 = new Block(10)
   block5.setBlockNumber(10)
 
-  const tx31 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, BobAddress))
+  const tx31 = new SignedTransaction([new SplitTransaction(AliceAddress, segment1, blkNum2, BobAddress)])
   tx31.sign(AlicePrivateKey)
   const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
-  const tx41 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, OperatorAddress))
+  const tx41 = new SignedTransaction([new SplitTransaction(AliceAddress, segment1, blkNum2, OperatorAddress)])
   tx41.sign(AlicePrivateKey)
   const tx42 = createTransfer(OperatorPrivateKey, OperatorAddress, segment5, blkNum3, OperatorAddress)
   
@@ -257,7 +257,7 @@ function transactions() {
 
   const tx = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
   const invalidTx = createTransfer(OperatorPrivateKey, AliceAddress, segment2, blkNum2, BobAddress)
-  const mergeTx = new SignedTransaction(new MergeTransaction(AliceAddress, segment4, segment5, BobAddress, blkNum1, blkNum2))
+  const mergeTx = new SignedTransaction([new MergeTransaction(AliceAddress, segment4, segment5, BobAddress, blkNum1, blkNum2)])
   mergeTx.sign(AlicePrivateKey)
 
   block.appendTx(tx)

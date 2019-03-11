@@ -81,7 +81,7 @@ export abstract class BaseTransaction {
    * @description verify function verify transaction's segment, owner and signatures.
    * @param signatures 
    */
-  abstract verify(signatures: string[]): boolean
+  abstract verify(signatures: string[], hash: string): boolean
 
   abstract normalizeSigs(signatures: string[], hash?: string): string[]
 
@@ -308,7 +308,7 @@ export class DepositTransaction extends BaseTransaction {
     return [this.segment]
   }
 
-  verify(signatures: string[]): boolean {
+  verify(signatures: string[], hash: string): boolean {
     return true
   }
 
@@ -394,9 +394,9 @@ export class SplitTransaction extends BaseTransaction {
    *     see also https://github.com/cryptoeconomicslab/chamber-packages/blob/master/packages/chamber-contracts/contracts/verifier/StandardVerifier.vy#L92
    * @param signatures 
    */
-  verify(signatures: string[]): boolean {
+  verify(signatures: string[], hash: string): boolean {
     return utils.recoverAddress(
-      this.hash(), signatures[0]) == this.from
+      hash, signatures[0]) == this.from
   }
 
   normalizeSigs(signatures: string[], hash?: string): string[] {
@@ -497,9 +497,9 @@ export class MergeTransaction extends BaseTransaction {
    *     see also https://github.com/cryptoeconomicslab/chamber-packages/blob/master/packages/chamber-contracts/contracts/verifier/StandardVerifier.vy#L154
    * @param signatures 
    */
-  verify(signatures: string[]): boolean {
+  verify(signatures: string[], hash: string): boolean {
     return utils.recoverAddress(
-      this.hash(), signatures[0]) == this.from
+      hash, signatures[0]) == this.from
   }
 
   normalizeSigs(signatures: string[], hash?: string): string[] {
@@ -635,11 +635,11 @@ export class SwapTransaction extends BaseTransaction {
    *     see also https://github.com/cryptoeconomicslab/chamber-packages/blob/master/packages/chamber-contracts/contracts/verifier/MultisigVerifier.vy#L86
    * @param signatures 
    */
-  verify(signatures: string[]): boolean {
+  verify(signatures: string[], hash: string): boolean {
     return utils.recoverAddress(
-      this.hash(), signatures[0]) == this.from1
+      hash, signatures[0]) == this.from1
       && utils.recoverAddress(
-        this.hash(), signatures[1]) == this.from2
+        hash, signatures[1]) == this.from2
   }
 
   normalizeSigs(signatures: string[], hash?: string): string[] {

@@ -79,7 +79,7 @@ describe('Chain', () => {
       ethers.utils.bigNumberify(5),
       BobAddress
     )
-    const signedTx = new SignedTransaction(tx)
+    const signedTx = new SignedTransaction([tx])
     signedTx.sign(AlicePrivateKey)
     chain.appendTx(signedTx)
     const root = await chain.generateBlock()
@@ -94,7 +94,7 @@ describe('Chain', () => {
       ethers.utils.bigNumberify(5),
       BobAddress
     )
-    const signedTx = new SignedTransaction(tx)
+    const signedTx = new SignedTransaction([tx])
     signedTx.sign(AlicePrivateKey)
     chain.appendTx(signedTx)
     const result = await chain.generateBlock()
@@ -114,7 +114,7 @@ describe('Chain', () => {
       ethers.utils.bigNumberify(5),
       BobAddress
     )
-    const signedTx = new SignedTransaction(tx)
+    const signedTx = new SignedTransaction([tx])
     signedTx.sign(AlicePrivateKey)
     chain.appendTx(signedTx)
     const result = chain.appendTx(signedTx)

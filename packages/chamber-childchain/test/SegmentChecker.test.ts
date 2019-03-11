@@ -43,11 +43,11 @@ describe('SegmentChecker', () => {
   )
 
 
-  const signedTx1 = new SignedTransaction(tx1)
-  const signedTx2 = new SignedTransaction(tx2)
-  const signedTx3 = new SignedTransaction(tx3)
-  const signedTx4 = new SignedTransaction(tx4)
-  const signedTx5 = new SignedTransaction(tx5)
+  const signedTx1 = new SignedTransaction([tx1])
+  const signedTx2 = new SignedTransaction([tx2])
+  const signedTx3 = new SignedTransaction([tx3])
+  const signedTx4 = new SignedTransaction([tx4])
+  const signedTx5 = new SignedTransaction([tx5])
 
   it('should succeed to insert', async () => {
     const segmentChecker = new SegmentChecker()

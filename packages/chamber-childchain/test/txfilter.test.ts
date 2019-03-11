@@ -32,8 +32,8 @@ describe('TxFilter', () => {
 
   it('should success to checkAndInsertTx', async () => {
     const txFilter = new TxFilter()
-    const signedTx1 = new SignedTransaction(tx1)
-    const signedTx2 = new SignedTransaction(tx2)
+    const signedTx1 = new SignedTransaction([tx1])
+    const signedTx2 = new SignedTransaction([tx2])
     signedTx1.sign(AlicePrivateKey)
     signedTx2.sign(AlicePrivateKey)
     assert.isTrue(txFilter.checkAndInsertTx(signedTx1))
@@ -42,8 +42,8 @@ describe('TxFilter', () => {
 
   it('should failed to checkAndInsertTx', async () => {
     const txFilter = new TxFilter()
-    const signedTx1 = new SignedTransaction(tx1)
-    const signedTx3 = new SignedTransaction(tx3)
+    const signedTx1 = new SignedTransaction([tx1])
+    const signedTx3 = new SignedTransaction([tx3])
     signedTx1.sign(AlicePrivateKey)
     signedTx3.sign(AlicePrivateKey)
     assert.isTrue(txFilter.checkAndInsertTx(signedTx1))

@@ -18,7 +18,7 @@ export class TxFilter {
     if(this.txHashes.get(tx.hash()) !== undefined) {
       throw new Error('conflicted transaction hash')
     }
-    if(tx.getRawTx().getInputs().filter(input => {
+    if(tx.getAllInputs().filter(input => {
       const target = input.getSegment(0)
       return this.segments.filter(segment => {
         return target.start.lt(segment.end) && target.end.gt(segment.start)

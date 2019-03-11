@@ -31,14 +31,14 @@ export class Snapshot {
    * @param {SignedTransaction} signedTx SignedTransaction
    */
   checkInput(signedTx: SignedTransaction): Promise<boolean> {
-    return Promise.all(signedTx.tx.getInputs().map((i) => {
+    return Promise.all(signedTx.getAllInputs().map((i) => {
       const id = i.hash();
       return this.db.contains(id);
     })).then((isContains) => {
       if(isContains.indexOf(false) >= 0) {
         throw new Error('input not found');
       }else{
-        return Promise.all(signedTx.tx.getInputs().map((i) => {
+        return Promise.all(signedTx.getAllInputs().map((i) => {
           return this.db.deleteId(i.hash());
         }));
       }
@@ -50,7 +50,7 @@ export class Snapshot {
   }
 
   applyTx(signedTx: SignedTransaction, blkNum: BigNumber): Promise<boolean> {
-    return Promise.all(signedTx.tx.getOutputs().map((o) => {
+    return Promise.all(signedTx.getAllOutputs().map((o) => {
       return this.db.insertId(o.withBlkNum(blkNum).hash())
     })).then(() => {
       return Promise.resolve(true);

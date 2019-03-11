@@ -476,13 +476,13 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       ethers.utils.bigNumberify('1000000'),
       ethers.utils.bigNumberify('2000000'))
     const block3 = new Block()
-    const swapTx = new SignedTransaction(SwapTransaction.SimpleSwap(
+    const swapTx = new SignedTransaction([SwapTransaction.SimpleSwap(
       testAddresses.AliceAddress,
       segment1,
       blkNum1,
       testAddresses.OperatorAddress,
       segment2,
-      blkNum2))
+      blkNum2)])
     swapTx.sign(testKeys.AlicePrivateKey)
     swapTx.sign(testKeys.OperatorPrivateKey)
     block3.setBlockNumber(6)

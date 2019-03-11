@@ -33,8 +33,8 @@ describe('Block', () => {
 
   const rawTx1 = SplitTransaction.Transfer(AliceAddress, segment1, blkNum, BobAddress)
   const rawTx2 = SplitTransaction.Transfer(AliceAddress, segment3, blkNum, BobAddress)
-  const tx1 = new SignedTransaction(rawTx1)
-  const tx2 = new SignedTransaction(rawTx2)
+  const tx1 = new SignedTransaction([rawTx1])
+  const tx2 = new SignedTransaction([rawTx2])
   tx1.sign(AlicePrivateKey)
   tx2.sign(AlicePrivateKey)
 

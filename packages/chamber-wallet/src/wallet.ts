@@ -241,7 +241,7 @@ export class ChamberWallet {
       this.storage.getStorage().addProof(key, block.getBlockNumber(), JSON.stringify(exclusionProof.serialize()))
     })
     const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(tx => {
-      tx.signedTx.tx.getInputs().forEach(input => {
+      tx.signedTx.getAllInputs().forEach(input => {
         this._spend(input)
       })
       if(tx.getOutput().getOwners().indexOf(this.wallet.address) >= 0) {
@@ -273,7 +273,8 @@ export class ChamberWallet {
     )
     if(depositorAddress === this.getAddress()) {
       this.storage.addUTXO(new SignedTransactionWithProof(
-        new SignedTransaction(depositTx),
+        new SignedTransaction([depositTx]),
+        0,
         0,
         '0x',
         '0x',
@@ -531,7 +532,7 @@ export class ChamberWallet {
     if(tx == null) {
       return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
     }
-    const signedTx = new SignedTransaction(tx)
+    const signedTx = new SignedTransaction([tx])
     signedTx.sign(this.wallet.privateKey)
     return await this.client.sendTransaction(signedTx)
   }
@@ -541,7 +542,7 @@ export class ChamberWallet {
     if(tx == null) {
       return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
     }
-    const signedTx = new SignedTransaction(tx)
+    const signedTx = new SignedTransaction([tx])
     signedTx.sign(this.wallet.privateKey)
     return await this.client.sendTransaction(signedTx)
   }
@@ -588,7 +589,7 @@ export class ChamberWallet {
     const swapTxResult = await this.client.getSwapRequestResponse(this.getAddress())
     if(swapTxResult.isOk()) {
       const swapTx = swapTxResult.ok()
-      if(this.checkSwapTx(swapTx.getRawTx() as SwapTransaction)) {
+      if(this.checkSwapTx(swapTx.getRawTx(0) as SwapTransaction)) {
         swapTx.sign(this.wallet.privateKey)
         const result = await this.client.sendTransaction(swapTx)
         if(result.isOk()) {

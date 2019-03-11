@@ -476,6 +476,7 @@ def exit(
     _segment,
     txHash,
     _txBytes,
+    # slice(_txBytes, start=_txBytesOffset, len=144),
     blkNum,
     _proof,
     _sig,

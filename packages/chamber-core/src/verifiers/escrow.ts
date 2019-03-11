@@ -206,9 +206,9 @@ export class EscrowTransaction extends BaseTransaction {
     return [this.segment]
   }
 
-  verify(signatures: string[]): boolean {
+  verify(signatures: string[], hash: string): boolean {
     return utils.recoverAddress(
-      this.hash(), signatures[0]) == this.from
+      hash, signatures[0]) == this.from
   }
 
   normalizeSigs(signatures: string[], hash?: string): string[] {

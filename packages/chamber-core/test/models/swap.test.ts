@@ -47,7 +47,7 @@ describe('SwapRequest', () => {
     const tx = swapRequest.getSignedSwapTx()
     assert.notEqual(tx, undefined)
     if(tx) {
-      const swapTx: SwapTransaction = tx.getRawTx() as SwapTransaction
+      const swapTx: SwapTransaction = tx.getRawTx(0) as SwapTransaction
       assert.equal(swapTx.getInput(0).getOwners()[0], AliceAddress)
       assert.equal(swapTx.getOutput(0).getOwners()[0], BobAddress)
     }

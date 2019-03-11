@@ -82,7 +82,7 @@ export class SwapRequest {
     if(this.target) {
       const tx = this.getSwapTx(this.target.getOwners()[0], this.target.getBlkNum(), this.target.getSegment(0))
       if(tx)
-        return new SignedTransaction(tx)
+        return new SignedTransaction([tx])
     } else {
       throw new Error('target not setted')
     }

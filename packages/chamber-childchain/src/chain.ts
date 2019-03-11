@@ -150,12 +150,12 @@ export class Chain {
     segment: BigNumber,
     blkNum: BigNumber
   ) {
-    this.segmentChecker.spend(new SignedTransaction(new SplitTransaction(
+    this.segmentChecker.spend(new SignedTransaction([new SplitTransaction(
       exitor,
       Segment.fromBigNumber(segment),
       blkNum,
       constants.AddressZero
-    )))
+    )]))
     await this.writeSnapshot()
   }
 
