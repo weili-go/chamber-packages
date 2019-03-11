@@ -1,9 +1,12 @@
 const ERC721 = artifacts.require("ERC721")
 const RootChain = artifacts.require("RootChain")
-const TransactionVerifier = artifacts.require("TransactionVerifier")
+const CustomVerifier = artifacts.require("CustomVerifier")
+const VerifierUtil = artifacts.require("VerifierUtil")
+const OwnStateVerifier = artifacts.require("OwnStateVerifier")
 const StandardVerifier = artifacts.require("StandardVerifier")
-const MultisigVerifier = artifacts.require("MultisigVerifier")
-const EscrowVerifier = artifacts.require("EscrowVerifier")
+const SwapVerifier = artifacts.require("SwapVerifier")
+const EscrowStateVerifier = artifacts.require("EscrowStateVerifier")
+const EscrowTxVerifier = artifacts.require("EscrowTxVerifier")
 const FastFinality = artifacts.require("FastFinality")
 const Checkpoint = artifacts.require("Checkpoint")
 
@@ -11,25 +14,36 @@ module.exports = (deployer) => {
   let rootChain
   let fastFinality
   let checkpoint
+  let customVerifier
   deployer.deploy(ERC721)
   .then(() => deployer.deploy(Checkpoint))
   .then((_checkpoint) => {
     checkpoint = _checkpoint
-    return deployer.deploy(StandardVerifier)
+    return deployer.deploy(VerifierUtil)
   })
-  .then(() => deployer.deploy(EscrowVerifier))
-  .then(() => deployer.deploy(MultisigVerifier))
+  .then(() => deployer.deploy(OwnStateVerifier, VerifierUtil.address))
+  .then(() => deployer.deploy(EscrowStateVerifier, VerifierUtil.address))
+  .then(() => deployer.deploy(StandardVerifier, VerifierUtil.address, OwnStateVerifier.address))
+  .then(() => deployer.deploy(SwapVerifier, VerifierUtil.address, OwnStateVerifier.address))
+  .then(() => deployer.deploy(EscrowTxVerifier, VerifierUtil.address, OwnStateVerifier.address, EscrowStateVerifier.address))
   .then(() => deployer.deploy(
-    TransactionVerifier,
-    StandardVerifier.address,
-    MultisigVerifier.address
+    CustomVerifier,
+    VerifierUtil.address,
+    OwnStateVerifier.address
   ))
-  .then((_txVerifier) => {
-    return _txVerifier.addVerifier(EscrowVerifier.address)
+  .then((_customVerifier) => {
+    customVerifier = _customVerifier
+    return customVerifier.addVerifier(StandardVerifier.address)
+  })
+  .then(() => {
+    return customVerifier.addVerifier(SwapVerifier.address)
+  })
+  .then(() => {
+    return customVerifier.addVerifier(EscrowTxVerifier.address)
   })
   .then(() => deployer.deploy(
     RootChain,
-    TransactionVerifier.address,
+    CustomVerifier.address,
     ERC721.address,
     Checkpoint.address
   ))
@@ -43,7 +57,7 @@ module.exports = (deployer) => {
   .then(() => deployer.deploy(
       FastFinality,
       RootChain.address,
-      TransactionVerifier.address,
+      CustomVerifier.address,
       ERC721.address
   ))
   .then((_fastFinality) => {

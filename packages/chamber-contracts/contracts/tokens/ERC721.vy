@@ -91,6 +91,10 @@ def setup():
     self.minter = msg.sender
 
 @public
+def getMinter() -> address:
+    return self.minter
+
+@public
 @constant
 def supportsInterface(_interfaceID: bytes32) -> bool:
     """
@@ -326,7 +330,7 @@ def setApprovalForAll(_operator: address, _approved: bool):
 ### MINT & BURN FUNCTIONS ###
 
 @public
-def mint(_to: address, _tokenId: uint256) -> bool:
+def mint(_to: address, _tokenId: uint256):
     """
     @dev Function to mint tokens
          Throws if `msg.sender` is not the minter.
@@ -343,7 +347,6 @@ def mint(_to: address, _tokenId: uint256) -> bool:
     # Add NFT. Throws if `_tokenId` is owned by someone
     self._addTokenTo(_to, _tokenId)
     # log.Transfer(ZERO_ADDRESS, _to, _tokenId)
-    return True
 
 
 @public

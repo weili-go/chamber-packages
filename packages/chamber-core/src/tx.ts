@@ -9,6 +9,8 @@ import {
   RLPItem,
   Hash,
 } from './helpers/types';
+import * as constants from './helpers/constants'
+
 import BigNumber = utils.BigNumber
 
 export class DecoderUtility {
@@ -101,13 +103,13 @@ export class TransactionDecoder {
     const label = utils.bigNumberify(utils.hexDataSlice(bytes, 0, 8)).toNumber()
     const maxBlkNum = utils.bigNumberify(utils.hexDataSlice(bytes, 8, 16)).toNumber()
     const body = DecoderUtility.decode(utils.hexDataSlice(bytes, 16, 496))
-    if(label === 2) {
+    if(label === 11) {
       return SplitTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
-    }else if(label === 3) {
+    }else if(label === 12) {
       return MergeTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
-    }else if(label === 4) {
+    }else if(label === 1) {
       return DepositTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
-    }else if(label === 5) {
+    }else if(label === 21) {
       return SwapTransaction.fromTuple(body).withMaxBlkNum(maxBlkNum)
     }else{
       throw new Error('unknown label')
@@ -126,25 +128,31 @@ export class TransactionOutputDeserializer {
   }
 }
 
-export interface TransactionOutput {
-  getLabel(): Hash
-  withBlkNum(blkNum: BigNumber): TransactionOutput
-  getOwners(): Address[]
-  getBlkNum(): BigNumber
-  getSegment(index: number): Segment
-  hash(): Hash
-  getBytes(): string
-  serialize(): any
+export abstract class TransactionOutput {
+  abstract getLabel(): Hash
+  abstract withBlkNum(blkNum: BigNumber): TransactionOutput
+  abstract getOwners(): Address[]
+  abstract getBlkNum(): BigNumber
+  abstract getSegment(index: number): Segment
+  abstract hash(): Hash
+  abstract getBytes(): string
+  abstract serialize(): any
   /**
    * @description checkSpend function verify that the transaction spend UTXO correctly.
    * @param txo 
    */
-  checkSpend(txo: TransactionOutput): boolean
-  subSpend(txo: TransactionOutput): TransactionOutput[]
-  toObject(): any
+  abstract isSpent(txo: TransactionOutput): boolean
+  getRemainingState(txo: TransactionOutput): TransactionOutput[] {
+    const newSegments = this.getSegment(0).sub(txo.getSegment(0))
+    return newSegments.map(s => {
+      return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())
+    })
+  }
+  abstract toObject(): any
 }
 
-export class OwnState implements TransactionOutput {
+let OwnStateAddress = constants.OwnStateAddress
+export class OwnState extends TransactionOutput {
   segment: Segment
   owner: Address
   blkNum: BigNumber | null
@@ -153,13 +161,18 @@ export class OwnState implements TransactionOutput {
     segment: Segment,
     owner: Address
   ) {
+    super()
     this.segment = segment
     this.owner = owner
     this.blkNum = null
   }
 
+  static setAddress(_OwnStateAddress: Address) {
+    OwnStateAddress = _OwnStateAddress
+  }
+
   getLabel(): Hash {
-    return utils.keccak256(utils.toUtf8Bytes('own'))
+    return utils.hexZeroPad(OwnStateAddress, 32)
   }
 
   withBlkNum(blkNum: BigNumber) {
@@ -206,11 +219,9 @@ export class OwnState implements TransactionOutput {
   getBytes() {
     if(this.blkNum) {
       return this.joinHex([
-        this.getLabel(),
+        utils.hexZeroPad(utils.hexlify(this.getLabel()), 32),
         utils.hexZeroPad(utils.hexlify(this.owner), 32),
-        utils.hexZeroPad(utils.hexlify(this.segment.tokenId), 32),
-        utils.hexZeroPad(utils.hexlify(this.segment.start), 32),
-        utils.hexZeroPad(utils.hexlify(this.segment.end), 32),
+        utils.hexZeroPad(utils.hexlify(this.segment.toBigNumber()), 32),
         utils.hexZeroPad(utils.hexlify(this.blkNum), 32)
       ])
     } else {
@@ -225,7 +236,7 @@ export class OwnState implements TransactionOutput {
   /**
    * @description verify txo spend this instance correctly
    */
-  checkSpend(txo: TransactionOutput): boolean {
+  isSpent(txo: TransactionOutput): boolean {
     if(txo.getLabel() == this.getLabel()
       && txo.getBlkNum().eq(this.getBlkNum())
       && txo.getOwners()[0] == this.getOwners()[0]
@@ -235,14 +246,7 @@ export class OwnState implements TransactionOutput {
       return false
     }
   }
-
-  subSpend(txo: TransactionOutput): TransactionOutput[] {
-    const newSegments = this.getSegment(0).sub(txo.getSegment(0))
-    return newSegments.map(s => {
-      return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())
-    })
-  }
-
+  
   private joinHex(a: string[]) {
     return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
   }
@@ -266,7 +270,7 @@ export class DepositTransaction extends BaseTransaction {
     depositor: Address,
     segment: Segment
   ) {
-    super(4, [depositor, segment.getTokenId(), segment.toBigNumber()])
+    super(1, [depositor, segment.toBigNumber()])
     this.depositor = depositor
     this.segment = segment
   }
@@ -274,7 +278,7 @@ export class DepositTransaction extends BaseTransaction {
   static fromTuple(tuple: RLPItem[]): DepositTransaction {
     return new DepositTransaction(
       DecoderUtility.getAddress(tuple[0]),
-      Segment.fromBigNumber(utils.bigNumberify(tuple[2])))
+      Segment.fromBigNumber(utils.bigNumberify(tuple[1])))
   }
 
   static decode(bytes: string): DepositTransaction {
@@ -330,7 +334,7 @@ export class SplitTransaction extends BaseTransaction {
     blkNum: BigNumber,
     to: Address
   ) {
-    super(2, [from, segment.toBigNumber(), blkNum, to])
+    super(11, [from, segment.toBigNumber(), blkNum, to])
     this.from = from
     this.segment = segment
     this.blkNum = blkNum
@@ -421,7 +425,7 @@ export class MergeTransaction extends BaseTransaction {
     blkNum1: BigNumber,
     blkNum2: BigNumber
   ) {
-    super(3, 
+    super(12, 
       [from,
         new Segment(segment1.tokenId, segment1.start, segment2.end).toBigNumber(),
         segment1.end,
@@ -524,7 +528,7 @@ export class SwapTransaction extends BaseTransaction {
     segment2: Segment,
     blkNum2: BigNumber
   ) {
-    super(5,
+    super(21,
       [from1,
         segment1.toBigNumber(),
         blkNum1,

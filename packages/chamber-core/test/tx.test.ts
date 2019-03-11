@@ -41,7 +41,7 @@ describe('Transaction', () => {
     const encoded = tx.encode()
     const decoded: SplitTransaction = TransactionDecoder.decode(encoded) as SplitTransaction
     //assert.equal(encoded, '0xf601b4f394953b8fb338ef870eda6d74c1dd4769b6c977b8cf831e8480832dc6c0019434fdeadc2b69fd24f3043a89f9231f10f1284a4a');
-    assert.equal(decoded.label.toNumber(), 2);
+    assert.equal(decoded.label.toNumber(), 11);
     assert.equal(decoded.getOutput(0).getSegment(0).start.toString(), '2000000');
   });
 

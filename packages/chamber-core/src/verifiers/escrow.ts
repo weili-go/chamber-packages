@@ -16,7 +16,7 @@ import {
 } from '../helpers/types'
 
 
-export class EscrowLockState implements TransactionOutput {
+export class EscrowLockState extends TransactionOutput {
   segment: Segment
   owner: Address
   ttp: Address
@@ -31,6 +31,7 @@ export class EscrowLockState implements TransactionOutput {
     to: Address,
     timeout: BigNumber
   ) {
+    super()
     this.segment = segment
     this.owner = owner
     this.ttp = ttp
@@ -114,7 +115,7 @@ export class EscrowLockState implements TransactionOutput {
     return utils.keccak256(this.getBytes())
   }
 
-  checkSpend(txo: TransactionOutput): boolean {
+  isSpent(txo: TransactionOutput): boolean {
     if(txo instanceof OwnState
       && txo.getBlkNum().eq(this.getBlkNum())
       && txo.getOwners()[0] == this.getOwners()[0]
@@ -124,14 +125,7 @@ export class EscrowLockState implements TransactionOutput {
       return false
     }
   }
-
-  subSpend(txo: TransactionOutput): TransactionOutput[] {
-    const newSegments = this.getSegment(0).sub(txo.getSegment(0))
-    return newSegments.map(s => {
-      return new OwnState(s, this.getOwners()[0]).withBlkNum(this.getBlkNum())
-    })
-  }
-
+  
   private joinHex(a: string[]) {
     return utils.hexlify(utils.concat(a.map(s => utils.arrayify(s))))
   }
@@ -162,7 +156,7 @@ export class EscrowTransaction extends BaseTransaction {
     to: Address,
     timeout: BigNumber
   ) {
-    super(21, [from, segment.toBigNumber(), blkNum, ttp, to, timeout])
+    super(31, [from, segment.toBigNumber(), blkNum, ttp, to, timeout])
     this.from = from
     this.segment = segment
     this.blkNum = blkNum

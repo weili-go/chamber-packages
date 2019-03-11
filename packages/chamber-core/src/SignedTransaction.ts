@@ -240,7 +240,7 @@ export class SignedTransactionWithProof {
   }
 
   spend(txo: TransactionOutput) {
-    return this.getOutput().subSpend(txo).map(newTxo => {
+    return this.getOutput().getRemainingState(txo).map(newTxo => {
       return new SignedTransactionWithProof(
         this.signedTx,
         this.outputIndex,
