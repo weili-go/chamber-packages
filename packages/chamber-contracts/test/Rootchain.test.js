@@ -192,7 +192,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         15 * 100,
         Scenario1.segments[5].toBigNumber(),
         depositTx.encode(),
-        '0x',
+        '0x00000050',
         '0x',
         0,
         {
@@ -378,7 +378,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         3 * 100,
         Scenario1.segments[0].toBigNumber(),
         depositTx.encode(),
-        '0x',
+        '0x00000050',
         '0x',
         0,
         {

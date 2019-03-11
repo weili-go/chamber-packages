@@ -1,4 +1,4 @@
-import { utils } from "ethers"
+import { utils, ethers } from "ethers"
 import {
   BaseTransaction,
   TransactionDecoder,
@@ -217,14 +217,31 @@ export class SignedTransactionWithProof {
     return this.proof
   }
 
+  /**
+   * this.txIndex should be 0 or 1
+   */
+  private getTxOffset() {
+    if(this.txIndex == 0) {
+      return ethers.constants.Zero
+    } else {
+      return utils.bigNumberify(utils.hexDataLength(this.signedTx.getRawTx(0).encode()))
+    }
+  }
+
+  private getTxSize() {
+    return utils.bigNumberify(utils.hexDataLength(this.signedTx.getRawTx(this.txIndex).encode()))
+  }
+
   getProofAsHex(): HexString {
+    const txOffset = utils.padZeros(utils.arrayify(this.getTxOffset()), 2)
+    const txSize = utils.padZeros(utils.arrayify(this.getTxSize()), 2)
     const rootHeader = utils.arrayify(this.root)
     const timestampHeader = utils.padZeros(utils.arrayify(this.timestamp), 8)
     // get original range
     const range: BigNumber = this.getSignedTx().getRawTx(this.txIndex).getOutput(this.outputIndex).getSegment(0).getAmount()
     const rangeHeader = utils.padZeros(utils.arrayify(range), 8)
     const body = utils.arrayify(this.proof.toHex())
-    return utils.hexlify(utils.concat([rootHeader, timestampHeader, rangeHeader, body]))
+    return utils.hexlify(utils.concat([txOffset, txSize, rootHeader, timestampHeader, rangeHeader, body]))
   }
 
   getSignatures(): HexString {

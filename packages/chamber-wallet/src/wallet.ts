@@ -279,7 +279,8 @@ export class ChamberWallet {
         '0x',
         '0x',
         ethers.constants.Zero,
-        new SumMerkleProof(1, 0, segment, '0x'),
+        // 0x00000050 is header. 0x0050 is size of deposit transaction
+        new SumMerkleProof(1, 0, segment, '0x00000050'),
         blkNum))
     }
     this.exitableRangeManager.extendRight(end)
