@@ -68,6 +68,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         from: operator
       })
     this.rootChain = await RootChain.new(
+      this.verifierUtil.address,
       this.customVerifier.address,
       this.erc721.address,
       this.checkpoint.address,

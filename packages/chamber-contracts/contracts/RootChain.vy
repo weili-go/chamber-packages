@@ -24,6 +24,7 @@ struct ExtendExit:
   forceInclude: uint256
 
 struct Challenge:
+  segment: uint256
   blkNum: uint256
   isAvailable: bool
   exitId: uint256
@@ -46,6 +47,15 @@ contract Checkpoint():
   def getCheckpoint(
     _checkpointId: uint256
   ) -> (uint256, uint256): constant
+
+contract VerifierUtil():
+  def parseSegment(
+    segment: uint256
+  ) -> (uint256, uint256, uint256): constant
+  def isContainSegment(
+    segment: uint256,
+    small: uint256
+  ) -> (bool): constant
 
 contract CustomVerifier():
   def isExitGamable(
@@ -89,6 +99,7 @@ ExitableMerged: event({_tokenId: uint256, _start: uint256, _end: uint256})
 
 # management
 operator: address
+verifierUtil:address
 txverifier: address
 checkpointAddress: address
 childChain: map(uint256, bytes32)
@@ -347,9 +358,15 @@ def processDepositFragment(
 
 # @dev Constructor
 @public
-def __init__(_txverifierAddress: address, _exitToken: address, _checkpointAddress: address):
+def __init__(
+  _verifierUtil: address,
+  _txverifierAddress: address,
+  _exitToken: address,
+  _checkpointAddress: address
+):
   self.operator = msg.sender
   self.currentChildBlock = 1
+  self.verifierUtil = _verifierUtil
   self.txverifier = _txverifierAddress
   self.exitToken = create_with_code_of(_exitToken)
   self.checkpointAddress = _checkpointAddress
@@ -450,6 +467,9 @@ def exit(
   txHash: bytes32 = sha3(_txBytes)
   exitId: uint256 = self.exitNonce
   if self.challenges[txHash].isAvailable and self.challenges[txHash].blkNum < blkNum:
+    # prevTx's segment should contains exit segment
+    # https://github.com/cryptoeconomicslab/chamber-packages/pull/184
+    assert VerifierUtil(self.verifierUtil).isContainSegment(self.challenges[txHash].segment, _segment)
     self.extendExits[exitId].priority = self.challenges[txHash].blkNum
     self.childs[self.challenges[txHash].exitId] = exitId
   exitStateBytes: bytes[256] = self.checkTransaction(
@@ -528,12 +548,12 @@ def challenge(
       self.extendExits[lowerExit].challengeCount -= 1
       if as_unitless_number(block.timestamp) > self.exits[lowerExit].exitableAt - EXTEND_PERIOD_SECONDS:
         self.extendExits[lowerExit].extendedExitableAt = as_unitless_number(block.timestamp) + EXTEND_PERIOD_SECONDS
-    #if not CustomVerifier(self.txverifier).doesRequireConfsig(_txBytes):
-    #  self.challenges[txHash] = Challenge({
-    #    blkNum: exitBlkNum,
-    #    isAvailable: True,
-    #    exitId: _exitId
-    #  })
+    self.challenges[txHash] = Challenge({
+      segment: exit.segment,
+      blkNum: exitBlkNum,
+      isAvailable: True,
+      exitId: _exitId
+    })
   blockTimestamp: uint256 = convert(slice(_proof, start=32, len=8), uint256)
   assert CustomVerifier(self.txverifier).isSpent(
     txHash,
