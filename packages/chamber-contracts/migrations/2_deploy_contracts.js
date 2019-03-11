@@ -43,6 +43,7 @@ module.exports = (deployer) => {
   })
   .then(() => deployer.deploy(
     RootChain,
+    VerifierUtil.address,
     CustomVerifier.address,
     ERC721.address,
     Checkpoint.address

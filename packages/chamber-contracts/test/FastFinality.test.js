@@ -64,6 +64,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
     await this.customVerifier.addVerifier(this.standardVerifier.address, {from: operator})
     await this.customVerifier.addVerifier(this.swapVerifier.address, {from: operator})
     this.rootChain = await RootChain.new(
+      this.verifierUtil.address,
       this.customVerifier.address,
       this.erc721.address,
       this.checkpoint.address,
