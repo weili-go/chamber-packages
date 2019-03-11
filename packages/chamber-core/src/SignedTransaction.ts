@@ -232,6 +232,15 @@ export class SignedTransactionWithProof {
     return utils.bigNumberify(utils.hexDataLength(this.signedTx.getRawTx(this.txIndex).encode()))
   }
 
+  /**
+   * @description header structure
+   *     txOffset    2 bytes
+   *     txSize      2 bytes
+   *     merkle root 8 bytes
+   *     timestamp   8 bytes
+   *     range       8 bytes
+   *     proof body  n * 41 bytes
+   */
   getProofAsHex(): HexString {
     const txOffset = utils.padZeros(utils.arrayify(this.getTxOffset()), 2)
     const txSize = utils.padZeros(utils.arrayify(this.getTxSize()), 2)
