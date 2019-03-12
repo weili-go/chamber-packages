@@ -437,17 +437,29 @@ export class ChamberWallet {
   /**
    * @ignore
    */
-  private searchUtxo(to: Address, amount: BigNumber): SplitTransaction | null {
-    let tx: SplitTransaction | null = null
+  private searchUtxo(to: Address, amount: BigNumber, feeTo?: Address, fee?: BigNumber): SignedTransaction | null {
+    let tx: SignedTransaction | null = null
     this.getUTXOArray().forEach((_tx) => {
       const output = _tx.getOutput()
       const segment = output.getSegment(0)
-      if(segment.getAmount().gte(amount)) {
-        tx = new SplitTransaction(
+      const sum = amount.add(fee || 0)
+      if(segment.getAmount().gte(sum)) {
+        const paymentTx = new SplitTransaction(
           this.wallet.address,
           new Segment(segment.getTokenId(), segment.start, segment.start.add(amount)),
           _tx.blkNum,
           to)
+        if(feeTo && fee) {
+          const feeStart = segment.start.add(amount)
+          const feeTx = new SplitTransaction(
+            this.wallet.address,
+            new Segment(segment.getTokenId(), feeStart, feeStart.add(fee)),
+            _tx.blkNum,
+            feeTo)
+          tx = new SignedTransaction([paymentTx, feeTx])
+        } else {
+          tx = new SignedTransaction([paymentTx])
+        }
       }
     })
     return tx
@@ -526,14 +538,16 @@ export class ChamberWallet {
 
   async transfer(
     to: Address,
-    amountStr: string
+    amountStr: string,
+    feeTo?: Address,
+    feeAmountStr?: string
   ): Promise<ChamberResult<boolean>> {
     const amount = ethers.utils.bigNumberify(amountStr)
-    const tx = this.searchUtxo(to, amount)
-    if(tx == null) {
+    const feeAmount = feeAmountStr ? ethers.utils.bigNumberify(feeAmountStr) : undefined
+    const signedTx = this.searchUtxo(to, amount, feeTo, feeAmount)
+    if(signedTx == null) {
       return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
     }
-    const signedTx = new SignedTransaction([tx])
     signedTx.sign(this.wallet.privateKey)
     return await this.client.sendTransaction(signedTx)
   }
