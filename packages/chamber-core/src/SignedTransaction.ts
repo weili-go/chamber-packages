@@ -51,7 +51,7 @@ export class SignedTransaction {
       return isVerified && tx.verify(this.signatures, this.getTxHash())
     }, true)
   }
-
+  
   /**
    * sign
    * @param pkey is hex string of private key
