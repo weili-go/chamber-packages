@@ -56,3 +56,20 @@ def isContainSegment(
   (tokenId2, start2, end2) = self.parseSegment(small)
   assert tokenId1 == tokenId2 and start1 <= start2 and end2 <= end1
   return True
+
+@public
+@constant
+def hasInterSection(
+  segment1: uint256,
+  segment2: uint256
+) -> (uint256, uint256, uint256):
+  tokenId1: uint256
+  start1: uint256
+  end1: uint256
+  tokenId2: uint256
+  start2: uint256
+  end2: uint256
+  (tokenId1, start1, end1) = self.parseSegment(segment1)
+  (tokenId2, start2, end2) = self.parseSegment(segment2)
+  assert tokenId1 == tokenId2 and start1 < end2 and start2 < end1
+  return (tokenId1, start1, end1)

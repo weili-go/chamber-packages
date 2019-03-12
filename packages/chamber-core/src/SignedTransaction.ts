@@ -1,10 +1,11 @@
-import { utils } from "ethers"
+import { utils, ethers } from "ethers"
 import {
   BaseTransaction,
   TransactionDecoder,
   TransactionOutput,
   SwapTransaction,
-  TransactionOutputDeserializer
+  TransactionOutputDeserializer,
+  SplitTransaction
 } from './tx'
 import {
   HexString,
@@ -15,18 +16,20 @@ import { keccak256, BigNumber } from 'ethers/utils'
 import {
   SumMerkleProof
 } from './merkle'
+import { HexUtil } from './utils/hex'
+import { Segment } from './segment';
 
 /**
  * SignedTransaction is the transaction and its signatures
  */
 export class SignedTransaction {
-  tx: BaseTransaction
+  txs: BaseTransaction[]
   signatures: Signature[]
 
   constructor(
-    tx: BaseTransaction
+    txs: BaseTransaction[]
   ) {
-    this.tx = tx
+    this.txs = txs
     this.signatures = []
   }
 
@@ -35,69 +38,103 @@ export class SignedTransaction {
     return this
   }
 
-  getRawTx() {
-    return this.tx
+  getRawTx(txIndex: number) {
+    return this.txs[txIndex]
+  }
+
+  getRawTxs() {
+    return this.txs
   }
 
   verify(): boolean {
-    return this.tx.verify(this.signatures)
+    return this.txs.reduce((isVerified, tx) => {
+      return isVerified && tx.verify(this.signatures, this.getTxHash())
+    }, true)
   }
-
+  
   /**
    * sign
    * @param pkey is hex string of private key
    */
   sign(pkey: string) {
     this.signatures.push(this.justSign(pkey))
-    this.signatures = this.getRawTx().normalizeSigs(this.signatures)
+    this.signatures = this.getRawTxs()[0].normalizeSigs(this.signatures)
   }
 
   justSign(pkey: string) {
     const key = new utils.SigningKey(pkey)
-    return utils.joinSignature(key.signDigest(this.tx.hash()))
+    return utils.joinSignature(key.signDigest(this.getTxHash()))
   }
 
   getTxBytes() {
-    return this.toHex()
+    return HexUtil.concat(this.txs.map(tx => tx.encode()))
   }
+
+  hash() { return this.getTxHash() }
 
   getTxHash() {
-    return this.hash()
+    return utils.keccak256(this.getTxBytes())
   }
 
-  /**
-   * @deprecated
-   */
-  toHex() {
-    return this.tx.encode()
+  getAllOutputs(): TransactionOutput[] {
+    return this.txs.reduce((acc: TransactionOutput[], tx) => {
+      return acc.concat(tx.getOutputs())
+    }, [])
   }
 
-  /**
-   * @deprecated
-   */
-  hash() {
-    return this.tx.hash()
+  getAllInputs(): TransactionOutput[] {
+    return this.txs.reduce((acc: TransactionOutput[], tx) => {
+      return acc.concat(tx.getInputs())
+    }, [])
   }
 
   getSegments() {
-    return this.tx.getSegments()
+    let segments = this.txs.reduce((segments: Segment[], tx) => {
+      return segments.concat(tx.getSegments())
+    }, [])
+    segments.sort((a, b) => {
+      if(a.start.gt(b.start)) return 1
+      else if(a.start.lt(b.start)) return -1
+      else return 0
+    })
+    return segments
+  }
+
+  /**
+   * 
+   * @description txs[txIndex].getOutputs(outputIndex)
+   */
+  getIndex(segment: Segment): any {
+    let result
+    this.txs.forEach((tx, txIndex) => {
+      tx.getSegments().forEach((s, outputIndex) => {
+        if(s.start.eq(segment.start)) {
+          result = {
+            txIndex: txIndex,
+            outputIndex: outputIndex
+          }
+        }
+      })
+    })
+    if(!result) throw new Error('error')
+    return result
   }
 
   getSignatures() {
-    return utils.hexlify(utils.concat(this.signatures.map(s => utils.arrayify(s))))
+    return HexUtil.concat(this.signatures)
   }
 
   serialize() {
     return {
-      rawTx: this.toHex(),
+      rawTxs: this.txs.map(tx => tx.encode()),
       sigs: this.signatures
     }
   }
 
   static deserialize(data: any): SignedTransaction {
-    return new SignedTransaction(TransactionDecoder.decode(data.rawTx))
-      .withRawSignatures(data.sigs)
-  }
+    return new SignedTransaction(data.rawTxs.map((rawTx: any)=>TransactionDecoder.decode(rawTx)))
+    .withRawSignatures(data.sigs)
+}
 
 }
 
@@ -106,6 +143,7 @@ export class SignedTransaction {
  */
 export class SignedTransactionWithProof {
   signedTx: SignedTransaction
+  txIndex: number
   outputIndex: number
   proof: SumMerkleProof
   superRoot: Hash
@@ -117,6 +155,7 @@ export class SignedTransactionWithProof {
 
   constructor(
     tx: SignedTransaction,
+    txIndex: number,
     outputIndex: number,
     superRoot: Hash,
     root: Hash,
@@ -126,6 +165,7 @@ export class SignedTransactionWithProof {
     txo?: TransactionOutput
   ) {
     this.signedTx = tx
+    this.txIndex = txIndex
     this.outputIndex = outputIndex
     this.superRoot = superRoot
     this.root = root
@@ -136,7 +176,7 @@ export class SignedTransactionWithProof {
     if(txo) {
       this.txo = txo
     } else {
-      this.txo = this.signedTx.tx.getOutput(this.outputIndex).withBlkNum(this.blkNum)
+      this.txo = this.signedTx.getRawTx(this.txIndex).getOutput(this.outputIndex).withBlkNum(this.blkNum)
     }
   }
 
@@ -145,8 +185,8 @@ export class SignedTransactionWithProof {
     return this
   }
 
-  requireConfsig() {
-    return this.getSignedTx().getRawTx().requireConfsig()
+  requireConfsig(): boolean {
+    return this.getSignedTx().getRawTxs().filter(tx => tx.requireConfsig()).length > 0
   }
 
   getSignedTx(): SignedTransaction {
@@ -154,11 +194,11 @@ export class SignedTransactionWithProof {
   }
 
   getTxBytes(): HexString {
-    return this.getSignedTx().toHex()
+    return this.getSignedTx().getTxBytes()
   }
 
   getTxHash(): Hash {
-    return this.getSignedTx().hash()
+    return this.getSignedTx().getTxHash()
   }
 
   getStateBytes() {
@@ -177,20 +217,44 @@ export class SignedTransactionWithProof {
     return this.proof
   }
 
+  /**
+   * this.txIndex should be 0 or 1
+   */
+  private getTxOffset() {
+    if(this.txIndex == 0) {
+      return ethers.constants.Zero
+    } else {
+      return utils.bigNumberify(utils.hexDataLength(this.signedTx.getRawTx(0).encode()))
+    }
+  }
+
+  private getTxSize() {
+    return utils.bigNumberify(utils.hexDataLength(this.signedTx.getRawTx(this.txIndex).encode()))
+  }
+
+  /**
+   * @description header structure
+   *     txOffset    2 bytes
+   *     txSize      2 bytes
+   *     merkle root 8 bytes
+   *     timestamp   8 bytes
+   *     range       8 bytes
+   *     proof body  n * 41 bytes
+   */
   getProofAsHex(): HexString {
+    const txOffset = utils.padZeros(utils.arrayify(this.getTxOffset()), 2)
+    const txSize = utils.padZeros(utils.arrayify(this.getTxSize()), 2)
     const rootHeader = utils.arrayify(this.root)
     const timestampHeader = utils.padZeros(utils.arrayify(this.timestamp), 8)
     // get original range
-    const range: BigNumber = this.getSignedTx().getRawTx().getOutput(this.outputIndex).getSegment(0).getAmount()
+    const range: BigNumber = this.getSignedTx().getRawTx(this.txIndex).getOutput(this.outputIndex).getSegment(0).getAmount()
     const rangeHeader = utils.padZeros(utils.arrayify(range), 8)
     const body = utils.arrayify(this.proof.toHex())
-    return utils.hexlify(utils.concat([rootHeader, timestampHeader, rangeHeader, body]))
+    return utils.hexlify(utils.concat([txOffset, txSize, rootHeader, timestampHeader, rangeHeader, body]))
   }
 
   getSignatures(): HexString {
-    return utils.hexlify(
-      utils.concat(
-        this.signedTx.signatures.map(s => utils.arrayify(s)).concat(this.confSigs.map(s => utils.arrayify(s)))))
+    return HexUtil.concat(this.signedTx.signatures.concat(this.confSigs))
   }
 
   getOutput() {
@@ -209,12 +273,13 @@ export class SignedTransactionWithProof {
     const key = new utils.SigningKey(pkey)
     const merkleHash = this.merkleHash()
     this.confSigs.push(utils.joinSignature(key.signDigest(merkleHash)))
-    this.confSigs = this.getSignedTx().getRawTx().normalizeSigs(this.confSigs, merkleHash)
+    this.confSigs = this.getSignedTx().getRawTx(this.txIndex).normalizeSigs(this.confSigs, merkleHash)
   }
 
   serialize() {
     return {
       signedTx: this.getSignedTx().serialize(),
+      txIndex: this.txIndex,
       outputIndex: this.outputIndex,
       superRoot: this.superRoot,
       root: this.root,
@@ -229,6 +294,7 @@ export class SignedTransactionWithProof {
   static deserialize(data: any): SignedTransactionWithProof {
     return new SignedTransactionWithProof(
       SignedTransaction.deserialize(data.signedTx),
+      data.txIndex,
       data.outputIndex,
       data.superRoot,
       data.root,
@@ -243,6 +309,7 @@ export class SignedTransactionWithProof {
     return this.getOutput().getRemainingState(txo).map(newTxo => {
       return new SignedTransactionWithProof(
         this.signedTx,
+        this.txIndex,
         this.outputIndex,
         this.superRoot,
         this.root,

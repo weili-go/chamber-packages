@@ -45,7 +45,7 @@ const segment5 = Segment.ETH(
   utils.bigNumberify('3200000'))
     
 function createTransfer(privKey, from, seg, blkNum, to) {
-  const tx= new SignedTransaction(SplitTransaction.Transfer(from, seg, blkNum, to))
+  const tx= new SignedTransaction([SplitTransaction.Transfer(from, seg, blkNum, to)])
   tx.sign(privKey)
   return tx
 }
@@ -57,6 +57,9 @@ function scenario1() {
   const segment6 = Segment.ETH(
     utils.bigNumberify('2000000'),
     utils.bigNumberify('3000000'))
+  const feeSegment = Segment.ETH(
+    utils.bigNumberify('3200000'),
+    utils.bigNumberify('3210000'))
   // deposits
   const blkNum1 = utils.bigNumberify('3')
   const blkNum2 = utils.bigNumberify('5')
@@ -74,6 +77,7 @@ function scenario1() {
   block6.setBlockNumber(12)
   const block7 = new Block(14)
   block7.setBlockNumber(14)
+  const blkNum8 = utils.bigNumberify('15')
 
   const depositTx1 = new DepositTransaction(AliceAddress, segment1)
   const depositTx2 = new DepositTransaction(BobAddress, segment2)
@@ -88,7 +92,11 @@ function scenario1() {
   const tx62 = createTransfer(User5PrivateKey, User5Address, segment2, blkNum4, User4Address)
   const tx71 = createTransfer(User5PrivateKey, User5Address, segment4, blkNum1, OperatorAddress)
   const tx72 = createTransfer(User5PrivateKey, User5Address, segment5, blkNum1, OperatorAddress)
-  const tx73 = createTransfer(User5PrivateKey, User5Address, segment1, blkNum3, OperatorAddress)
+  const tx73 = new SignedTransaction([
+    SplitTransaction.Transfer(User5Address, segment1, blkNum3, BobAddress),
+    SplitTransaction.Transfer(User5Address, feeSegment, blkNum8, OperatorAddress)])
+  tx73.sign(User5PrivateKey)
+
   
   block3.appendTx(tx31)
   block3.appendTx(tx32)
@@ -111,6 +119,7 @@ function scenario1() {
   return {
     segments: [segment1, segment2, segment3, segment4, segment5, segment6],
     deposits: [depositTx1, depositTx2, depositTx3],
+    feeSegment: feeSegment,
     blocks: [
       {
         block: block3,
@@ -152,8 +161,8 @@ function scenario2() {
   const block5 = new Block(10)
   block5.setBlockNumber(10)
 
-  const tx31 = new SignedTransaction(SwapTransaction.SimpleSwap(
-    AliceAddress, segment4, blkNum1, OperatorAddress, segment5, blkNum2))
+  const tx31 = new SignedTransaction([SwapTransaction.SimpleSwap(
+    AliceAddress, segment4, blkNum1, OperatorAddress, segment5, blkNum2)])
   tx31.sign(AlicePrivateKey)
   tx31.sign(OperatorPrivateKey)
   const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
@@ -201,10 +210,10 @@ function scenario3() {
   const block5 = new Block(10)
   block5.setBlockNumber(10)
 
-  const tx31 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, BobAddress))
+  const tx31 = new SignedTransaction([new SplitTransaction(AliceAddress, segment1, blkNum2, BobAddress)])
   tx31.sign(AlicePrivateKey)
   const tx32 = createTransfer(User4PrivateKey, User4Address, segment2, blkNum2, User5Address)
-  const tx41 = new SignedTransaction(new SplitTransaction(AliceAddress, segment1, blkNum2, OperatorAddress))
+  const tx41 = new SignedTransaction([new SplitTransaction(AliceAddress, segment1, blkNum2, OperatorAddress)])
   tx41.sign(AlicePrivateKey)
   const tx42 = createTransfer(OperatorPrivateKey, OperatorAddress, segment5, blkNum3, OperatorAddress)
   
@@ -257,7 +266,7 @@ function transactions() {
 
   const tx = createTransfer(AlicePrivateKey, AliceAddress, segment1, blkNum1, BobAddress)
   const invalidTx = createTransfer(OperatorPrivateKey, AliceAddress, segment2, blkNum2, BobAddress)
-  const mergeTx = new SignedTransaction(new MergeTransaction(AliceAddress, segment4, segment5, BobAddress, blkNum1, blkNum2))
+  const mergeTx = new SignedTransaction([new MergeTransaction(AliceAddress, segment4, segment5, BobAddress, blkNum1, blkNum2)])
   mergeTx.sign(AlicePrivateKey)
 
   block.appendTx(tx)

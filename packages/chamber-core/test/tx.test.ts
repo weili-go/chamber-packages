@@ -89,7 +89,7 @@ describe('Transaction', () => {
 
     it('serialize and deserialize', () => {
       const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
-      const signedTx = new SignedTransaction(tx)
+      const signedTx = new SignedTransaction([tx])
       signedTx.sign(AlicePrivateKey)
       const serialized = signedTx.serialize()
       const deserialized = SignedTransaction.deserialize(serialized)
@@ -99,7 +99,7 @@ describe('Transaction', () => {
 
     it('getSignatures', () => {
       const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
-      const signedTx = new SignedTransaction(tx)
+      const signedTx = new SignedTransaction([tx])
       signedTx.sign(AlicePrivateKey)
       const signature = signedTx.getSignatures()
       assert.equal(utils.recoverAddress(signedTx.hash(), signature), AliceAddress)
@@ -107,14 +107,14 @@ describe('Transaction', () => {
 
     it('verify transfer transaction', () => {
       const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
-      const signedTx = new SignedTransaction(tx)
+      const signedTx = new SignedTransaction([tx])
       signedTx.sign(AlicePrivateKey)
       assert.equal(signedTx.verify(), true)
     });
 
     it('failed to verify transfer transaction', () => {
       const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
-      const signedTx = new SignedTransaction(tx)
+      const signedTx = new SignedTransaction([tx])
       signedTx.sign(BobPrivateKey)
       assert.equal(signedTx.verify(), false)
     });
@@ -122,7 +122,7 @@ describe('Transaction', () => {
     it('verify split transaction', () => {
       const tx = new SplitTransaction(
         AliceAddress, splitSegment, blkNum, BobAddress)
-      const signedTx = new SignedTransaction(tx)
+      const signedTx = new SignedTransaction([tx])
       signedTx.sign(AlicePrivateKey)
       assert.equal(signedTx.verify(), true)
       assert.equal(SignedTransaction.deserialize(signedTx.serialize()).verify(), true)
@@ -131,7 +131,7 @@ describe('Transaction', () => {
     it('verify merge transaction', () => {
       const tx = new MergeTransaction(
         AliceAddress, segment1, segment2, BobAddress, blkNum1, blkNum2)
-      const signedTx = new SignedTransaction(tx)
+      const signedTx = new SignedTransaction([tx])
       signedTx.sign(AlicePrivateKey)
       assert.equal(signedTx.verify(), true)
     });
@@ -139,7 +139,7 @@ describe('Transaction', () => {
     it('verify simple swap transaction', () => {
       const tx = SwapTransaction.SimpleSwap(
         AliceAddress, segment1, blkNum1, BobAddress, segment2, blkNum2)
-      const signedTx = new SignedTransaction(tx)
+      const signedTx = new SignedTransaction([tx])
       signedTx.sign(AlicePrivateKey)
       signedTx.sign(BobPrivateKey)
       assert.equal(signedTx.verify(), true)
@@ -159,17 +159,17 @@ describe('Transaction', () => {
         BobAddress,
         swapSegment2,
         blkNum2)
-      const signedTx = new SignedTransaction(tx)
+      const signedTx = new SignedTransaction([tx])
       signedTx.sign(AlicePrivateKey)
       signedTx.sign(BobPrivateKey)
       assert.equal(signedTx.verify(), true)
-      const outputSegment1 = signedTx.getRawTx().getOutput(0).getSegment(0)
-      const outputSegment2 = signedTx.getRawTx().getOutput(1).getSegment(0)
+      const outputSegment1 = signedTx.getRawTx(0).getOutput(0).getSegment(0)
+      const outputSegment2 = signedTx.getRawTx(0).getOutput(1).getSegment(0)
       assert.equal(outputSegment1.start.toString(), utils.bigNumberify('5000000').toString())
       assert.equal(outputSegment1.end.toString(), utils.bigNumberify('5700000').toString())
       assert.equal(outputSegment2.start.toString(), utils.bigNumberify('6000000').toString())
       assert.equal(outputSegment2.end.toString(), utils.bigNumberify('7000000').toString())
-      assert.equal(signedTx.getRawTx().getOutputs().length, 2)
+      assert.equal(signedTx.getRawTx(0).getOutputs().length, 2)
     });
 
   })

@@ -161,6 +161,7 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
       const exitId = result.receipt.logs[0].args._exitId
       const lastTx = Scenario1.blocks[4].block.getSignedTransactionWithProof(
         Scenario1.blocks[4].transactions[2].hash())[0]
+      console.log(lastTx.getProofAsHex())
       await this.rootChain.challengeTooOldExit(
         checkpointId,
         14 * 100,

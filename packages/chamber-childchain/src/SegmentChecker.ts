@@ -54,19 +54,19 @@ export class SegmentChecker {
   }
 
   isContain(tx: SignedTransaction): boolean {
-    return tx.getRawTx().getInputs().reduce((isContain, i) => {
+    return tx.getAllInputs().reduce((isContain, i) => {
       return isContain && this._isContain(i)
     }, true)
   }
 
   spend(tx: SignedTransaction) {
-    return tx.getRawTx().getInputs().map((i) => {
+    return tx.getAllInputs().map((i) => {
       return this._spend(i)
     })
   }
 
   insert(tx: SignedTransaction, blkNum: BigNumber) {
-    return tx.getRawTx().getOutputs().map((o) => {
+    return tx.getAllOutputs().map((o) => {
       return this._insert(o, blkNum)
     })
   }

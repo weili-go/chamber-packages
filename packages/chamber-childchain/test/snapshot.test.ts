@@ -34,7 +34,7 @@ describe('Snapshot', () => {
       ethers.utils.bigNumberify(5),
       BobAddress
     )
-    const signedTx = new SignedTransaction(tx)
+    const signedTx = new SignedTransaction([tx])
     const result = await snapshot.checkInput(signedTx)
     assert.equal(result, true)
   })

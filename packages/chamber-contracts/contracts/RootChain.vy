@@ -56,6 +56,10 @@ contract VerifierUtil():
     segment: uint256,
     small: uint256
   ) -> (bool): constant
+  def hasInterSection(
+    segment1: uint256,
+    segment2: uint256
+  ) -> (uint256, uint256, uint256): constant
 
 contract CustomVerifier():
   def isExitGamable(
@@ -140,32 +144,6 @@ EXIT_BOND: constant(wei_value) = as_wei_value(1, "finney")
 CHALLENGE_BOND: constant(wei_value) = as_wei_value(1, "finney")
 FORCE_INCLUDE_BOND: constant(wei_value) = as_wei_value(1, "finney")
 
-@private
-@constant
-def parseSegment(
-  segment: uint256
-) -> (uint256, uint256, uint256):
-  tokenId: uint256 = bitwise_and(shift(segment, -16 * 8), MASK8BYTES)
-  start: uint256 = bitwise_and(shift(segment, -8 * 8), MASK8BYTES)
-  end: uint256 = bitwise_and(segment, MASK8BYTES)
-  return (tokenId, start, end)
-
-@private
-@constant
-def checkSegment(
-  segment1: uint256,
-  segment2: uint256
-) -> (uint256, uint256, uint256):
-  tokenId1: uint256
-  start1: uint256
-  end1: uint256
-  tokenId2: uint256
-  start2: uint256
-  end2: uint256
-  (tokenId1, start1, end1) = self.parseSegment(segment1)
-  (tokenId2, start2, end2) = self.parseSegment(segment2)
-  assert tokenId1 == tokenId2 and start1 < end2 and start2 < end1
-  return (tokenId1, start1, end1)
 
 @private
 @constant
@@ -187,8 +165,8 @@ def checkMembership(
   _rootHash: bytes32,
   _proof: bytes[512]
 ) -> bool:
-  currentAmount: uint256 = convert(slice(_proof, start=40, len=8), uint256)
-  _totalAmount: uint256 = TOTAL_DEPOSIT * convert(slice(_proof, start=48, len=2), uint256)
+  currentAmount: uint256 = convert(slice(_proof, start=44, len=8), uint256)
+  _totalAmount: uint256 = TOTAL_DEPOSIT * convert(slice(_proof, start=52, len=2), uint256)
   # currentAmount: uint256 = _end - _start
   currentLeft: uint256 = 0
   currentRight: uint256 = _totalAmount
@@ -196,11 +174,11 @@ def checkMembership(
   proofElement: bytes32
 
   for i in range(16):
-    if (50 + i * 41) >= len(_proof):
+    if (54 + i * 41) >= len(_proof):
       break
-    leftOrRight: uint256 = convert(slice(_proof, start=50 + i * 41, len=1), uint256)
-    amount: uint256 = convert(slice(_proof, start=50 + i * 41 + 1, len=8), uint256)
-    proofElement = extract32(_proof, 50 + i * 41 + 9, type=bytes32)
+    leftOrRight: uint256 = convert(slice(_proof, start=54 + i * 41, len=1), uint256)
+    amount: uint256 = convert(slice(_proof, start=54 + i * 41 + 1, len=8), uint256)
+    proofElement = extract32(_proof, 54 + i * 41 + 9, type=bytes32)
     if leftOrRight == 0:
       currentRight -= amount
       computedHash = sha3(concat(
@@ -232,9 +210,9 @@ def checkTransaction(
     tokenId: uint256
     start: uint256
     end: uint256
-    (tokenId, start, end) = self.parseSegment(_segment)
-    root = extract32(_proof, 0, type=bytes32)
-    blockTimestamp = convert(slice(_proof, start=32, len=8), uint256)
+    (tokenId, start, end) = VerifierUtil(self.verifierUtil).parseSegment(_segment)
+    root = extract32(_proof, 0 + 4, type=bytes32)
+    blockTimestamp = convert(slice(_proof, start=32 + 4, len=8), uint256)
     assert self.childChain[_blkNum] == self.getPlasmaBlockHash(root, blockTimestamp)
     assert self.checkMembership(
       start + tokenId * TOTAL_DEPOSIT,
@@ -249,20 +227,22 @@ def checkTransaction(
     # deposit transaction
     depositHash: bytes32 = CustomVerifier(self.txverifier).getDepositHash(_txBytes)
     assert depositHash == root
+  txBytesOffset: int128 = convert(slice(_proof, start=0, len=2), int128)
+  txBytesSize: int128 = convert(slice(_proof, start=2, len=2), int128)
+  slicedTxBytes: bytes[496] = slice(_txBytes, start=txBytesOffset, len=txBytesSize)
   assert CustomVerifier(self.txverifier).isExitGamable(
     _txHash,
     sha3(concat(_txHash, self.childChain[_blkNum])),
-    _txBytes,
+    slicedTxBytes,
     _sigs,
     _outputIndex,
     _owner,
     _segment,
     _hasSig)
   return CustomVerifier(self.txverifier).getOutput(
-    _txBytes,
+    slicedTxBytes,
     _blkNum,
-    _outputIndex
-  )
+    _outputIndex)
 
 @private
 @constant
@@ -517,7 +497,7 @@ def challenge(
   txoIndex: uint256 = _utxoPos - blkNum * 100
   exit: Exit = self.exits[_exitId]
   exitBlkNum: uint256 = exit.blkNum
-  self.checkSegment(_segment, exit.segment)
+  VerifierUtil(self.verifierUtil).hasInterSection(_segment, exit.segment)
   # assert exit.txHash == sha3(_exitTxBytes)
   txHash: bytes32 = sha3(_txBytes)
   assert exit.stateHash == sha3(_exitStateBytes)
@@ -590,7 +570,7 @@ def requestHigherPriorityExit(
     lowerPriority = self.extendExits[_lowerPriorityExitId].priority
   assert higherPriority < lowerPriority
   assert self.lowerExits[_higherPriorityExitId] == 0
-  self.checkSegment(higherPriorityExit.segment, exit.segment)
+  VerifierUtil(self.verifierUtil).hasInterSection(higherPriorityExit.segment, exit.segment)
   self.extendExits[_lowerPriorityExitId].challengeCount += 1
   self.lowerExits[_higherPriorityExitId] = _lowerPriorityExitId
 
@@ -634,7 +614,7 @@ def finalizeExit(
   tokenId: uint256
   start: uint256
   end: uint256
-  (tokenId, start, end) = self.parseSegment(exit.segment)
+  (tokenId, start, end) = VerifierUtil(self.verifierUtil).parseSegment(exit.segment)
   # check _tokenId is correct
   self.checkExitable(
     tokenId,
@@ -675,11 +655,11 @@ def challengeTooOldExit(
   blkNum: uint256 = _utxoPos / 100
   outputIndex: uint256 = _utxoPos - blkNum * 100
   exit: Exit = self.exits[_exitId]
-  self.checkSegment(_segment, exit.segment)
+  VerifierUtil(self.verifierUtil).hasInterSection(_segment, exit.segment)
   checkpointBlkNum: uint256
   checkpointSegment: uint256
   (checkpointBlkNum, checkpointSegment) = Checkpoint(self.checkpointAddress).getCheckpoint(_checkpointId)
-  self.checkSegment(_segment, checkpointSegment)
+  VerifierUtil(self.verifierUtil).hasInterSection(_segment, checkpointSegment)
   txHash: bytes32 = sha3(_txBytes)
   assert blkNum <= checkpointBlkNum
   priority: uint256 = exit.blkNum
@@ -713,8 +693,8 @@ def mergeExitable(
   tokenId2: uint256
   start2: uint256
   end2: uint256
-  (tokenId1, start1, end1) = self.parseSegment(_segment1)
-  (tokenId2, start2, end2) = self.parseSegment(_segment2)
+  (tokenId1, start1, end1) = VerifierUtil(self.verifierUtil).parseSegment(_segment1)
+  (tokenId2, start2, end2) = VerifierUtil(self.verifierUtil).parseSegment(_segment2)
   assert tokenId1 == tokenId2 and end1 == start2
   assert self.exitable[tokenId1][end1].start == start1
   assert self.exitable[tokenId1][end2].start == start2

@@ -157,7 +157,7 @@ contract("CustomVerifier", ([alice, bob, operator, user4, user5, admin]) => {
     const blkNum3 = utils.bigNumberify('3')
     const blkNum5 = utils.bigNumberify('5')
 
-    const swapTx = new SignedTransaction(new SwapTransaction(
+    const swapTx = new SignedTransaction([new SwapTransaction(
       testAddresses.AliceAddress,
       Segment.ETH(
         utils.bigNumberify('5000000'),
@@ -169,7 +169,7 @@ contract("CustomVerifier", ([alice, bob, operator, user4, user5, admin]) => {
         utils.bigNumberify('5200000')),
       blkNum5,
       utils.bigNumberify('40000'),
-      utils.bigNumberify('60000')))
+      utils.bigNumberify('60000'))])
       swapTx.sign(testKeys.AlicePrivateKey)
       swapTx.sign(testKeys.OperatorPrivateKey)
 
@@ -223,13 +223,13 @@ contract("CustomVerifier", ([alice, bob, operator, user4, user5, admin]) => {
       utils.bigNumberify('5000000'),
       utils.bigNumberify('5100000'))
 
-    const escrowTx = new SignedTransaction(new EscrowTransaction(
+    const escrowTx = new SignedTransaction([new EscrowTransaction(
       testAddresses.AliceAddress,
       segment,
       blkNum,
       testAddresses.OperatorAddress,
       testAddresses.BobAddress,
-      utils.bigNumberify('12000000')))
+      utils.bigNumberify('12000000'))])
     escrowTx.sign(testKeys.AlicePrivateKey)
 
     it("should be addVerifier", async () => {

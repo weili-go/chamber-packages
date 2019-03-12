@@ -189,9 +189,11 @@ class SegmentNode {
       }).map(a => a.i)
       return proofs.map((p, i) => {
         // outputMaps[i] is output index
+        const index = signedTx.getIndex(p.segment)
         return new SignedTransactionWithProof(
           signedTx,
-          outputMaps[i],
+          index.txIndex,
+          index.outputIndex,
           superRoot,
           this.getRoot(),
           this.timestamp,
@@ -308,10 +310,10 @@ class SegmentNode {
 
   getUserTransactions(owner: Address): SignedTransaction[] {
     return this.txs.filter(tx => {
-      const hasOutput = tx.tx.getOutputs().filter(output => {
+      const hasOutput = tx.getAllOutputs().filter(output => {
         return output.getOwners().indexOf(owner) >= 0
       }).length > 0
-      const hasInput = tx.tx.getInputs().filter(input => {
+      const hasInput = tx.getAllInputs().filter(input => {
         return input.getOwners().indexOf(owner) >= 0
       }).length > 0
       return hasOutput || hasInput
