@@ -232,7 +232,7 @@ contract("CustomVerifier", ([alice, bob, operator, user4, user5, admin]) => {
       utils.bigNumberify('12000000'))])
     escrowTx.sign(testKeys.AlicePrivateKey)
 
-    it("should be addVerifier", async () => {
+    it("should addVerifier", async () => {
       await this.customVerifier.addVerifier(
         this.escrowTxVerifier.address,
         {

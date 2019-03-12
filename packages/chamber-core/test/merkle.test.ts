@@ -33,7 +33,7 @@ describe('SumMerkleTree', function() {
       new BigNumber(10)
     );
 
-    it('should be success to verify', function() {
+    it('should be succeeded to verify', function() {
       const tree = new SumMerkleTree(leaves);
       const root = tree.root();
       const proofs = tree.proofs(0, leaves[2].getHash());

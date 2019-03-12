@@ -84,7 +84,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
   describe('depositAndMintToken', () => {
 
-    it('should success to deposit and withdraw', async () => {
+    it('should succeed to deposit and withdraw', async () => {
       const result = await this.fastFinality.depositAndMintToken(
         7 * 24 * 60 * 60,
         {
@@ -134,7 +134,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
       })
     })
 
-    it('should success to dispute and finalizeDispute', async () => {
+    it('should succeed to dispute and finalizeDispute', async () => {
       const tx = Scenario3.blocks[0].transactions[0]
       const operatorSig = Scenario3.blocks[0].operatorSignes[0]
 
@@ -161,7 +161,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
 
     });
     
-    it('should failed to finalizeDispute', async () => {
+    it('should fail to finalizeDispute', async () => {
       Scenario3.blocks[0].block.setSuperRoot(constants.ZERO_HASH)
       const tx = Scenario3.blocks[0].block.getSignedTransactionWithProof(
         Scenario3.blocks[0].transactions[0].hash())[0]
@@ -228,7 +228,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         })
     });
 
-    it('should be success to challenge', async () => {
+    it('should be succeeded to challenge', async () => {
       const tx = Scenario3.blocks[0].block.getSignedTransactionWithProof(
         Scenario3.blocks[0].transactions[0].hash())[0]
       await this.fastFinality.challenge(
@@ -259,7 +259,7 @@ contract("FastFinality", ([alice, bob, operator, merchant, user5, admin]) => {
         }))
     })
 
-    it('should be success to secondDispute', async () => {
+    it('should be succeeded to secondDispute', async () => {
       const tx = Scenario3.blocks[0].block.getSignedTransactionWithProof(
         Scenario3.blocks[0].transactions[0].hash())[0]
       const secondDisputeTx = Scenario3.blocks[1].block.getSignedTransactionWithProof(

@@ -30,7 +30,7 @@ describe('TxFilter', () => {
     BobAddress
   )
 
-  it('should success to checkAndInsertTx', async () => {
+  it('should succeed to checkAndInsertTx', async () => {
     const txFilter = new TxFilter()
     const signedTx1 = new SignedTransaction([tx1])
     const signedTx2 = new SignedTransaction([tx2])
@@ -40,7 +40,7 @@ describe('TxFilter', () => {
     assert.isTrue(txFilter.checkAndInsertTx(signedTx2))
   })
 
-  it('should failed to checkAndInsertTx', async () => {
+  it('should fail to checkAndInsertTx', async () => {
     const txFilter = new TxFilter()
     const signedTx1 = new SignedTransaction([tx1])
     const signedTx3 = new SignedTransaction([tx3])
