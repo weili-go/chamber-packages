@@ -19,8 +19,8 @@ install:
   - lerna bootstrap
 
 script:
-  - yarn build
-  - yarn test
+  - yarn build:ci
+  - yarn test:ci
 
 dist: trusty
 sudo: false
