@@ -125,7 +125,7 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
       await submit(Scenario1.blocks[4].block)
     })
 
-    it("should success to request checkpoint", async () => {
+    it("should succeed to request checkpoint", async () => {
       await this.checkpoint.requestCheckpoint(
         checkpointBlkNum,
         checkpointSegment.toBigNumber(),
@@ -161,7 +161,6 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
       const exitId = result.receipt.logs[0].args._exitId
       const lastTx = Scenario1.blocks[4].block.getSignedTransactionWithProof(
         Scenario1.blocks[4].transactions[2].hash())[0]
-      console.log(lastTx.getProofAsHex())
       await this.rootChain.challengeTooOldExit(
         checkpointId,
         14 * 100,
@@ -175,7 +174,7 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
         });
     })
 
-    it("should success to challenge checkpoint", async () => {
+    it("should succeed to challenge checkpoint", async () => {
       await this.checkpoint.requestCheckpoint(
         checkpointBlkNum,
         checkpointSegment.toBigNumber(),
@@ -232,7 +231,7 @@ contract("Checkpoint", ([alice, bob, operator, user4, user5, admin]) => {
         }))
     })
 
-    it("should success to respond challenge checkpoint", async () => {
+    it("should succeed to respond challenge checkpoint", async () => {
       await this.checkpoint.requestCheckpoint(
         checkpointBlkNum,
         checkpointSegment.toBigNumber(),

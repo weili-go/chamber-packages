@@ -112,7 +112,7 @@ describe('Transaction', () => {
       assert.equal(signedTx.verify(), true)
     });
 
-    it('failed to verify transfer transaction', () => {
+    it('fail to verify transfer transaction', () => {
       const tx = SplitTransaction.Transfer(AliceAddress, segment, blkNum, BobAddress)
       const signedTx = new SignedTransaction([tx])
       signedTx.sign(BobPrivateKey)

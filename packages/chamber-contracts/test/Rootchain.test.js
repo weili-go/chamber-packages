@@ -139,7 +139,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         })      
     })
 
-    it("should success to exit and finalizeExit", async () => {
+    it("should succeed to exit and finalizeExit", async () => {
       const tx = Scenario1.blocks[0].block.getSignedTransactionWithProof(
         Scenario1.blocks[0].transactions[0].hash())[0]
       const gasCost = await this.rootChain.exit.estimateGas(
@@ -186,7 +186,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
     })
 
-    it("should success to exit feeTransaction", async () => {
+    it("should succeed to exit feeTransaction", async () => {
       const tx = Scenario1.blocks[4].block.getSignedTransactionWithProof(
         Scenario1.blocks[4].transactions[2].hash())[1]
       const result = await this.rootChain.exit(
@@ -203,7 +203,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       assert.equal(result.logs[0].event, 'ExitStarted')
     })
 
-    it("should success to exit depositTx and nevert challenged before tx", async () => {
+    it("should succeed to exit depositTx and nevert challenged before tx", async () => {
       const depositTx = Scenario1.deposits[2]
       const result1 = await this.rootChain.exit(
         15 * 100,
@@ -272,7 +272,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         });
     })
 
-    it("should success to challengeBefore", async () => {
+    it("should succeed to challengeBefore", async () => {
       const tx = Scenario1.blocks[2].block.getSignedTransactionWithProof(
         Scenario1.blocks[2].transactions[0].hash())[0]
       const result = await this.rootChain.exit(
@@ -320,7 +320,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         }))
     })
 
-    it("should success to respondChallenge", async () => {
+    it("should succeed to respondChallenge", async () => {
       const tx = Scenario1.blocks[2].block.getSignedTransactionWithProof(
         Scenario1.blocks[2].transactions[0].hash())[0]
       const result1 = await this.rootChain.exit(
@@ -375,7 +375,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       assert.equal(exitResult[2].toNumber(), 0)
     })
 
-    it("should success to challengeBefore by deposit transaction", async () => {
+    it("should succeed to challengeBefore by deposit transaction", async () => {
       const tx = Scenario1.blocks[0].block.getSignedTransactionWithProof(
         Scenario1.blocks[0].transactions[0].hash())[0]
       const result1 = await this.rootChain.exit(
@@ -431,7 +431,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       assert.equal(exitResult[2].toNumber(), 0)
     })
 
-    it("should failed to finalizeExit", async () => {
+    it("should fail to finalizeExit", async () => {
       const tx = Scenario1.blocks[0].block.getSignedTransactionWithProof(
         Scenario1.blocks[0].transactions[0].hash())[0]
       const result1 = await this.rootChain.exit(
@@ -528,7 +528,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await submit(block3)
     })
 
-    it("should success to exit two UTXO from same transaction", async () => {
+    it("should succeed to exit two UTXO from same transaction", async () => {
       const txs = block3.getSignedTransactionWithProof(swapTx.hash())
       const tx1 = txs[0]
       const tx2 = txs[1]
@@ -607,7 +607,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await submit(Scenario2.blocks[1].block)
     })
 
-    it("should success to force include", async () => {
+    it("should succeed to force include", async () => {
       const tx1 = Scenario2.blocks[1].block.getSignedTransactionWithProof(
         Scenario2.blocks[1].transactions[0].hash())[0]
       const tx2 = Scenario2.blocks[1].block.getSignedTransactionWithProof(
@@ -670,7 +670,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
         }))
     })
 
-    it("should success to respond a force include", async () => {
+    it("should succeed to respond a force include", async () => {
       const tx1 = Scenario2.blocks[1].block.getSignedTransactionWithProof(
         Scenario2.blocks[1].transactions[0].hash())[0]
       const tx2 = Scenario2.blocks[1].block.getSignedTransactionWithProof(
@@ -804,7 +804,7 @@ contract("RootChain", ([alice, bob, operator, user4, user5, admin]) => {
       await submit(Scenario4.blocks[0].block)
     })
 
-    it("should success to exit and finalizeExit ERC20", async () => {
+    it("should succeed to exit and finalizeExit ERC20", async () => {
       const tx = Scenario4.blocks[0].block.getSignedTransactionWithProof(
         Scenario4.blocks[0].transactions[0].hash())[0]
       const result = await this.rootChain.exit(

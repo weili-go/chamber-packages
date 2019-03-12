@@ -86,7 +86,7 @@ describe('Chain', () => {
     assert.equal(root.ok().length, 66)
   })
 
-  it('should failed to generateBlock by no input', async () => {
+  it('should fail to generateBlock by no input', async () => {
     const chain = new Chain(new MockChainDb())
     const tx = SplitTransaction.Transfer(
       AliceAddress,
@@ -102,7 +102,7 @@ describe('Chain', () => {
     assert.equal(result.error().message, 'no valid transactions')
   })
 
-  it('should success to generateBlock but segment duplecated', async () => {
+  it('should generateBlock but segment duplecated', async () => {
     const chain = new Chain(new MockChainDb())
     const segment = Segment.ETH(ethers.utils.bigNumberify(0), ethers.utils.bigNumberify(10000000))
     const depositTx = new DepositTransaction(AliceAddress, segment)

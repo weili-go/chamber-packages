@@ -13,7 +13,7 @@ describe('ExitableRangeManager', () => {
   const bn2000000 = utils.bigNumberify('2000000')
   const bn3000000 = utils.bigNumberify('3000000')
 
-  it('shoud success to extendRight', () => {
+  it('shoud be succeeded to extendRight', () => {
     const exitableRangeManager = new ExitableRangeManager()
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
@@ -28,7 +28,7 @@ describe('ExitableRangeManager', () => {
       bn2000000.toString())
   })
 
-  it('shoud success to remove left', () => {
+  it('shoud be succeeded to remove left', () => {
     const exitableRangeManager = new ExitableRangeManager()
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
@@ -42,7 +42,7 @@ describe('ExitableRangeManager', () => {
     }, 'exitable ranges not found');
   })
 
-  it('shoud success to remove right', () => {
+  it('shoud be succeeded to remove right', () => {
     const exitableRangeManager = new ExitableRangeManager()
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
@@ -67,7 +67,7 @@ describe('ExitableRangeManager', () => {
     }, 'exitable ranges not found');
   })
 
-  it('shoud success to insert', () => {
+  it('shoud be succeeded to insert', () => {
     const exitableRangeManager = new ExitableRangeManager()
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
@@ -79,7 +79,7 @@ describe('ExitableRangeManager', () => {
       bn1500000.toString())
   })
 
-  it('shoud success to insert and remove multiple times', () => {
+  it('shoud be succeeded to insert and remove multiple times', () => {
     const exitableRangeManager = new ExitableRangeManager()
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
@@ -97,7 +97,7 @@ describe('ExitableRangeManager', () => {
       utils.bigNumberify('5000000').toString())    
   })
 
-  it('shoud success to serialize and deserialize', () => {
+  it('shoud be succeeded to serialize and deserialize', () => {
     const exitableRangeManager = new ExitableRangeManager()
     exitableRangeManager.extendRight(bn1000000)
     exitableRangeManager.extendRight(bn2000000)
