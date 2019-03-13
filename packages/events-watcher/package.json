@@ -13,5 +13,9 @@
     "test": "mocha -r ts-node/register 'test/**/*.ts'",
     "test:ci": "npm run test",
     "docs": "typedoc --out ../../docs/core ./src"
+  },
+  "dependencies": {
+    "ethers": "^4.0.27",
+    "tslib": "^1.9.3"
   }
 }
