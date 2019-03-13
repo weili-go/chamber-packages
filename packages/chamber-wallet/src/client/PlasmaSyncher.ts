@@ -12,6 +12,7 @@ import { WaitingBlockWrapper } from '../models'
 import artifact from '../assets/RootChain.json'
 import { IEventWatcherStorage, EventWatcher, ETHEventAdaptor } from '@layer2/events-watcher'
 import { IStorage } from '../storage/IStorage'
+import { EventEmitter } from 'events'
 if(!artifact.abi) {
   console.error('ABI not found')
 }
@@ -47,7 +48,7 @@ export class WalletEventWatcherStorage implements IEventWatcherStorage {
 
 }
 
-export class PlasmaSyncher {
+export class PlasmaSyncher extends EventEmitter {
   private client: PlasmaClient
   private storage: WalletStorage
   private httpProvider: ethers.providers.JsonRpcProvider
@@ -62,6 +63,7 @@ export class PlasmaSyncher {
     storage: WalletStorage,
     options: any
   ) {
+    super()
     this.client = client
     this.httpProvider = provider
     this.storage = storage
@@ -80,7 +82,7 @@ export class PlasmaSyncher {
       ))
     })
   }
-
+  
   getListener() {
     return this.listener
   }
@@ -139,9 +141,12 @@ export class PlasmaSyncher {
   /**
    * @ignore
    */
-  private addWaitingBlock(tx: WaitingBlockWrapper) {
-    this.waitingBlocks.set(tx.blkNum.toString(), tx.serialize())
+  private addWaitingBlock(blockHeader: WaitingBlockWrapper) {
+    this.waitingBlocks.set(blockHeader.blkNum.toString(), blockHeader.serialize())
     this.storage.storeMap('waitingBlocks', this.waitingBlocks)
+    this.emit('PlasmaBlockHeaderAdded', {
+      blockHeader: blockHeader
+    })
   }
 
   /**

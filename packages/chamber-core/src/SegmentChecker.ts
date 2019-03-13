@@ -1,9 +1,9 @@
 import {
-  SignedTransaction,
   TransactionOutput,
   TransactionOutputDeserializer,
   DepositTransaction
-} from '@layer2/core'
+} from './tx'
+import { SignedTransaction } from './SignedTransaction'
 import { BigNumber } from 'ethers/utils';
 
 export class SegmentChecker {

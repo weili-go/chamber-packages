@@ -27,11 +27,12 @@ import {
   TransactionOutput
 } from '@layer2/core'
 import { WalletErrorFactory } from './error'
-import { Exit } from './models'
+import { Exit, WaitingBlockWrapper } from './models'
 import { Contract } from 'ethers'
 import { BigNumber } from 'ethers/utils';
 import { PlasmaSyncher } from './client/PlasmaSyncher'
 import artifact from './assets/RootChain.json'
+import { SegmentHistoryManager } from './history/SegmentHistory';
 if(!artifact.abi) {
   console.error('ABI not found')
 }
@@ -59,6 +60,7 @@ export class ChamberWallet {
   private exitableRangeManager: ExitableRangeManager
   private plasmaSyncher: PlasmaSyncher
   private options: any
+  private segmentHistoryManager: SegmentHistoryManager
 
   /**
    * 
@@ -191,6 +193,10 @@ export class ChamberWallet {
     })
 
     this.exitableRangeManager = this.storage.loadExitableRangeManager()
+    this.segmentHistoryManager = new SegmentHistoryManager()
+    this.plasmaSyncher.on('PlasmaBlockHeaderAdded', (e: any) => {
+      this.segmentHistoryManager.appendBlockHeader(e.blockHeader as WaitingBlockWrapper)
+    })
   }
 
   /**
@@ -236,9 +242,9 @@ export class ChamberWallet {
    */
   private updateBlock(block: Block) {
     this.getUTXOArray().forEach((tx) => {
-      const exclusionProof = block.getExclusionProof(tx.getOutput().getSegment(0))
+      const segmentedBlock = block.getSegmentedBlock(tx.getOutput().getSegment(0))
       const key = tx.getOutput().hash()
-      this.storage.getStorage().addProof(key, block.getBlockNumber(), JSON.stringify(exclusionProof.serialize()))
+      this.segmentHistoryManager.appendSegmentedBlock(key, segmentedBlock)
     })
     const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(tx => {
       tx.signedTx.getAllInputs().forEach(input => {
@@ -249,6 +255,9 @@ export class ChamberWallet {
         if(tx.requireConfsig()) {
           tx.confirmMerkleProofs(this.wallet.privateKey)
         }
+        this.segmentHistoryManager.init(
+          tx.getOutput().hash(),
+          tx.getOutput().getSegment(0))
         this.storage.addUTXO(tx)
         // send back to operator
         if(tx.requireConfsig()) {
@@ -271,6 +280,7 @@ export class ChamberWallet {
       depositorAddress,
       segment
     )
+    this.segmentHistoryManager.appendDeposit(blkNum.toNumber(), depositTx)
     if(depositorAddress === this.getAddress()) {
       this.storage.addUTXO(new SignedTransactionWithProof(
         new SignedTransaction([depositTx]),
@@ -280,7 +290,7 @@ export class ChamberWallet {
         '0x',
         ethers.constants.Zero,
         // 0x00000050 is header. 0x0050 is size of deposit transaction
-        new SumMerkleProof(1, 0, segment, '0x00000050'),
+        new SumMerkleProof(1, 0, segment, '', '0x00000050'),
         blkNum))
     }
     this.exitableRangeManager.extendRight(end)
@@ -360,6 +370,18 @@ export class ChamberWallet {
       balance = balance.add(tx.getOutput().getSegment(0).getAmount())
     })
     return balance
+  }
+
+  /**
+   * verifyHistory is history verification method for UTXO
+   * @param tx The tx be verified history
+   */
+  verifyHistory(tx: SignedTransactionWithProof): boolean {
+    const key = tx.getOutput().hash()
+    // verify history between deposit and latest tx
+    // segmentHistoryManager.verifyHistory should return current UTXO
+    const utxos = this.segmentHistoryManager.verifyHistory(key)
+    return utxos.length == 0 && utxos[0].hash() == key
   }
 
   /**

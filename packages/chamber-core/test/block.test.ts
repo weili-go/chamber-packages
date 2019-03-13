@@ -6,7 +6,8 @@ import {
   SplitTransaction,
   MergeTransaction,
   SignedTransaction,
-  SignedTransactionWithProof
+  SignedTransactionWithProof,
+  ExclusionProof
 } from '../src'
 import { assert } from "chai"
 import { constants, utils } from "ethers"
@@ -66,7 +67,7 @@ describe('Block', () => {
     assert.equal(block.checkInclusion(sptx1, segment1), true)
   })
 
-  it('should getExclusionProof', () => {
+  it('should getSegmentedBlock', () => {
     const block = new Block()
     block.setBlockNumber(2)
     block.appendTx(tx1)
@@ -77,9 +78,12 @@ describe('Block', () => {
       utils.bigNumberify('3000000'),
       utils.bigNumberify('3200000')
     )
-    const exclusionProof = block.getExclusionProof(segment)
-    assert.equal(exclusionProof.index, 0)
-    assert.equal(exclusionProof.segment.start.toNumber(), 0)
+    const segmentedBlock = block.getSegmentedBlock(segment)
+    assert.equal(segmentedBlock.blkNum, block.number)
+    assert.isTrue(segmentedBlock.getItems()[0] instanceof ExclusionProof)
+    const exclusionProof = segmentedBlock.getItems()[0] as ExclusionProof
+    assert.equal(exclusionProof.proof.segment.start.toNumber(), 0)
+    assert.equal(exclusionProof.proof.segment.end.toNumber(), 5000000)
   })
 
   it('serialize and deserialize', () => {

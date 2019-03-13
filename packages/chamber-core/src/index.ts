@@ -18,6 +18,7 @@ export {
 export {
   Segment
 } from './segment'
+export { SegmentChecker } from './SegmentChecker'
 
 export {
   SumMerkleTreeNode,
@@ -31,5 +32,6 @@ export * from './utils/result'
 export * from './utils/MapUtil'
 
 export * from './models/swap'
+export * from './models/SegmentedBlock'
 
 export * from './verifiers/escrow'

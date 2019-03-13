@@ -7,6 +7,7 @@ import {
   SignedTransaction,
   Block,
   Segment,
+  SegmentChecker,
   SignedTransactionWithProof,
   SplitTransaction
 } from '@layer2/core'
@@ -14,7 +15,6 @@ import { ChainErrorFactory } from './error'
 import { constants, utils } from 'ethers';
 import BigNumber = utils.BigNumber
 import { SwapManager } from './SwapManager';
-import { SegmentChecker } from './SegmentChecker';
 
 export interface IChainDb {
   contains(key: string): Promise<boolean>

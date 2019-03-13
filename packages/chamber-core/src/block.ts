@@ -24,6 +24,7 @@ import {
 } from './helpers/types'
 import { DepositTransaction, TransactionDecoder } from './tx';
 import { MapUtil } from './utils/MapUtil'
+import { SegmentedBlock, ExclusionProof } from './models/SegmentedBlock';
 
 class SegmentNode {
   segment: Segment
@@ -184,11 +185,7 @@ class SegmentNode {
       const signedTx = this.getSignedTransaction(hash)
       const confSigs: string[] | undefined = this.confSigMap.get(hash)
       const proofs = this.getProof(hash)
-      const outputMaps = signedTx.getSegments().map((s, i) => {return {"s":s, "i":i}}).filter(a => {
-        return !a.s.getAmount().eq(0)
-      }).map(a => a.i)
       return proofs.map((p, i) => {
-        // outputMaps[i] is output index
         const index = signedTx.getIndex(p.segment)
         return new SignedTransactionWithProof(
           signedTx,
@@ -211,17 +208,35 @@ class SegmentNode {
     }
   }
 
-  getExclusionProof(segment: Segment): SumMerkleProof {
-    if(this.tree === null) {
-      this.tree = this.createTree()
+  getSegmentedBlock(segment: Segment): SegmentedBlock {
+    if(this.tree == null) throw new Error('')
+    if(this.superRoot != null) {
+      const superRoot = this.superRoot
+      const proofs = this.tree.getProofByRange(
+        this.numTokens,
+        segment.getGlobalStart(),
+        segment.getGlobalEnd())
+      const items = proofs.map(proof => {
+        if(proof.leaf == utils.keccak256(HashZero)) {
+          return new ExclusionProof(proof)
+        } else {
+          const signedTx = this.getSignedTransaction(proof.leaf)
+          const index = signedTx.getIndex(proof.segment)
+          return new SignedTransactionWithProof(
+            signedTx,
+            index.txIndex,
+            index.outputIndex,
+            superRoot,
+            this.getRoot(),
+            this.timestamp,
+            proof,
+            utils.bigNumberify(this.number))
+        }
+      })
+      return new SegmentedBlock(segment, items, this.number)
+    } else {
+      throw new Error('')
     }
-    const proof = this.tree.getProofByRange(
-      this.numTokens,
-      segment.getGlobalStart())
-    if(proof == null) {
-      throw new Error('exclusion proof not found')
-    }
-    return proof
   }
 
   checkInclusion(
