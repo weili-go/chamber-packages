@@ -2,9 +2,7 @@
   "name": "@layer2/contracts",
   "version": "0.0.31",
   "main": "index.js",
-  "publishConfig": {
-    "access": "public"
-  },
+  "private": true,
   "license": "MIT",
   "repository": {
     "type": "git",

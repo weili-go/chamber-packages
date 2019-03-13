@@ -17,7 +17,7 @@
   "license": "MIT",
   "main": "lib/operator.js",
   "bin": {
-    "layer2-operator": "entry.js"
+    "layer2-operator": "lib/entry.js"
   },
   "directories": {
     "lib": "lib",
