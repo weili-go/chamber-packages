@@ -376,6 +376,11 @@ def listToken(
 def setup():
   self.listToken(ZERO_ADDRESS, as_unitless_number(as_wei_value(1, "gwei")))
 
+@public
+def updateOperator(_newOperator: address):
+  assert msg.sender == self.operator
+  self.operator = _newOperator
+
 # @dev submit plasma block
 @public
 def submit(_root: bytes32):
