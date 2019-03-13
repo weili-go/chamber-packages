@@ -1,6 +1,9 @@
 {
   "name": "@layer2/operator",
   "version": "0.0.30",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "> TODO: description",
   "keywords": [
     "plasma",
