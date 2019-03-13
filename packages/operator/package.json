@@ -44,7 +44,8 @@
     "ethers": "^4.0.27",
     "jayson": "^2.1.2",
     "leveldown": "^4.0.2",
-    "levelup": "^4.0.0"
+    "levelup": "^4.0.0",
+    "memdown": "^3.0.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
