@@ -1,0 +1,54 @@
+{
+  "name": "@layer2/operator",
+  "version": "0.0.30",
+  "description": "> TODO: description",
+  "keywords": [
+    "plasma",
+    "ethereum"
+  ],
+  "author": {
+    "name": "Cryptoeconomics Lab",
+    "url": "https://www.cryptoeconomicslab.com/"
+  },
+  "homepage": "https://github.com/cryptoeconomicslab/chamber-packages",
+  "license": "MIT",
+  "main": "lib/operator.js",
+  "bin": {
+    "layer2-operator": "entry.js"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cryptoeconomicslab/chamber-packages.git"
+  },
+  "scripts": {
+    "test": "mocha 'test/**/*.js'"
+  },
+  "bugs": {
+    "url": "https://github.com/cryptoeconomicslab/chamber-packages/issues"
+  },
+  "dependencies": {
+    "@layer2/childchain": "^0.0.30",
+    "@layer2/core": "^0.0.30",
+    "@layer2/events-watcher": "^0.0.30",
+    "body-parser": "^1.18.3",
+    "connect": "^3.6.6",
+    "cors": "^2.8.5",
+    "dotenv": "^6.2.0",
+    "ethers": "^4.0.27",
+    "jayson": "^2.1.2",
+    "leveldown": "^4.0.2",
+    "levelup": "^4.0.0",
+    "memdown": "^3.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.0.2"
+  }
+}

@@ -17,5 +17,9 @@
   "dependencies": {
     "ethers": "^4.0.27",
     "tslib": "^1.9.3"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.0.2"
   }
 }
