@@ -1,6 +1,6 @@
 {
   "name": "@layer2/childchain",
-  "version": "0.0.31",
+  "version": "0.0.32",
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -12,7 +12,7 @@
   },
   "files": [
     "dist"
-  ],  
+  ],
   "scripts": {
     "build": "tsc --build ./tsconfig.json",
     "build:dev": "tsc",
@@ -24,7 +24,7 @@
     "docs": "typedoc --out ../../docs/childchain ./src"
   },
   "dependencies": {
-    "@layer2/core": "^0.0.31",
+    "@layer2/core": "^0.0.32",
     "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "^7.1.0",
     "@types/mocha": "^5.2.5",
