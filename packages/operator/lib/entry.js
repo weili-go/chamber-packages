@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
-const { ChainManager } = require('./lib');
-const Rpc = require('./lib/JsonRpc');
+const { ChainManager } = require('./index');
+const Rpc = require('./JsonRpc');
 const leveldown = require('leveldown');
 const path = require('path')
 const fs = require('fs')
