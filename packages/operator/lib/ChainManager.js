@@ -3,7 +3,6 @@ const ChainDb = require('./db/LeveldbAdaptor');
 const { EventWatcher, ETHEventAdaptor } = require('@layer2/events-watcher')
 const ethers = require('ethers')
 const rootChainInterface = new ethers.utils.Interface(require('../assets/RootChain.json').abi)
-require("dotenv").config();
 
 class WalletEventWatcherStorage {
 

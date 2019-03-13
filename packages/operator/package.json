@@ -1,6 +1,9 @@
 {
   "name": "@layer2/operator",
   "version": "0.0.30",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "> TODO: description",
   "keywords": [
     "plasma",
@@ -28,6 +31,7 @@
     "url": "git+https://github.com/cryptoeconomicslab/chamber-packages.git"
   },
   "scripts": {
+    "start": "node -r dotenv/config ./entry",
     "test": "mocha 'test/**/*.js'"
   },
   "bugs": {
