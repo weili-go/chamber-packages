@@ -9,30 +9,48 @@ import {
 } from '@layer2/core';
 import { WaitingBlockWrapper } from '../models';
 import { ethers } from 'ethers';
+import { IStorage } from '../storage';
+import { PlasmaClient } from '../client';
 
 /**
  * The history of a segment
  */
 export class SegmentHistory {
+  key: string
   originalSegment: Segment
-  history: SegmentedBlock[]
+  storage: IStorage
 
-  constructor(originalSegment: Segment) {
+  constructor(storage: IStorage, key: string, originalSegment: Segment) {
+    this.key = key
+    this.storage = storage
     this.originalSegment = originalSegment
-    this.history = []
   }
 
-  append(segmentedBlock: SegmentedBlock) {
-    this.history[segmentedBlock.getBlockNumber()] = segmentedBlock
+  getKey() {
+    return this.key
   }
 
-  verify(
+  async append(segmentedBlock: SegmentedBlock) {
+    await this.storage.addProof(
+      this.getKey(),
+      segmentedBlock.getBlockNumber(),
+      JSON.stringify(segmentedBlock.serialize())
+    )
+  }
+
+  async getSegmentedBlock(blkNum: number) {
+    const serialized = await this.storage.getProof(this.getKey(), blkNum)
+    return SegmentedBlock.deserialize(JSON.parse(serialized))
+  }
+
+  async verify(
     segmentChecker: SegmentChecker,
     blkNum: number,
     root: string
   ) {
     // check this.history[blkNum] is exclusion proof or parent of childTxs
-    const items = this.history[blkNum].getItems()
+    const segmentedBlock = await this.getSegmentedBlock(blkNum)
+    const items = segmentedBlock.getItems()
     items.forEach((item) => {
       if(item instanceof SignedTransactionWithProof) {
         const tx = item as SignedTransactionWithProof
@@ -70,51 +88,110 @@ export class SegmentHistoryManager {
   blockHeaders: WaitingBlockWrapper[]
   deposits: DepositTransaction[]
   segmentChecker: SegmentChecker
+  storage: IStorage
+  client: PlasmaClient
 
-  constructor() {
+  constructor(storage: IStorage, client: PlasmaClient) {
+    this.storage = storage
+    this.client = client
     this.deposits = []
     this.blockHeaders = []
     this.segmentChecker = new SegmentChecker()
+    try {
+      this.segmentChecker.deserialize(JSON.parse(this.storage.get('segmentChecker')))
+    } catch(e) {
+      console.warn(e)
+    }
   }
 
   init(key: string, originalSegment: Segment) {
-    this.segmentHistoryMap[key] = new SegmentHistory(originalSegment)
+    this.segmentHistoryMap[key] = new SegmentHistory(this.storage, key, originalSegment)
   }
 
   appendDeposit(blkNum: number, deposit: DepositTransaction) {
     this.segmentChecker.insertDepositTx(deposit, ethers.utils.bigNumberify(blkNum))
+    this.storage.add('segmentChecker', JSON.stringify(this.segmentChecker.serialize()))
   }
 
-  appendSegmentedBlock(key: string, segmentedBlock: SegmentedBlock) {
-    this.segmentHistoryMap[key].append(segmentedBlock)
+  async appendSegmentedBlock(key: string, segmentedBlock: SegmentedBlock) {
+    if(!this.segmentHistoryMap[key]) {
+      this.init(key, segmentedBlock.getOriginalSegment())
+    }
+    await this.segmentHistoryMap[key].append(segmentedBlock)
   }
 
-  appendBlockHeader(header: WaitingBlockWrapper) {
+  async appendBlockHeader(header: WaitingBlockWrapper) {
     this.blockHeaders.push(header)
+    await this.storage.addBlockHeader(header.blkNum.toNumber(), header.serialize())
   }
 
-  verifyHistory(key: string) {
+  async getBlockHeader(blkNum: number) {
+    const serialized = await this.storage.getBlockHeader(blkNum)
+    return WaitingBlockWrapper.deserialize(serialized)
+  }
+
+  async loadBlockHeaders(fromBlkNum: number, toBlkNum: number) {
+    const serialized = await this.storage.searchBlockHeader(fromBlkNum, toBlkNum)
+    return serialized.map((s: any) => WaitingBlockWrapper.deserialize(s))
+  }
+
+  async verifyHistory(key: string) {
     const segmentChecker = new SegmentChecker()
     segmentChecker.deserialize(this.segmentChecker.serialize())
-    return this.verifyPart(segmentChecker, key, 0)
+    return await this.verifyPart(segmentChecker, key, 0)
   }
 
-  private verifyPart(
+  private async verifyPart(
     segmentChecker: SegmentChecker,
     key: string,
-    pointer: number
-  ): TransactionOutput[] {
+    fromBlkNum: number
+  ): Promise<TransactionOutput[]> {
     // check segment history by this.blockHeaders
-    if(pointer < this.blockHeaders.length) {
-      const blkNum = this.blockHeaders[pointer].blkNum.toNumber()
-      this.segmentHistoryMap[key].verify(
-        segmentChecker,
-        blkNum,
-        this.blockHeaders[pointer].root)
-      return this.verifyPart(
+    const blockHeaders = await this.loadBlockHeaders(fromBlkNum, fromBlkNum + 100)
+    if(blockHeaders.length > 0) {
+      await this.verifyPart2(segmentChecker, key, blockHeaders, 2)
+      return this.verifyPart(segmentChecker, key, fromBlkNum + 100)
+    } else {
+      return segmentChecker.leaves
+    }
+  }
+
+  private async verifyPart2(
+    segmentChecker: SegmentChecker,
+    key: string,
+    blockHeaders: WaitingBlockWrapper[],
+    retryCounter: number
+  ): Promise<TransactionOutput[]> {
+    const blockHeader = blockHeaders.shift()
+    if(blockHeader) {
+      const blkNum = blockHeader.blkNum.toNumber()
+      try {
+        await this.segmentHistoryMap[key].verify(
+          segmentChecker,
+          blkNum,
+          blockHeader.root)
+      } catch(e) {
+        if(e.message === 'invalid history') {
+          throw e
+        }
+        console.warn(e)
+        const result = await this.client.getBlock(blkNum)
+        if(result.isOk() && retryCounter >= 0) {
+          const segmentedBlock = result.ok().getSegmentedBlock(this.segmentHistoryMap[key].originalSegment)
+          this.appendSegmentedBlock(key, segmentedBlock)
+          // retry
+          return await this.verifyPart2(
+            segmentChecker,
+            key,
+            [blockHeader].concat(blockHeaders),
+            retryCounter - 1)
+        }
+      }
+      return await this.verifyPart2(
         segmentChecker,
         key,
-        pointer + 1)
+        blockHeaders,
+        2)
     } else {
       return segmentChecker.leaves
     }

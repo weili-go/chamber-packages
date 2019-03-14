@@ -209,7 +209,9 @@ class SegmentNode {
   }
 
   getSegmentedBlock(segment: Segment): SegmentedBlock {
-    if(this.tree == null) throw new Error('')
+    if(this.tree === null) {
+      this.tree = this.createTree()
+    }
     if(this.superRoot != null) {
       const superRoot = this.superRoot
       const proofs = this.tree.getProofByRange(
