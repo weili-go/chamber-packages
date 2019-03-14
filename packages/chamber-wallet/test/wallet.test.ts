@@ -11,7 +11,6 @@ import {
 import { assert } from "chai"
 import { constants, utils } from "ethers"
 import { MockStorage } from "../src/storage/MockStorage";
-import { util } from 'prettier';
 
 class MockNetworkClient implements INetworkClient {
   request(methodName: string, args: any) {

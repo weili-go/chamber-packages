@@ -56,17 +56,20 @@ export class SumMerkleProof {
   numTokens: number
   index: number
   segment: Segment
+  leaf: string
   proof: string
 
   constructor(
     numTokens: number,
     index: number,
     segment: Segment,
+    leaf: string,
     proof: string
   ) {
     this.numTokens = numTokens
     this.index = index
     this.segment = segment
+    this.leaf = leaf
     this.proof = proof
   }
 
@@ -81,6 +84,7 @@ export class SumMerkleProof {
       numTokens: this.numTokens,
       index: this.index,
       segment: this.segment.serialize(),
+      leaf: this.leaf,
       proof: this.proof
     }
   }
@@ -90,6 +94,7 @@ export class SumMerkleProof {
       data.numTokens,
       data.index,
       Segment.deserialize(data.segment),
+      data.leaf,
       data.proof
     )
   }
@@ -185,6 +190,7 @@ export class SumMerkleTree {
           numTokens,
           i,
           Segment.fromGlobal(start, start.add(amount)),
+          utils.hexlify(this.leaves[i].getHash()),
           utils.hexlify(this._proof(i))))
       }
       start = start.add(amount)
@@ -196,21 +202,25 @@ export class SumMerkleTree {
    * getProofByRange
    * @param {BigNumber} offset 
    */
-  getProofByRange(numTokens: number, offset: BigNumber): SumMerkleProof | null {
-    let start = new BigNumber(0)
+  getProofByRange(numTokens: number, start: BigNumber, end: BigNumber): SumMerkleProof[] {
+    let offsetStart = new BigNumber(0)
+    const proofs = []
 
     for(let i = 0; i < this.leaves.length; i++) {
       const amount = this.leaves[i].getLengthAsBigNumber()
-      if(start.add(amount).gt(offset)) {
-        return new SumMerkleProof(
+      const offsetEnd = offsetStart.add(amount)
+      // offsetStart < end and start < offsetEnd
+      if(end.gt(offsetStart) && offsetEnd.gt(start)) {
+        proofs.push(new SumMerkleProof(
           numTokens,
           i,
-          Segment.fromGlobal(start, start.add(amount)),
-          utils.hexlify(this._proof(i)))
+          Segment.fromGlobal(offsetStart, offsetEnd),
+          utils.hexlify(this.leaves[i].getHash()),
+          utils.hexlify(this._proof(i))))
       }
-      start = start.add(amount)
+      offsetStart = offsetEnd
     }
-    return null
+    return proofs
   }
 
   _proof(index: number): Buffer {
@@ -240,7 +250,7 @@ export class SumMerkleTree {
    * @param {Buffer} root is root of tree
    * @param {SumMerkleProof} proof is proof buffer for the leaf
    */
-  verify(
+  static verify(
     start: BigNumber,
     end: BigNumber,
     value: Buffer,

@@ -38,7 +38,7 @@ describe('SumMerkleTree', function() {
       const root = tree.root();
       const proofs = tree.proofs(0, leaves[2].getHash());
       //assert.equal(root.toString('hex'), '95cb4e0012c0cd6674800bc14c15d1af47a202067789e652d49c60b3f4f1c1cc');
-      assert.equal(tree.verify(
+      assert.equal(SumMerkleTree.verify(
         new BigNumber(5),
         new BigNumber(9),
         leaves[2].getHash(),    // leaf hash
@@ -51,7 +51,7 @@ describe('SumMerkleTree', function() {
       const tree = new SumMerkleTree(leaves);
       const root = tree.root();
       const proofs = tree.proofs(0, leaves[2].getHash());
-      assert.equal(tree.verify(
+      assert.equal(SumMerkleTree.verify(
         new BigNumber(5),
         new BigNumber(9),
         leaves[2].getHash(),    // leaf hash
@@ -64,7 +64,7 @@ describe('SumMerkleTree', function() {
       const tree = new SumMerkleTree(leaves);
       const root = tree.root();
       const proofs = tree.proofs(0, leaves[2].getHash());
-      assert.equal(tree.verify(
+      assert.equal(SumMerkleTree.verify(
         new BigNumber(7),
         new BigNumber(9),
         leaves[2].getHash(),    // leaf hash
@@ -77,7 +77,7 @@ describe('SumMerkleTree', function() {
       const tree = new SumMerkleTree(leaves);
       const root = tree.root();
       const proofs = tree.proofs(0, leaves[2].getHash());
-      assert.equal(tree.verify(
+      assert.equal(SumMerkleTree.verify(
         new BigNumber(5),
         new BigNumber(9),
         leaves[0].getHash(),    // leaf hash
