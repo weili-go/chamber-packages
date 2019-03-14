@@ -100,7 +100,8 @@ export class SegmentHistoryManager {
     try {
       this.segmentChecker.deserialize(JSON.parse(this.storage.get('segmentChecker')))
     } catch(e) {
-      console.warn(e)
+      // console.warn(e)
+      // key "segmentChecker" not found
     }
   }
 
