@@ -250,7 +250,7 @@ export class SumMerkleTree {
    * @param {Buffer} root is root of tree
    * @param {SumMerkleProof} proof is proof buffer for the leaf
    */
-  verify(
+  static verify(
     start: BigNumber,
     end: BigNumber,
     value: Buffer,

@@ -12,9 +12,10 @@ import {
   Signature,
   Hash
 } from './helpers/types'
+import { TOTAL_AMOUNT } from './helpers/constants'
 import { keccak256, BigNumber } from 'ethers/utils'
 import {
-  SumMerkleProof
+  SumMerkleProof, SumMerkleTree
 } from './merkle'
 import { HexUtil } from './utils/hex'
 import { Segment } from './segment';
@@ -274,6 +275,17 @@ export class SignedTransactionWithProof {
     const merkleHash = this.merkleHash()
     this.confSigs.push(utils.joinSignature(key.signDigest(merkleHash)))
     this.confSigs = this.getSignedTx().getRawTx(this.txIndex).normalizeSigs(this.confSigs, merkleHash)
+  }
+
+  checkInclusion() {
+    return SumMerkleTree.verify(
+      this.getOutput().getSegment(0).start,
+      this.getOutput().getSegment(0).end,
+      Buffer.from(this.getTxHash().substr(2), 'hex'),
+      TOTAL_AMOUNT.mul(this.proof.numTokens),
+      Buffer.from(this.root.substr(2), 'hex'),
+      this.proof
+    )
   }
 
   serialize() {

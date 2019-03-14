@@ -218,7 +218,7 @@ class SegmentNode {
         segment.getGlobalEnd())
       const items = proofs.map(proof => {
         if(proof.leaf == utils.keccak256(HashZero)) {
-          return new ExclusionProof(proof)
+          return new ExclusionProof(this.getRoot(), proof)
         } else {
           const signedTx = this.getSignedTransaction(proof.leaf)
           const index = signedTx.getIndex(proof.segment)
@@ -247,7 +247,7 @@ class SegmentNode {
       this.tree = this.createTree()
     }
     const proof = tx.getProof()
-    return this.tree.verify(
+    return SumMerkleTree.verify(
       segment.getGlobalStart(),
       segment.getGlobalEnd(),
       Buffer.from(tx.signedTx.hash().substr(2), 'hex'),

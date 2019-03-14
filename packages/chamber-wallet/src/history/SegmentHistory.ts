@@ -28,7 +28,8 @@ export class SegmentHistory {
 
   verify(
     segmentChecker: SegmentChecker,
-    blkNum: number
+    blkNum: number,
+    root: string
   ) {
     // check this.history[blkNum] is exclusion proof or parent of childTxs
     const items = this.history[blkNum].getItems()
@@ -36,6 +37,9 @@ export class SegmentHistory {
       if(item instanceof SignedTransactionWithProof) {
         const tx = item as SignedTransactionWithProof
         // check inclusion check
+        if(!(tx.getRoot() == root && tx.checkInclusion())) {
+          throw new Error('invalid history: fail to check inclusion')
+        }
         if(segmentChecker.isContain(tx.getSignedTx())) {
           segmentChecker.spend(tx.getSignedTx())
           segmentChecker.insert(tx.getSignedTx(), ethers.utils.bigNumberify(blkNum))
@@ -44,7 +48,10 @@ export class SegmentHistory {
         }
       } else if (item instanceof ExclusionProof) {
         const exclusionProof = item as ExclusionProof
-        // check exclusion check
+        // check exclusion
+        if(!(exclusionProof.getRoot() == root && exclusionProof.checkExclusion())) {
+          throw new Error('invalid history: fail to check exclusion')
+        }
       } else {
         throw new Error('invalid type')
       }
@@ -100,7 +107,10 @@ export class SegmentHistoryManager {
     // check segment history by this.blockHeaders
     if(pointer < this.blockHeaders.length) {
       const blkNum = this.blockHeaders[pointer].blkNum.toNumber()
-      this.segmentHistoryMap[key].verify(segmentChecker, blkNum)
+      this.segmentHistoryMap[key].verify(
+        segmentChecker,
+        blkNum,
+        this.blockHeaders[pointer].root)
       return this.verifyPart(
         segmentChecker,
         key,
@@ -108,23 +118,6 @@ export class SegmentHistoryManager {
     } else {
       return segmentChecker.leaves
     }
-  }
-
-  private checkDeposits(from: number, to: number, txs: SignedTransactionWithProof[]) {
-    if(from + 1 < to) {
-      for(let i = from + 1; i < to; i++) {
-        txs = this.checkDeposit(i, txs)
-      }
-    }
-    return txs
-  }
-
-  private checkDeposit(depositBlkNum: number, txs: SignedTransactionWithProof[]) {
-    return txs.filter(tx => {
-      return tx.getSignedTx().getAllInputs().filter(input => {
-        return this.deposits[depositBlkNum].getOutput().isSpent(input)
-      }).length == 0
-    })
   }
 
 }
