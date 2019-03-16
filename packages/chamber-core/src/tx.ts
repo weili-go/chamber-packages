@@ -282,7 +282,7 @@ export class DepositTransaction extends BaseTransaction {
   }
 
   static decode(bytes: string): DepositTransaction {
-    return DepositTransaction.fromTuple(DecoderUtility.decode(bytes))
+    return DepositTransaction.fromTuple(DecoderUtility.decode(utils.hexDataSlice(bytes, 16, 496)))
   }
 
   getInput(): TransactionOutput {

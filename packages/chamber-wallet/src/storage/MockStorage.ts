@@ -47,11 +47,11 @@ export class MockStorage implements IStorage {
     else
     return Promise.reject(new Error(`key ${blkNum} not found`))
   }
-  searchBlockHeader(fromBlkNum: number, toBlkNum: number): Promise<string[]> {
-    const arr: string[] = []
+  searchBlockHeader(fromBlkNum: number, toBlkNum: number): Promise<{blkNum: number, value: string}[]> {
+    const arr: {blkNum: number, value: string}[] = []
     this.blockHeaders.forEach((val, key) => {
       if(key >= fromBlkNum && key < toBlkNum)
-        arr.push(val)
+        arr.push({blkNum: key, value: val})
     })
     return Promise.resolve(arr)
   }

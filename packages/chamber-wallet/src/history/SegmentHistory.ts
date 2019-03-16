@@ -12,6 +12,83 @@ import { ethers } from 'ethers';
 import { IStorage } from '../storage';
 import { PlasmaClient } from '../client';
 
+export class PlasmaBlockHeader {
+  deposit?: DepositTransaction
+  block?: WaitingBlockWrapper
+  blkNum: number
+
+  constructor(blkNum: number) {
+    this.blkNum = blkNum
+  }
+
+  getBlkNum() {
+    return this.blkNum
+  }
+
+  isDeposit(): boolean {
+    return !!this.deposit
+  }
+
+  setDeposit(deposit: DepositTransaction) {
+    this.deposit = deposit
+  }
+
+  setBlock(block: WaitingBlockWrapper) {
+    this.block = block
+  }
+
+  getDeposit(): DepositTransaction {
+    if(this.deposit) {
+      return this.deposit
+    } else {
+      throw new Error('deposit not found')
+    }
+  }
+
+  getBlock(): WaitingBlockWrapper {
+    if(this.block) {
+      return this.block
+    } else {
+      throw new Error('block not found')
+    }
+  }
+
+  serialize() {
+    if(this.block) {
+      return ['B', this.block.serialize()]
+    } else if(this.deposit) {
+      return ['D', this.deposit.encode()]
+    } else {
+      throw new Error('unknown type')
+    }
+  }
+
+  static deserialize(blkNum: number, data: any[]) {
+    const plasmaBlockHeader = new PlasmaBlockHeader(blkNum)
+    if(data[0] == 'B') {
+      plasmaBlockHeader.setBlock(WaitingBlockWrapper.deserialize(data[1]))
+    } else if(data[0] == 'D') {
+      plasmaBlockHeader.setDeposit(DepositTransaction.decode(data[1]))
+    } else {
+      throw new Error('unknown type')
+    }
+    return plasmaBlockHeader
+  }
+
+  static CreateDeposit(blkNum: number, deposit: DepositTransaction) {
+    const plasmaBlockHeader = new PlasmaBlockHeader(blkNum)
+    plasmaBlockHeader.setDeposit(deposit)
+    return plasmaBlockHeader
+  }
+
+  static CreateTxBlock(block: WaitingBlockWrapper) {
+    const plasmaBlockHeader = new PlasmaBlockHeader(block.blkNum.toNumber())
+    plasmaBlockHeader.setBlock(block)
+    return plasmaBlockHeader
+  }
+  
+}
+
 /**
  * The history of a segment
  */
@@ -87,7 +164,6 @@ export class SegmentHistoryManager {
   segmentHistoryMap: {[key: string]: SegmentHistory} = {}
   blockHeaders: WaitingBlockWrapper[]
   deposits: DepositTransaction[]
-  segmentChecker: SegmentChecker
   storage: IStorage
   client: PlasmaClient
 
@@ -96,13 +172,6 @@ export class SegmentHistoryManager {
     this.client = client
     this.deposits = []
     this.blockHeaders = []
-    this.segmentChecker = new SegmentChecker()
-    try {
-      this.segmentChecker.deserialize(JSON.parse(this.storage.get('segmentChecker')))
-    } catch(e) {
-      // console.warn(e)
-      // key "segmentChecker" not found
-    }
   }
 
   init(key: string, originalSegment: Segment) {
@@ -110,8 +179,7 @@ export class SegmentHistoryManager {
   }
 
   appendDeposit(blkNum: number, deposit: DepositTransaction) {
-    this.segmentChecker.insertDepositTx(deposit, ethers.utils.bigNumberify(blkNum))
-    this.storage.add('segmentChecker', JSON.stringify(this.segmentChecker.serialize()))
+    this.storage.addBlockHeader(blkNum, JSON.stringify(PlasmaBlockHeader.CreateDeposit(blkNum, deposit).serialize()))
   }
 
   async appendSegmentedBlock(key: string, segmentedBlock: SegmentedBlock) {
@@ -123,26 +191,20 @@ export class SegmentHistoryManager {
 
   async appendBlockHeader(header: WaitingBlockWrapper) {
     this.blockHeaders.push(header)
-    await this.storage.addBlockHeader(header.blkNum.toNumber(), header.serialize())
-  }
-
-  async getBlockHeader(blkNum: number) {
-    const serialized = await this.storage.getBlockHeader(blkNum)
-    return WaitingBlockWrapper.deserialize(serialized)
+    await this.storage.addBlockHeader(header.blkNum.toNumber(), JSON.stringify(PlasmaBlockHeader.CreateTxBlock(header).serialize()))
   }
 
   async loadBlockHeaders(fromBlkNum: number, toBlkNum: number) {
     const serialized = await this.storage.searchBlockHeader(fromBlkNum, toBlkNum)
-    return serialized.map((s: any) => WaitingBlockWrapper.deserialize(s))
+    return serialized.map((s: any) => PlasmaBlockHeader.deserialize(s.blkNum, JSON.parse(s.value)))
   }
 
   async verifyHistory(key: string) {
     const segmentChecker = new SegmentChecker()
-    segmentChecker.deserialize(this.segmentChecker.serialize())
-    return await this.verifyPart(segmentChecker, key, 0)
+    return await this.loadAndVerify(segmentChecker, key, 0)
   }
 
-  private async verifyPart(
+  private async loadAndVerify(
     segmentChecker: SegmentChecker,
     key: string,
     fromBlkNum: number
@@ -150,52 +212,72 @@ export class SegmentHistoryManager {
     // check segment history by this.blockHeaders
     const blockHeaders = await this.loadBlockHeaders(fromBlkNum, fromBlkNum + 100)
     if(blockHeaders.length > 0) {
-      await this.verifyPart2(segmentChecker, key, blockHeaders, 2)
-      return this.verifyPart(segmentChecker, key, fromBlkNum + 100)
+      await this.verifyPart(segmentChecker, key, blockHeaders)
+      return this.loadAndVerify(segmentChecker, key, fromBlkNum + 100)
     } else {
       return segmentChecker.leaves
     }
   }
 
-  private async verifyPart2(
+  private async verifyPart(
     segmentChecker: SegmentChecker,
     key: string,
-    blockHeaders: WaitingBlockWrapper[],
-    retryCounter: number
+    blockHeaders: PlasmaBlockHeader[]
   ): Promise<TransactionOutput[]> {
     const blockHeader = blockHeaders.shift()
     if(blockHeader) {
-      const blkNum = blockHeader.blkNum.toNumber()
-      try {
-        await this.segmentHistoryMap[key].verify(
-          segmentChecker,
-          blkNum,
-          blockHeader.root)
-      } catch(e) {
-        if(e.message === 'invalid history') {
-          throw e
-        }
-        console.warn(e)
-        const result = await this.client.getBlock(blkNum)
-        if(result.isOk() && retryCounter >= 0) {
-          const segmentedBlock = result.ok().getSegmentedBlock(this.segmentHistoryMap[key].originalSegment)
-          this.appendSegmentedBlock(key, segmentedBlock)
-          // retry
-          return await this.verifyPart2(
-            segmentChecker,
-            key,
-            [blockHeader].concat(blockHeaders),
-            retryCounter - 1)
-        }
+      if(blockHeader.isDeposit()) {
+        await this.verifyDeposit(segmentChecker, blockHeader.getBlkNum(), blockHeader.getDeposit())
+      } else {
+        await this.verifyBlock(segmentChecker, key, blockHeader.getBlock(), 2)
       }
-      return await this.verifyPart2(
+      return await this.verifyPart(
         segmentChecker,
         key,
-        blockHeaders,
-        2)
+        blockHeaders)
     } else {
       return segmentChecker.leaves
     }
   }
+
+  private async verifyDeposit(
+    segmentChecker: SegmentChecker,
+    blkNum: number,
+    deposit: DepositTransaction
+  ) {
+    segmentChecker.insertDepositTx(deposit, ethers.utils.bigNumberify(blkNum))
+  }
+
+  private async verifyBlock(
+    segmentChecker: SegmentChecker,
+    key: string,
+    blockHeader: WaitingBlockWrapper,
+    retryCounter: number
+  ) {
+    const blkNum = blockHeader.blkNum.toNumber()
+    try {
+      await this.segmentHistoryMap[key].verify(
+        segmentChecker,
+        blkNum,
+        blockHeader.root)
+    } catch(e) {
+      if(e.message === 'invalid history') {
+        throw e
+      }
+      console.warn(e)
+      const result = await this.client.getBlock(blkNum)
+      if(result.isOk() && retryCounter >= 0) {
+        const segmentedBlock = result.ok().getSegmentedBlock(this.segmentHistoryMap[key].originalSegment)
+        this.appendSegmentedBlock(key, segmentedBlock)
+        // retry
+        await this.verifyBlock(
+          segmentChecker,
+          key,
+          blockHeader,
+          retryCounter - 1)
+      }
+    }
+  }
+
 
 }
