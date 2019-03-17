@@ -31,6 +31,18 @@ export class ExclusionProof {
     )
   }
 
+  serialize() {
+    return {
+      type: 'E',
+      root: this.root,
+      proof: this.proof.serialize()
+    }
+  }
+
+  static deserialize(data: any) {
+    return new ExclusionProof(data.root, SumMerkleProof.deserialize(data.proof))
+  }
+
 }
 
 type SegmentedBlockItem = SignedTransactionWithProof | ExclusionProof
@@ -60,6 +72,28 @@ export class SegmentedBlock {
 
   getBlockNumber() {
     return this.blkNum
+  }
+
+  serialize() {
+    return {
+      originalSegment: this.originalSegment.serialize(),
+      items: this.items.map(item => item.serialize()),
+      blkNum: this.blkNum
+    }
+  }
+
+  static deserialize(data: any) {
+    return new SegmentedBlock(
+      Segment.deserialize(data.originalSegment),
+      data.items.map((item: any) => {
+        if(item.type == 'E') {
+          return ExclusionProof.deserialize(item)
+        } else {
+          return SignedTransactionWithProof.deserialize(item)
+        }
+      }),
+      data.blkNum
+    )
   }
 
 }

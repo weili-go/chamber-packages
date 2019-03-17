@@ -61,6 +61,7 @@ export class ChamberWallet {
   private plasmaSyncher: PlasmaSyncher
   private options: any
   private segmentHistoryManager: SegmentHistoryManager
+  private updatedHandler: (wallet: ChamberWallet) => void
 
   /**
    * 
@@ -193,10 +194,11 @@ export class ChamberWallet {
     })
 
     this.exitableRangeManager = this.storage.loadExitableRangeManager()
-    this.segmentHistoryManager = new SegmentHistoryManager()
+    this.segmentHistoryManager = new SegmentHistoryManager(storage, this.client)
     this.plasmaSyncher.on('PlasmaBlockHeaderAdded', (e: any) => {
       this.segmentHistoryManager.appendBlockHeader(e.blockHeader as WaitingBlockWrapper)
     })
+    this.updatedHandler = (wallet) => {}
   }
 
   /**
@@ -208,6 +210,7 @@ export class ChamberWallet {
    * ```
    */
   async init(handler: (wallet: ChamberWallet) => void) {
+    this.updatedHandler = handler
     await this.plasmaSyncher.init(() => handler(this))
   }
 
@@ -244,24 +247,27 @@ export class ChamberWallet {
     this.getUTXOArray().forEach((tx) => {
       const segmentedBlock = block.getSegmentedBlock(tx.getOutput().getSegment(0))
       const key = tx.getOutput().hash()
-      this.segmentHistoryManager.appendSegmentedBlock(key, segmentedBlock)
+      this.segmentHistoryManager.appendSegmentedBlock(key, segmentedBlock).then(()=>{
+        
+      })
     })
-    const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(tx => {
+    const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(async tx => {
       tx.signedTx.getAllInputs().forEach(input => {
         this._spend(input)
       })
       if(tx.getOutput().getOwners().indexOf(this.wallet.address) >= 0) {
-        // require confirmation signature?
-        if(tx.requireConfsig()) {
-          tx.confirmMerkleProofs(this.wallet.privateKey)
-        }
         this.segmentHistoryManager.init(
           tx.getOutput().hash(),
           tx.getOutput().getSegment(0))
-        this.storage.addUTXO(tx)
-        // send back to operator
-        if(tx.requireConfsig()) {
-          return this.client.sendConfsig(tx)
+        const verified = await this.verifyHistory(tx)
+        if(verified) {
+          this.storage.addUTXO(tx)
+          // require confirmation signature?
+          if(tx.requireConfsig()) {
+            tx.confirmMerkleProofs(this.wallet.privateKey)
+            // send back to operator
+            return this.client.sendConfsig(tx)
+          }
         }
       }
     }).filter(p => !!p)
@@ -280,8 +286,10 @@ export class ChamberWallet {
       depositorAddress,
       segment
     )
-    this.segmentHistoryManager.appendDeposit(blkNum.toNumber(), depositTx)
     if(depositorAddress === this.getAddress()) {
+      this.segmentHistoryManager.init(
+        depositTx.getOutput().withBlkNum(blkNum).hash(),
+        segment)
       this.storage.addUTXO(new SignedTransactionWithProof(
         new SignedTransaction([depositTx]),
         0,
@@ -293,6 +301,7 @@ export class ChamberWallet {
         new SumMerkleProof(1, 0, segment, '', '0x00000050'),
         blkNum))
     }
+    this.segmentHistoryManager.appendDeposit(blkNum.toNumber(), depositTx)
     this.exitableRangeManager.extendRight(end)
     this.storage.saveExitableRangeManager(this.exitableRangeManager)
     return depositTx
@@ -376,12 +385,20 @@ export class ChamberWallet {
    * verifyHistory is history verification method for UTXO
    * @param tx The tx be verified history
    */
-  verifyHistory(tx: SignedTransactionWithProof): boolean {
+  async verifyHistory(tx: SignedTransactionWithProof): Promise<boolean> {
     const key = tx.getOutput().hash()
     // verify history between deposit and latest tx
     // segmentHistoryManager.verifyHistory should return current UTXO
-    const utxos = this.segmentHistoryManager.verifyHistory(key)
-    return utxos.length == 0 && utxos[0].hash() == key
+    const utxos = await this.segmentHistoryManager.verifyHistory(key)
+    if(utxos.length > 0) {
+      tx.checkVerified(true)
+      // update
+      this.storage.addUTXO(tx)
+      this.updatedHandler(this)
+      return true
+    } else {
+      return false
+    }
   }
 
   /**

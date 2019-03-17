@@ -31,7 +31,7 @@
     "url": "git+https://github.com/cryptoeconomicslab/chamber-packages.git"
   },
   "scripts": {
-    "start": "node -r dotenv/config ./entry",
+    "start": "node -r dotenv/config ./lib/entry",
     "test": "mocha 'test/**/*.js'"
   },
   "bugs": {

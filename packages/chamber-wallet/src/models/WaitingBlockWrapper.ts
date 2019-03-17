@@ -14,7 +14,7 @@ export class WaitingBlockWrapper {
 
   serialize() {
     return JSON.stringify({
-      blkNum: this.blkNum,
+      blkNum: this.blkNum.toString(),
       root: this.root
     })
   }

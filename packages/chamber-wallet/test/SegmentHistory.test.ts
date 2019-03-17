@@ -2,16 +2,29 @@ import { describe, it } from "mocha"
 import {
   SegmentHistoryManager
 } from '../src/history/SegmentHistory'
-
+import { MockStorage } from "../src/storage/MockStorage";
+import {
+  INetworkClient,
+  JsonRpcClient,
+  PlasmaClient
+} from '../src/client'
 import { assert } from "chai"
 import { constants, utils } from "ethers"
 import { DepositTransaction, Segment, SignedTransaction, Block, SplitTransaction } from "@layer2/core";
 import { WaitingBlockWrapper } from "../src/models";
 import { BigNumber } from 'ethers/utils';
 
+class MockNetworkClient implements INetworkClient {
+  request(methodName: string, args: any) {
+    return Promise.resolve({})
+  }
+}
 
 describe('SegmentHistoryManager', () => {
 
+  let storage = new MockStorage()
+  const mockClient = new MockNetworkClient()
+  const client = new PlasmaClient(mockClient)
   const AlicePrivateKey = '0xe88e7cda6f7fae195d0dcda7ccb8d733b8e6bb9bd0bc4845e1093369b5dc2257'
   const BobPrivateKey = '0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f'
   const AliceAddress = utils.computeAddress(AlicePrivateKey)
@@ -42,10 +55,11 @@ describe('SegmentHistoryManager', () => {
   block8.setSuperRoot(constants.HashZero)
 
   beforeEach(() => {
+    storage = new MockStorage()
   })
 
-  it('should verify history', () => {
-    const segmentHistoryManager = new SegmentHistoryManager()
+  it('should verify history', async () => {
+    const segmentHistoryManager = new SegmentHistoryManager(storage, client)
     segmentHistoryManager.appendDeposit(blkNum3.toNumber(), depositTx1)
     segmentHistoryManager.appendDeposit(blkNum5.toNumber(), depositTx2)
     segmentHistoryManager.appendBlockHeader(new WaitingBlockWrapper(
@@ -57,10 +71,10 @@ describe('SegmentHistoryManager', () => {
       block8.getRoot()
     ))
     segmentHistoryManager.init('key', segment1)
-    segmentHistoryManager.appendSegmentedBlock("key", block6.getSegmentedBlock(segment1))
-    segmentHistoryManager.appendSegmentedBlock("key", block8.getSegmentedBlock(segment1))
+    await segmentHistoryManager.appendSegmentedBlock("key", block6.getSegmentedBlock(segment1))
+    await segmentHistoryManager.appendSegmentedBlock("key", block8.getSegmentedBlock(segment1))
 
-    const utxo = segmentHistoryManager.verifyHistory('key')
+    const utxo = await segmentHistoryManager.verifyHistory('key')
     assert.equal(utxo[0].getBlkNum().toNumber(), blkNum8.toNumber())
     assert.deepEqual(utxo[0].getOwners(), [AliceAddress])
     assert.equal(utxo[0].getSegment(0).toBigNumber().toNumber(), segment1.toBigNumber().toNumber())

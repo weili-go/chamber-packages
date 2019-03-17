@@ -153,6 +153,7 @@ export class SignedTransactionWithProof {
   blkNum: BigNumber
   confSigs: Signature[]
   txo: TransactionOutput
+  verifiedFlag: boolean
 
   constructor(
     tx: SignedTransaction,
@@ -179,10 +180,16 @@ export class SignedTransactionWithProof {
     } else {
       this.txo = this.signedTx.getRawTx(this.txIndex).getOutput(this.outputIndex).withBlkNum(this.blkNum)
     }
+    this.verifiedFlag = false
   }
 
   withRawConfSigs(sigs: Signature[]): SignedTransactionWithProof {
     this.confSigs = sigs
+    return this
+  }
+
+  checkVerified(verifiedFlag: boolean) {
+    this.verifiedFlag = verifiedFlag
     return this
   }
 
@@ -299,7 +306,8 @@ export class SignedTransactionWithProof {
       proof: this.proof.serialize(),
       blkNum: this.blkNum.toString(),
       confSigs: this.confSigs,
-      txo: this.txo.serialize()
+      txo: this.txo.serialize(),
+      verified: this.verifiedFlag
     }
   }
 
@@ -314,7 +322,7 @@ export class SignedTransactionWithProof {
       SumMerkleProof.deserialize(data.proof),
       utils.bigNumberify(data.blkNum),
       TransactionOutputDeserializer.deserialize(data.txo)
-    ).withRawConfSigs(data.confSigs)
+    ).withRawConfSigs(data.confSigs).checkVerified(data.verified)
   }
 
   spend(txo: TransactionOutput) {
