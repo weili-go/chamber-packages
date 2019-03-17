@@ -251,22 +251,23 @@ export class ChamberWallet {
         
       })
     })
-    const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(tx => {
+    const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(async tx => {
       tx.signedTx.getAllInputs().forEach(input => {
         this._spend(input)
       })
       if(tx.getOutput().getOwners().indexOf(this.wallet.address) >= 0) {
-        // require confirmation signature?
-        if(tx.requireConfsig()) {
-          tx.confirmMerkleProofs(this.wallet.privateKey)
-        }
         this.segmentHistoryManager.init(
           tx.getOutput().hash(),
           tx.getOutput().getSegment(0))
-        this.storage.addUTXO(tx)
-        // send back to operator
-        if(tx.requireConfsig()) {
-          return this.client.sendConfsig(tx)
+        const verified = await this.verifyHistory(tx)
+        if(verified) {
+          this.storage.addUTXO(tx)
+          // require confirmation signature?
+          if(tx.requireConfsig()) {
+            tx.confirmMerkleProofs(this.wallet.privateKey)
+            // send back to operator
+            return this.client.sendConfsig(tx)
+          }
         }
       }
     }).filter(p => !!p)
