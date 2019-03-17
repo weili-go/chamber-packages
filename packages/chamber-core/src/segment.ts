@@ -113,20 +113,12 @@ export class Segment {
     return Segment.fromTuple(RLP.decode(bytes))
   }
 
-  serialize(): string[] {
-    return [
-      this.tokenId.toString(),
-      this.start.toString(),
-      this.end.toString()
-    ]
+  serialize(): string {
+    return this.toBigNumber().toHexString()
   }
 
-  static deserialize(data: string[]): Segment {
-    return new Segment(
-      utils.bigNumberify(data[0]),
-      utils.bigNumberify(data[1]),
-      utils.bigNumberify(data[2])
-    )
+  static deserialize(data: string): Segment {
+    return Segment.fromBigNumber(utils.bigNumberify(data))
   }
 
   isContain(segment: Segment) {
