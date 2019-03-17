@@ -5,7 +5,7 @@ import {
   DecoderUtility,
   OwnState,
   TransactionOutput
-} from '../../tx'
+} from '../../internal'
 import {
   Segment
 } from '../../segment'
@@ -14,10 +14,6 @@ import {
   RLPItem,
 } from '../../helpers/types'
 import { EscrowLockState } from './lockstate'
-
-console.log('BaseTransaction: ', BaseTransaction)
-console.log('DecoderUtility: ', DecoderUtility)
-console.log('OwnState: ', OwnState)
 
 export class EscrowLockTransaction extends BaseTransaction {
   from: Address

@@ -27,15 +27,16 @@ import {
   TransactionOutput,
   EscrowLockState,
   EscrowLockTransaction,
-  EscrowUnockTransaction,
+  EscrowUnlockTransaction,
   EscrowTimeoutTransaction
 } from '@layer2/core'
 import { WalletErrorFactory } from './error'
-import { Exit } from './models'
+import { Exit, WaitingBlockWrapper } from './models'
 import { Contract } from 'ethers'
 import { BigNumber } from 'ethers/utils';
 import { PlasmaSyncher } from './client/PlasmaSyncher'
 import artifact from './assets/RootChain.json'
+import { SegmentHistoryManager } from './history/SegmentHistory';
 if(!artifact.abi) {
   console.error('ABI not found')
 }
@@ -63,6 +64,7 @@ export class ChamberWallet {
   private exitableRangeManager: ExitableRangeManager
   private plasmaSyncher: PlasmaSyncher
   private options: any
+  private segmentHistoryManager: SegmentHistoryManager
 
   /**
    * 
@@ -195,6 +197,10 @@ export class ChamberWallet {
     })
 
     this.exitableRangeManager = this.storage.loadExitableRangeManager()
+    this.segmentHistoryManager = new SegmentHistoryManager()
+    this.plasmaSyncher.on('PlasmaBlockHeaderAdded', (e: any) => {
+      this.segmentHistoryManager.appendBlockHeader(e.blockHeader as WaitingBlockWrapper)
+    })
   }
 
   /**
@@ -226,7 +232,7 @@ export class ChamberWallet {
   private _spend(txo: TransactionOutput) {
     this.getUTXOArray().forEach((tx) => {
       const output = tx.getOutput()
-      if(output.checkSpent(txo)) {
+      if(output.isSpent(txo)) {
         this.storage.deleteUTXO(output.hash())
         tx.spend(txo).forEach(newTx => {
           this.storage.addUTXO(newTx)
@@ -240,12 +246,12 @@ export class ChamberWallet {
    */
   private updateBlock(block: Block) {
     this.getUTXOArray().forEach((tx) => {
-      const exclusionProof = block.getExclusionProof(tx.getOutput().getSegment(0))
+      const segmentedBlock = block.getSegmentedBlock(tx.getOutput().getSegment(0))
       const key = tx.getOutput().hash()
-      this.storage.getStorage().addProof(key, block.getBlockNumber(), JSON.stringify(exclusionProof.serialize()))
+      this.segmentHistoryManager.appendSegmentedBlock(key, segmentedBlock)
     })
     const tasks = block.getUserTransactionAndProofs(this.wallet.address).map(tx => {
-      tx.signedTx.tx.getInputs().forEach(input => {
+      tx.signedTx.getAllInputs().forEach(input => {
         this._spend(input)
       })
       if(tx.getOutput().getOwners().indexOf(this.wallet.address) >= 0) {
@@ -253,6 +259,9 @@ export class ChamberWallet {
         if(tx.requireConfsig()) {
           tx.confirmMerkleProofs(this.wallet.privateKey)
         }
+        this.segmentHistoryManager.init(
+          tx.getOutput().hash(),
+          tx.getOutput().getSegment(0))
         this.storage.addUTXO(tx)
         // send back to operator
         if(tx.requireConfsig()) {
@@ -275,14 +284,17 @@ export class ChamberWallet {
       depositorAddress,
       segment
     )
+    this.segmentHistoryManager.appendDeposit(blkNum.toNumber(), depositTx)
     if(depositorAddress === this.getAddress()) {
       this.storage.addUTXO(new SignedTransactionWithProof(
-        new SignedTransaction(depositTx),
+        new SignedTransaction([depositTx]),
+        0,
         0,
         '0x',
         '0x',
         ethers.constants.Zero,
-        new SumMerkleProof(1, 0, segment, '0x'),
+        // 0x00000050 is header. 0x0050 is size of deposit transaction
+        new SumMerkleProof(1, 0, segment, '', '0x00000050'),
         blkNum))
     }
     this.exitableRangeManager.extendRight(end)
@@ -365,6 +377,18 @@ export class ChamberWallet {
   }
 
   /**
+   * verifyHistory is history verification method for UTXO
+   * @param tx The tx be verified history
+   */
+  verifyHistory(tx: SignedTransactionWithProof): boolean {
+    const key = tx.getOutput().hash()
+    // verify history between deposit and latest tx
+    // segmentHistoryManager.verifyHistory should return current UTXO
+    const utxos = this.segmentHistoryManager.verifyHistory(key)
+    return utxos.length == 0 && utxos[0].hash() == key
+  }
+
+  /**
    * 
    * @param ether 1.0
    */
@@ -436,52 +460,32 @@ export class ChamberWallet {
     return new ChamberOk(exit)
   }
 
-
-  private searchEscrowUtxo(to: Address, amount: BigNumber): EscrowLockState | null {
-    let tx: EscrowTransaction | null = null
-    this.getUTXOArray().forEach((_tx) => {
-      const output = _tx.getOutput()
-      const segment = output.getSegment(0)
-      if(segment.getAmount().gte(amount)) {
-        tx = new EscrowLockState(
-          this.wallet.address,
-          new Segment(segment.getTokenId(), segment.start, segment.start.add(amount)),
-          _tx.blkNum,
-          to)
-      }
-    })
-    return tx
-  }
-  private searchLockedUtxo(to: Address, amount: BigNumber): EscrowTransaction | null {
-    let tx: EscrowTransaction | null = null
-    this.getUTXOArray().forEach((_tx) => {
-      const output = _tx.getOutput()
-      const segment = output.getSegment(0)
-      if(segment.getAmount().gte(amount)) {
-        tx = new EscrowTransaction(
-          this.wallet.address,
-          new Segment(segment.getTokenId(), segment.start, segment.start.add(amount)),
-          _tx.blkNum,
-          to)
-      }
-    })
-    return tx
-  }
-
   /**
    * @ignore
    */
-  private searchUtxo(to: Address, amount: BigNumber): SplitTransaction | null {
-    let tx: SplitTransaction | null = null
+  private searchUtxo(to: Address, amount: BigNumber, feeTo?: Address, fee?: BigNumber): SignedTransaction | null {
+    let tx: SignedTransaction | null = null
     this.getUTXOArray().forEach((_tx) => {
       const output = _tx.getOutput()
       const segment = output.getSegment(0)
-      if(segment.getAmount().gte(amount)) {
-        tx = new SplitTransaction(
+      const sum = amount.add(fee || 0)
+      if(segment.getAmount().gte(sum)) {
+        const paymentTx = new SplitTransaction(
           this.wallet.address,
           new Segment(segment.getTokenId(), segment.start, segment.start.add(amount)),
           _tx.blkNum,
           to)
+        if(feeTo && fee) {
+          const feeStart = segment.start.add(amount)
+          const feeTx = new SplitTransaction(
+            this.wallet.address,
+            new Segment(segment.getTokenId(), feeStart, feeStart.add(fee)),
+            _tx.blkNum,
+            feeTo)
+          tx = new SignedTransaction([paymentTx, feeTx])
+        } else {
+          tx = new SignedTransaction([paymentTx])
+        }
       }
     })
     return tx
@@ -551,50 +555,25 @@ export class ChamberWallet {
     if(input) {
       return this.getUTXOArray().filter((_tx) => {
         // check input spent _tx which user has
-        return _tx.getOutput().checkSpent(input)
+        return _tx.getOutput().isSpent(input)
       }).length > 0
     } else {
       return false
     }
   }
-  
-  async lock(
-    to: Address,
-    amountStr: string
-  ): Promise<ChamberResult<boolean>> {
-    const amount = ethers.utils.bigNumberify(amountStr)
-    const tx = this.searchEscrowUtxo(to, amount)
-    if(tx == null) {
-      return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
-    }
-    const signedTx = new SignedTransaction(tx)
-    signedTx.sign(this.wallet.privateKey)
-    return await this.client.sendTransaction(signedTx)
-  }
-  async cancel(
-    to: Address,
-    amountStr: string
-  ): Promise<ChamberResult<boolean>> {
-    const amount = ethers.utils.bigNumberify(amountStr)
-    const tx = this.searchLockedUtxo(to, amount)
-    if(tx == null) {
-      return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
-    }
-    const signedTx = new SignedTransaction(tx)
-    signedTx.sign(this.wallet.privateKey)
-    return await this.client.sendTransaction(signedTx)
-  }
 
   async transfer(
     to: Address,
-    amountStr: string
+    amountStr: string,
+    feeTo?: Address,
+    feeAmountStr?: string
   ): Promise<ChamberResult<boolean>> {
     const amount = ethers.utils.bigNumberify(amountStr)
-    const tx = this.searchUtxo(to, amount)
-    if(tx == null) {
+    const feeAmount = feeAmountStr ? ethers.utils.bigNumberify(feeAmountStr) : undefined
+    const signedTx = this.searchUtxo(to, amount, feeTo, feeAmount)
+    if(signedTx == null) {
       return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
     }
-    const signedTx = new SignedTransaction(tx)
     signedTx.sign(this.wallet.privateKey)
     return await this.client.sendTransaction(signedTx)
   }
@@ -604,7 +583,7 @@ export class ChamberWallet {
     if(tx == null) {
       return new ChamberResultError(WalletErrorFactory.TooLargeAmount())
     }
-    const signedTx = new SignedTransaction(tx)
+    const signedTx = new SignedTransaction([tx])
     signedTx.sign(this.wallet.privateKey)
     return await this.client.sendTransaction(signedTx)
   }
@@ -651,7 +630,7 @@ export class ChamberWallet {
     const swapTxResult = await this.client.getSwapRequestResponse(this.getAddress())
     if(swapTxResult.isOk()) {
       const swapTx = swapTxResult.ok()
-      if(this.checkSwapTx(swapTx.getRawTx() as SwapTransaction)) {
+      if(this.checkSwapTx(swapTx.getRawTx(0) as SwapTransaction)) {
         swapTx.sign(this.wallet.privateKey)
         const result = await this.client.sendTransaction(swapTx)
         if(result.isOk()) {

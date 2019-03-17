@@ -16,7 +16,7 @@ import {
   EscrowLockTransaction,
   EscrowUnlockTransaction,
   EscrowTimeoutTransaction
-} from './verifiers/escrow'
+} from './internal'
 
 export class DecoderUtility {
   static decode(bytes: string) {

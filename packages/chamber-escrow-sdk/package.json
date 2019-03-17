@@ -1,6 +1,6 @@
 {
   "name": "@layer2/escrow-sdk",
-  "version": "0.0.30",
+  "version": "0.0.32",
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -10,6 +10,9 @@
     "type": "git",
     "url": "https://github.com/cryptoeconomicslab/chamber-packages.git"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc --build ./tsconfig.json",
     "build:dev": "tsc",
@@ -21,8 +24,8 @@
     "docs": "typedoc --out ../../docs/wallet ./src"
   },
   "dependencies": {
-    "@layer2/core": "^0.0.30",
-    "@layer2/events-watcher": "^0.0.30",
+    "@layer2/core": "^0.0.32",
+    "@layer2/events-watcher": "^0.0.32",
     "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "^7.1.0",
     "@types/mocha": "^5.2.5",
@@ -30,16 +33,18 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-bignumber": "^3.0.0",
-    "ethers": "^4.0.21",
+    "ethers": "^4.0.27",
     "istanbul": "^0.4.5",
     "istanbul-coveralls": "^1.0.3",
     "node-fetch": "^2.3.0",
     "remap-istanbul": "^0.13.0",
     "ts-node": "^7.0.1",
+    "tslib": "^1.9.3",
     "typescript": "^3.2.2"
   },
   "devDependencies": {
-    "mocha": "^5.2.0",
+    "chai": "^4.2.0",
+    "mocha": "^6.0.2",
     "typedoc": "^0.14.2"
   }
 }

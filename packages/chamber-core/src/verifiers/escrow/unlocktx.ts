@@ -5,7 +5,7 @@ import {
   DecoderUtility,
   OwnState,
   TransactionOutput
-} from '../../tx'
+} from '../../internal'
 import {
   Segment
 } from '../../segment'

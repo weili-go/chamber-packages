@@ -2,14 +2,17 @@ import { utils } from "ethers"
 import BigNumber = utils.BigNumber
 import {
   OwnState,
-  TransactionOutput
-} from '../../tx'
+  DecoderUtility,
+  TransactionOutput,
+  BaseTransaction
+} from '../../internal'
 import {
   Segment
 } from '../../segment'
 import {
   Address,
   Hash,
+  RLPItem,
 } from '../../helpers/types'
 
 export class EscrowLockState extends TransactionOutput {
